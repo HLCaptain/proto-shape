@@ -1,0 +1,42 @@
+[gd_scene load_steps=7 format=3 uid="uid://drys0h14kvoud"]
+
+[ext_resource type="Script" path="res://camera.gd" id="1_4m6yf"]
+[ext_resource type="Script" path="res://addons/proto_shape/proto_stairs.gd" id="2_04krf"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_bk5re"]
+sun_angle_max = 60.0
+
+[sub_resource type="Sky" id="Sky_figaw"]
+sky_material = SubResource("ProceduralSkyMaterial_bk5re")
+
+[sub_resource type="Environment" id="Environment_sxnsr"]
+background_mode = 2
+sky = SubResource("Sky_figaw")
+ambient_light_source = 3
+ambient_light_color = Color(1, 1, 1, 1)
+reflected_light_source = 2
+
+[sub_resource type="CameraAttributesPhysical" id="CameraAttributesPhysical_miufq"]
+
+[node name="Linear Stairs" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_sxnsr")
+camera_attributes = SubResource("CameraAttributesPhysical_miufq")
+
+[node name="Camera3D" type="Camera3D" parent="WorldEnvironment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.09364, 13.7626)
+script = ExtResource("1_4m6yf")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="WorldEnvironment"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.152, 0.972, 8.9)
+size = Vector3(1.91578, 3.64154, 2.24605)
+
+[node name="ProtoStairs" type="CSGCombiner3D" parent="WorldEnvironment"]
+script = ExtResource("2_04krf")
+calculation = 1
+steps = 9
+width = 14.215
+height = 1.856
+depth = 2.9885
+fill = true
