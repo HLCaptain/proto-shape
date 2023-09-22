@@ -66,13 +66,13 @@ func _get_camera_oriented_plane(
 
 	# Transform the local point
 	var local_gizmo_position = gizmo_position
-	var global_gizmo_position = gizmo_position.rotated(quaternion.get_axis(), quaternion.get_angle()) + node.position
-	# gizmo_axis = gizmo_axis.rotated(quaternion.get_axis(), quaternion.get_angle()).normalized()
+	var global_gizmo_position = gizmo_position.rotated(quaternion.get_axis(), quaternion.get_angle()) * node.scale + node.position
+	var global_gizmo_axis = gizmo_axis.rotated(quaternion.get_axis(), quaternion.get_angle()).normalized()
 	# gizmo_axis = node.transform.rotated(gizmo_axis).origin.normalized()
 	# gizmo_axis = gizmo_axis.normalized()
-	print_debug("gizmo_axis = " + str(gizmo_axis))
+	print_debug("global_gizmo_axis = " + str(global_gizmo_axis))
 	print_debug("gizmo_position = " + str(global_gizmo_position))
-	var closest_point_to_camera = _get_closest_point_on_line(global_gizmo_position, gizmo_axis, camera_position)
+	var closest_point_to_camera = _get_closest_point_on_line(global_gizmo_position, global_gizmo_axis, camera_position)
 	var closest_point_to_camera_difference = closest_point_to_camera - camera_position
 	var parallel_to_gizmo_dir = closest_point_to_camera - global_gizmo_position
 	print_debug("parallel = " + str(parallel_to_gizmo_dir))
@@ -81,7 +81,7 @@ func _get_camera_oriented_plane(
 
 	# Transform 3 points to global space
 	var x = global_gizmo_position
-	var y = global_gizmo_position + gizmo_axis
+	var y = global_gizmo_position + global_gizmo_axis
 	var z = global_gizmo_position + perpendicular_to_gizmo_dir
 	# x = x.rotated(quaternion.get_axis(), quaternion.get_angle()) + node.position
 	# y = y.rotated(quaternion.get_axis(), quaternion.get_angle()) + node.position

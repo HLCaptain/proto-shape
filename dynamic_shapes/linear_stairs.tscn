@@ -33,11 +33,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.0681, 0.972, 8.9)
 size = Vector3(4.45802, 5.55505, 9.2667)
 
 [node name="ProtoStairs" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(0.740605, 0, -0.67194, 0, 0.999999, 0, 0.67194, 0, 0.740605, 0, 0, 0)
+transform = Transform3D(-0.541004, 0.0952895, -0.835604, 0.65157, 0.6757, -0.344798, 0.531762, -0.730991, -0.427644, 0, 0, 0)
 script = ExtResource("2_04krf")
 calculation = 1
 steps = 8
 width = 15.625
 height = 1.287
-depth = 1.89229
+depth = 2.97712
 fill = true
