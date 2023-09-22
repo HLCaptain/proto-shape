@@ -1,9 +1,9 @@
 @tool
 extends EditorPlugin
 
-const ProtoStairsGizmo = preload("proto_stairs_gizmo.gd")
+const ProtoGizmo = preload("proto_gizmo.gd")
 
-var gizmo_plugin = ProtoStairsGizmo.new()
+var gizmo_plugin = ProtoGizmo.new()
 
 func _enter_tree():
 	add_custom_type("ProtoStairs", "CSGCombiner3D", preload("proto_stairs.gd"), preload("res://icon.svg"))
