@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=3 uid="uid://drys0h14kvoud"]
 
 [ext_resource type="Script" path="res://camera.gd" id="1_4m6yf"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_stairs.gd" id="2_04krf"]
+[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp.gd" id="2_i41uw"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_bk5re"]
 sun_angle_max = 60.0
@@ -29,15 +29,18 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.09364, 13.7626)
 script = ExtResource("1_4m6yf")
 
 [node name="CSGBox3D" type="CSGBox3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.0681, 0.972, 8.9)
-size = Vector3(4.45802, 5.55505, 9.2667)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.6707, 0.972, 3.9)
+size = Vector3(10, 5.55505, 40)
 
 [node name="ProtoStairs" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(-0.541004, 0.0952895, -0.835604, 0.65157, 0.6757, -0.344798, 0.531762, -0.730991, -0.427644, 0, 0, 0)
-script = ExtResource("2_04krf")
-calculation = 1
-steps = 8
-width = 15.625
-height = 1.287
-depth = 2.97712
-fill = true
+transform = Transform3D(1, 0, 0, 0, 0.999999, 0, 0, 0, 1, 0, 0, 0)
+script = ExtResource("2_i41uw")
+type = 0
+width = 16.5508
+height = 10.941
+depth = 29.1774
+
+[node name="CSGPolygon3D" type="CSGPolygon3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.29666, -0.811041, -4.80418)
+polygon = PackedVector2Array(2.30319, -0.0710418, -1.03, 0.92, -0.6, -1.08)
+depth = 1.48
