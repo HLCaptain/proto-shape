@@ -26,21 +26,21 @@ camera_attributes = SubResource("CameraAttributesPhysical_miufq")
 
 [node name="Camera3D" type="Camera3D" parent="WorldEnvironment"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.09364, 13.7626)
+fov = 81.5625
 script = ExtResource("1_4m6yf")
 
 [node name="CSGBox3D" type="CSGBox3D" parent="WorldEnvironment"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.6707, 0.972, 3.9)
-size = Vector3(10, 5.55505, 40)
+size = Vector3(10, 5.55505, 10.5952)
 
-[node name="ProtoStairs" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 0.999999, 0, 0, 0, 1, 0, 0, 0)
+[node name="ProtoRamp" type="CSGCombiner3D" parent="WorldEnvironment"]
 script = ExtResource("2_i41uw")
 type = 0
-width = 16.5508
-height = 10.941
-depth = 29.1774
+width = 14.0769
+height = 8.0
+depth = 15.063
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.29666, -0.811041, -4.80418)
-polygon = PackedVector2Array(2.30319, -0.0710418, -1.03, 0.92, -0.6, -1.08)
+polygon = PackedVector2Array(2.51521, -1.5345, -1.03, 0.92, -0.6, -1.08)
 depth = 1.48

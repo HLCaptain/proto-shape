@@ -14,9 +14,9 @@ enum Type {
 var epsilon = 0.0001
 var _calculation: Calculation = Calculation.STAIRCASE_DIMENSIONS
 var _steps : int = 8
-var _width = 8.0
-var _height = 0.1
-var _depth = 0.1
+var _width = 1.0
+var _height = 1.0
+var _depth = 1.0
 var _fill = true
 var _type = Type.RAMP
 
