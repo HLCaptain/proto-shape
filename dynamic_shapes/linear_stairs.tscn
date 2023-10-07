@@ -34,16 +34,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.6707, 0.972, 3.9)
 size = Vector3(10.952, 5.55505, 10.5952)
 
 [node name="ProtoRamp" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(0.863105, 0.00730646, -0.504972, 0, 0.999896, 0.0144683, 0.505025, -0.0124878, 0.863015, 0.0762063, -0.0207023, 0.367475)
+transform = Transform3D(0.863105, 0.00730646, -0.504972, 0, 0.999896, 0.0144683, 0.505025, -0.0124878, 0.863015, -0.542323, 0.145859, -1.09308)
 script = ExtResource("2_i41uw")
 type = 1
 width = 1.27147
 height = 1.091
-depth = 1.38885
-anchor = 6
-anchor_fixed = false
+depth = 1.38995
+anchor = 2
+anchor_fixed = true
 calculation = 0
-steps = 4
+steps = 8
 fill = true
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="."]

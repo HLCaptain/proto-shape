@@ -266,13 +266,8 @@ func refresh_steps(new_steps):
 			box.position = Vector3()
 			add_child(box)
 
-	if calculation == Calculation.STAIRCASE_DIMENSIONS:
-		for child in get_children():
-			refresh_step(child.get_index())
-	else:
-		if current_steps < new_steps:
-			for i in range(current_steps, new_steps):
-				refresh_step(i)
+	for child in get_children():
+		refresh_step(child.get_index())
 
 func refresh_step(i: int):
 	var node: Node3D = get_child(i)
@@ -281,6 +276,8 @@ func refresh_step(i: int):
 	var step_width = width
 	var step_depth = get_true_step_depth()
 	var offset = get_anchor_offset(anchor)
+
+	translate_anchor(anchor, Anchor.BOTTOM_CENTER)
 
 	match type:
 		# Filled with CSGBox3Ds
@@ -306,6 +303,7 @@ func refresh_step(i: int):
 
 	# Apply anchor offset
 	node.position += offset
+	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
 
 func _ready():
 	set_steps(steps)
