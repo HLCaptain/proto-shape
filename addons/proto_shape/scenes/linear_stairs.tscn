@@ -37,19 +37,19 @@ size = Vector3(10.952, 5.55505, 10.5952)
 transform = Transform3D(0.863105, 0.0532712, -0.502207, 9.31323e-10, 0.994422, 0.105483, 0.505025, -0.0910432, 0.85829, 2.18163, 0.626726, 0.543204)
 script = ExtResource("2_i41uw")
 type = 0
-width = 1.10696
+width = 1.47553
 height = 1.0
-depth = 1.50271
+depth = 1.11963
 anchor = 0
 anchor_fixed = true
 
 [node name="ProtoRamp" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(0.863105, 0.0532712, -0.502207, 9.31323e-10, 0.994422, 0.105483, 0.505025, -0.0910432, 0.85829, 1.3736, 0.626726, 0.0704055)
+transform = Transform3D(0.863105, 0.0532712, -0.502207, 9.31323e-10, 0.994422, 0.105483, 0.505025, -0.0910432, 0.85829, 0.920183, 0.626726, -0.194901)
 script = ExtResource("2_i41uw")
 type = 1
-width = 1.54514
+width = 1.68358
 height = 0.101
-depth = 0.216576
+depth = 0.206109
 anchor = 1
 anchor_fixed = false
 calculation = 1
