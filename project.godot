@@ -11,13 +11,13 @@ config_version=5
 [application]
 
 config/name="Test"
-run/main_scene="res://dynamic_shapes/linear_stairs.tscn"
+run/main_scene="res://addons/proto_shape/scenes/linear_stairs.tscn"
 config/features=PackedStringArray("4.1", "Forward Plus")
-config/icon="res://icon.svg"
+config/icon="res://addons/proto_shape/icon/proto-shape-icon.png"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/plugin_refresher/plugin.cfg", "res://addons/proto_shape/plugin.cfg")
+enabled=PackedStringArray("res://addons/proto_shape/plugin.cfg")
 
 [rendering]
 

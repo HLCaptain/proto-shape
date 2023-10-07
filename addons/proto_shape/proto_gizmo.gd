@@ -57,9 +57,6 @@ func _redraw(gizmo):
 	gizmo.add_handles(handles, get_material("handles", gizmo), [depth_gizmo_id, width_gizmo_id])
 
 func _set_handle(gizmo, handle_id, secondary, camera, screen_pos):
-	print_debug("handle_id = " + str(handle_id))
-	print_debug("width_gizmo_id = " + str(width_gizmo_id))
-	print_debug("depth_gizmo_id = " + str(depth_gizmo_id))
 	match handle_id:
 		depth_gizmo_id:
 			_set_depth_handle(gizmo, camera, screen_pos)
