@@ -16,32 +16,48 @@ func _redraw(gizmo):
 	gizmo.clear()
 
 	var node : ProtoRamp = gizmo.get_node_3d()
+	if !node.anchor_changed.is_connected(gizmo.get_node_3d().update_gizmos):
+		node.anchor_changed.connect(gizmo.get_node_3d().update_gizmos)
 
 	var handles = PackedVector3Array()
+
+	var anchor_offset = node.get_anchor_offset(node.anchor)
 
 	var stair_calculation = node.calculation
 	if node.type == ProtoRamp.Type.RAMP:
 		stair_calculation = ProtoRamp.Calculation.STAIRCASE_DIMENSIONS
 
-	if (stair_calculation == ProtoRamp.Calculation.STEP_DIMENSIONS):
-		handles.push_back(Vector3(0, node.height * node.steps / 2, node.depth * node.steps))
-		handles.push_back(Vector3(node.width / 2, node.height * node.steps / 4, node.depth * node.steps / 2))
-	else :
-		handles.push_back(Vector3(0, node.height / 2, node.depth))
-		handles.push_back(Vector3(node.width / 2, node.height / 4, node.depth / 2))
+	var true_depth = node.get_true_depth()
+	var true_height = node.get_true_height()
+	var depth_gizmo_position = Vector3(0, true_height / 2, true_depth) + anchor_offset
+	var width_gizmo_position = Vector3(node.width / 2, true_height / 2, true_depth / 2) + anchor_offset
+	handles.push_back(depth_gizmo_position)
+	handles.push_back(width_gizmo_position)
+
+	# When on the left, width gizmo is on the right
+	# When in the back (top, base), depth gizmo is on the front
+	match node.anchor:
+		ProtoRamp.Anchor.BOTTOM_LEFT:
+			width_gizmo_position.x = -node.width
+		ProtoRamp.Anchor.TOP_LEFT:
+			width_gizmo_position.x = -node.width
+			depth_gizmo_position.z = -true_depth
+		ProtoRamp.Anchor.BASE_LEFT:
+			width_gizmo_position.x = -node.width
+			depth_gizmo_position.z = -true_depth
+		ProtoRamp.Anchor.BASE_CENTER:
+			depth_gizmo_position.z = -true_depth
+		ProtoRamp.Anchor.BASE_RIGHT:
+			depth_gizmo_position.z = -true_depth
+		ProtoRamp.Anchor.TOP_RIGHT:
+			depth_gizmo_position.z = -true_depth
+		ProtoRamp.Anchor.TOP_CENTER:
+			depth_gizmo_position.z = -true_depth
+
+	handles[0] = depth_gizmo_position
+	handles[1] = width_gizmo_position
 
 	gizmo.add_handles(handles, get_material("handles", gizmo), [depth_handle_id, width_handle_id])
-
-	var plane_y = node.height
-	var plane_z = node.depth
-	if (stair_calculation == ProtoRamp.Calculation.STEP_DIMENSIONS):
-		plane_y = node.height * node.steps
-		plane_z = node.depth * node.steps
-	# var plane = Plane(Vector3(1, 1, 0).rotated(node.quaternion.get_axis(), node.quaternion.get_angle()).normalized(), Vector3(0, 1, 0))
-	var gizmo_position = Vector3(0, node.height / 2, node.depth)
-	if (stair_calculation == ProtoRamp.Calculation.STEP_DIMENSIONS):
-		gizmo_position *= node.steps
-	var plane = _get_camera_oriented_plane(camera_position, gizmo_position, Vector3(0, 0, 1), gizmo)
 
 func _set_handle(gizmo, handle_id, secondary, camera, screen_pos):
 	# print_debug("handle_id = " + str(handle_id))
@@ -56,31 +72,57 @@ func _set_handle(gizmo, handle_id, secondary, camera, screen_pos):
 func _set_width_handle(gizmo, camera, screen_pos):
 	# print_debug("_set_width_handle")
 	var node : ProtoRamp = gizmo.get_node_3d()
-	var gizmo_position = Vector3(node.width / 2, node.height / 4, node.depth / 2)
-	if (node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS && node.type == ProtoRamp.Type.STAIRCASE):
-		gizmo_position.y *= node.steps
-		gizmo_position.z *= node.steps
+	var anchor_offset = node.get_anchor_offset(node.anchor)
+	var gizmo_position = Vector3(node.width / 2, node.get_true_height() / 4, node.get_true_depth() / 2)
 	var quat_axis = node.quaternion.get_axis() if node.quaternion.get_axis().is_normalized() else Vector3.UP
 	#print_debug("Gizmo_pos = " + str(gizmo_position))
-	var plane = _get_camera_oriented_plane(camera.position, gizmo_position, Vector3(1, 0, 0), gizmo)
+	var plane = _get_camera_oriented_plane(camera.position, gizmo_position + anchor_offset, Vector3(1, 0, 0), gizmo)
 	var offset = ((plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - node.position).rotated(quat_axis, -node.quaternion.get_angle())).x
 	#print_debug("Offset = " + str(offset))
+	# If anchor is on the left, offset is negative
+	# If anchor is not centered, offset is divided by 2
+	match node.anchor:
+		ProtoRamp.Anchor.BOTTOM_LEFT:
+			offset = -offset / 2
+		ProtoRamp.Anchor.TOP_LEFT:
+			offset = -offset / 2
+		ProtoRamp.Anchor.BASE_LEFT:
+			offset = -offset / 2
+		ProtoRamp.Anchor.BOTTOM_RIGHT:
+			offset = offset / 2
+		ProtoRamp.Anchor.TOP_RIGHT:
+			offset = offset / 2
+		ProtoRamp.Anchor.BASE_RIGHT:
+			offset = offset / 2
 	node.width = offset * 2
 
 func _set_depth_handle(gizmo, camera, screen_pos):
 	# print_debug("_set_depth_handle")
 	var node : ProtoRamp = gizmo.get_node_3d()
-	var gizmo_position = Vector3(0, node.height / 2, node.depth)
-	if (node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS && node.type == ProtoRamp.Type.STAIRCASE):
-		gizmo_position *= node.steps
+	var anchor_offset = node.get_anchor_offset(node.anchor)
+	var gizmo_position = Vector3(0, node.get_true_height() / 2, node.get_true_depth())
 	var quat_axis = Vector3.UP
 	if node.quaternion.get_axis().is_normalized():
 		quat_axis = node.quaternion.get_axis()
 
-	var plane = _get_camera_oriented_plane(camera.position, gizmo_position, Vector3(0, 0, 1), gizmo)
+	var plane = _get_camera_oriented_plane(camera.position, gizmo_position + anchor_offset, Vector3(0, 0, 1), gizmo)
 	var offset = ((plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - node.position).rotated(quat_axis, -node.quaternion.get_angle())).z
 	if (node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS && node.type == ProtoRamp.Type.STAIRCASE):
 		offset = offset / node.steps
+	# If anchor is on the back, offset is negative
+	match node.anchor:
+		ProtoRamp.Anchor.BASE_CENTER:
+			offset = -offset
+		ProtoRamp.Anchor.BASE_RIGHT:
+			offset = -offset
+		ProtoRamp.Anchor.BASE_LEFT:
+			offset = -offset
+		ProtoRamp.Anchor.TOP_CENTER:
+			offset = -offset
+		ProtoRamp.Anchor.TOP_RIGHT:
+			offset = -offset
+		ProtoRamp.Anchor.TOP_LEFT:
+			offset = -offset
 	node.depth = offset
 
 func _get_camera_oriented_plane(

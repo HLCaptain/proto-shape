@@ -1,6 +1,8 @@
 @tool
 extends CSGCombiner3D
 
+signal anchor_changed
+
 enum Calculation {
 	STAIRCASE_DIMENSIONS,
 	STEP_DIMENSIONS,
@@ -23,6 +25,8 @@ enum Type {
 	STAIRCASE,
 }
 
+var is_entered_tree = false
+
 var epsilon = 0.0001
 var _calculation: Calculation = Calculation.STAIRCASE_DIMENSIONS
 var _steps : int = 8
@@ -34,7 +38,7 @@ var _type = Type.RAMP
 var _anchor = Anchor.BOTTOM_CENTER
 var _anchor_fixed = true
 
-@export_category("Proto Stairs")
+@export_category("Proto Ramp")
 var calculation: Calculation: set = set_calculation, get = get_calculation
 var steps: int: set = set_steps, get = get_steps
 var width: float: set = set_width, get = get_width
@@ -66,22 +70,31 @@ func _set(property, value):
 	match property:
 		"type":
 			set_type(value)
+			return true
 		"calculation":
 			set_calculation(value)
+			return true
 		"steps":
 			set_steps(value)
+			return true
 		"width":
 			set_width(value)
+			return true
 		"height":
 			set_height(value)
+			return true
 		"depth":
 			set_depth(value)
+			return true
 		"fill":
 			set_fill(value)
+			return true
 		"anchor":
 			set_anchor(value)
+			return true
 		"anchor_fixed":
 			set_anchor_fixed(value)
+			return true
 
 func get_type():
 	return _type
@@ -167,20 +180,21 @@ func get_anchor_offset(anchor):
 
 func set_type(value):
 	_type = value
-	notify_property_list_changed()
-	# Staircase: dimensions are reset from forced STAIRCASE_DIMENSIONS calculation
-	# Ramp: dimensions are forced to STAIRCASE_DIMENSIONS calculation
-	match type:
-		Type.STAIRCASE:
-			if calculation == Calculation.STEP_DIMENSIONS:
-				_height /= steps
-				_depth = (_depth + epsilon) / steps
-		Type.RAMP:
-			if calculation == Calculation.STEP_DIMENSIONS:
-				_height *= steps
-				_depth = (_depth + epsilon) * steps
+	if is_entered_tree:
+		notify_property_list_changed()
+		# Staircase: dimensions are reset from forced STAIRCASE_DIMENSIONS calculation
+		# Ramp: dimensions are forced to STAIRCASE_DIMENSIONS calculation
+		match type:
+			Type.STAIRCASE:
+				if calculation == Calculation.STEP_DIMENSIONS:
+					_height /= steps
+					_depth = (_depth + epsilon) / steps
+			Type.RAMP:
+				if calculation == Calculation.STEP_DIMENSIONS:
+					_height *= steps
+					_depth = (_depth + epsilon) * steps
 
-	refresh_type()
+		refresh_type()
 
 func refresh_type():
 	refresh_steps(0)
@@ -188,31 +202,22 @@ func refresh_type():
 		Type.STAIRCASE:
 			refresh_steps(steps)
 		Type.RAMP:
-			# Create a single CSGPolygon3D
-			var polygon = CSGPolygon3D.new()
-			var array = PackedVector2Array()
-			array.append(Vector2(0, 0))
-			array.append(Vector2(depth, 0))
-			array.append(Vector2(depth, height))
-			polygon.polygon = array
-			polygon.rotate(Vector3.UP, -PI / 2.0)
-			polygon.translate(Vector3(0, 0, width / 2.0))
-			polygon.depth = width
-			add_child(polygon)
+			add_ramp()
 
 func set_calculation(value):
 	_calculation = value
 	# Calculate current step or staircase dimensions
 	# Only affecting dimensions when in STAIRCASE mode
-	match calculation:
-		Calculation.STAIRCASE_DIMENSIONS:
-			if type == Type.STAIRCASE:
-				_height *= steps
-				_depth = (_depth + epsilon) * steps
-		Calculation.STEP_DIMENSIONS:
-			if type == Type.STAIRCASE:
-				_height /= steps
-				_depth = (_depth + epsilon) / steps
+	if is_entered_tree:
+		match calculation:
+			Calculation.STAIRCASE_DIMENSIONS:
+				if type == Type.STAIRCASE:
+					_height *= steps
+					_depth = (_depth + epsilon) * steps
+			Calculation.STEP_DIMENSIONS:
+				if type == Type.STAIRCASE:
+					_height /= steps
+					_depth = (_depth + epsilon) / steps
 
 func set_width(value):
 	_width = value
@@ -240,6 +245,7 @@ func set_anchor(value):
 	_anchor = value
 	for child in get_children():
 		refresh_step(child.get_index())
+	anchor_changed.emit()
 
 func translate_anchor(from_anchor, to_anchor):
 	if !anchor_fixed:
@@ -254,20 +260,34 @@ func set_steps(value):
 
 func refresh_steps(new_steps):
 	var current_steps = get_child_count()
-	if current_steps > new_steps:
-		# Remove children
-		for i in range(current_steps - new_steps):
-			get_child(get_child_count() - 1).free()
-	else:
-		# Create new stairs
-		for i in range(current_steps, new_steps):
-			var box = CSGBox3D.new()
-			box.size = Vector3()
-			box.position = Vector3()
-			add_child(box)
+	for child in get_children():
+		child.free()
+
+	match type:
+		Type.STAIRCASE:
+			for i in range(new_steps):
+				var box = CSGBox3D.new()
+				box.size = Vector3()
+				box.position = Vector3()
+				add_child(box)
+		Type.RAMP:
+			add_ramp()
 
 	for child in get_children():
 		refresh_step(child.get_index())
+
+func add_ramp():
+	# Create a single CSGPolygon3D
+	var polygon = CSGPolygon3D.new()
+	var array = PackedVector2Array()
+	array.append(Vector2(0, 0))
+	array.append(Vector2(depth, 0))
+	array.append(Vector2(depth, height))
+	polygon.polygon = array
+	polygon.rotate(Vector3.UP, -PI / 2.0)
+	polygon.translate(Vector3(0, 0, width / 2.0))
+	polygon.depth = width
+	add_child(polygon)
 
 func refresh_step(i: int):
 	var node: Node3D = get_child(i)
@@ -305,11 +325,9 @@ func refresh_step(i: int):
 	node.position += offset
 	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
 
-func _ready():
-	set_steps(steps)
-
 func _enter_tree():
-	set_steps(steps)
+	# is_entered_tree is used to avoid setting properties traditionally on initialization
+	is_entered_tree = true
 
 func _init():
 	set_steps(steps)
