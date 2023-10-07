@@ -2,11 +2,16 @@ extends EditorNode3DGizmoPlugin
 
 const ProtoRamp = preload("proto_ramp.gd")
 var camera_position: Vector3 = Vector3(0, 0, 0)
-var depth_handle_id = 0
-var width_handle_id = 1
+var width_gizmo_id: int
+var depth_gizmo_id: int
 
 func _has_gizmo(node):
+	width_gizmo_id = randi_range(0, 100000)
+	depth_gizmo_id = randi_range(0, 100000)
 	return node is ProtoRamp
+
+func _get_gizmo_name():
+	return "ProtoRamp"
 
 func _init():
 	create_material("main", Color(1, 0, 0))
@@ -15,24 +20,15 @@ func _init():
 func _redraw(gizmo):
 	gizmo.clear()
 
-	var node : ProtoRamp = gizmo.get_node_3d()
+	var node: ProtoRamp = gizmo.get_node_3d()
 	if !node.anchor_changed.is_connected(gizmo.get_node_3d().update_gizmos):
 		node.anchor_changed.connect(gizmo.get_node_3d().update_gizmos)
 
-	var handles = PackedVector3Array()
-
-	var anchor_offset = node.get_anchor_offset(node.anchor)
-
-	var stair_calculation = node.calculation
-	if node.type == ProtoRamp.Type.RAMP:
-		stair_calculation = ProtoRamp.Calculation.STAIRCASE_DIMENSIONS
-
 	var true_depth = node.get_true_depth()
 	var true_height = node.get_true_height()
+	var anchor_offset = node.get_anchor_offset(node.anchor)
 	var depth_gizmo_position = Vector3(0, true_height / 2, true_depth) + anchor_offset
 	var width_gizmo_position = Vector3(node.width / 2, true_height / 2, true_depth / 2) + anchor_offset
-	handles.push_back(depth_gizmo_position)
-	handles.push_back(width_gizmo_position)
 
 	# When on the left, width gizmo is on the right
 	# When in the back (top, base), depth gizmo is on the front
@@ -54,17 +50,20 @@ func _redraw(gizmo):
 		ProtoRamp.Anchor.TOP_CENTER:
 			depth_gizmo_position.z = -true_depth
 
-	handles[0] = depth_gizmo_position
-	handles[1] = width_gizmo_position
+	var handles = PackedVector3Array()
+	handles.push_back(depth_gizmo_position)
+	handles.push_back(width_gizmo_position)
 
-	gizmo.add_handles(handles, get_material("handles", gizmo), [depth_handle_id, width_handle_id])
+	gizmo.add_handles(handles, get_material("handles", gizmo), [depth_gizmo_id, width_gizmo_id])
 
 func _set_handle(gizmo, handle_id, secondary, camera, screen_pos):
-	# print_debug("handle_id = " + str(handle_id))
+	print_debug("handle_id = " + str(handle_id))
+	print_debug("width_gizmo_id = " + str(width_gizmo_id))
+	print_debug("depth_gizmo_id = " + str(depth_gizmo_id))
 	match handle_id:
-		depth_handle_id:
+		depth_gizmo_id:
 			_set_depth_handle(gizmo, camera, screen_pos)
-		width_handle_id:
+		width_gizmo_id:
 			_set_width_handle(gizmo, camera, screen_pos)
 
 	gizmo.get_node_3d().update_gizmos()
@@ -73,7 +72,7 @@ func _set_width_handle(gizmo, camera, screen_pos):
 	# print_debug("_set_width_handle")
 	var node : ProtoRamp = gizmo.get_node_3d()
 	var anchor_offset = node.get_anchor_offset(node.anchor)
-	var gizmo_position = Vector3(node.width / 2, node.get_true_height() / 4, node.get_true_depth() / 2)
+	var gizmo_position = Vector3(node.width / 2, node.get_true_height() / 2, node.get_true_depth() / 2)
 	var quat_axis = node.quaternion.get_axis() if node.quaternion.get_axis().is_normalized() else Vector3.UP
 	#print_debug("Gizmo_pos = " + str(gizmo_position))
 	var plane = _get_camera_oriented_plane(camera.position, gizmo_position + anchor_offset, Vector3(1, 0, 0), gizmo)

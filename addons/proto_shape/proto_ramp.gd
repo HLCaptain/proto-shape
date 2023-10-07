@@ -136,7 +136,11 @@ func get_true_step_depth():
 	return step_depth
 
 func get_true_depth():
-	return get_true_step_depth() * steps
+	match type:
+		Type.STAIRCASE:
+			return get_true_step_depth() * steps
+		Type.RAMP:
+			return get_true_step_depth()
 
 func get_true_step_height():
 	var step_calculation = calculation
@@ -151,7 +155,11 @@ func get_true_step_height():
 	return step_height
 
 func get_true_height():
-	return get_true_step_height() * steps
+	match type:
+		Type.STAIRCASE:
+			return get_true_step_height() * steps
+		Type.RAMP:
+			return get_true_step_height()
 
 func get_anchor_offset(anchor):
 	var offset = Vector3()
@@ -194,7 +202,7 @@ func set_type(value):
 					_height *= steps
 					_depth = (_depth + epsilon) * steps
 
-		refresh_type()
+	refresh_type()
 
 func refresh_type():
 	refresh_steps(0)
