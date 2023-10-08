@@ -1,6 +1,6 @@
 # ProtoShape - Godot Prototyping Extension for CSG
 
-ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics. It is not recommended to use this plugin for final levels as it is not optimized for performance.
+ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics.
 
 <!-- Icon (addons/proto_shape/icon/proto-shape-icon.png) -->
 <img src="addons/proto_shape/icon/proto-shape-icon.png" style="height: 40%; width: 40%; margin: 0 auto; display: block">
