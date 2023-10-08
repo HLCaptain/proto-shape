@@ -21,6 +21,8 @@ When adding a new child node, search for `ProtoRamp` and add it to the scene.
 
 ## Contributing
 
+The library is written in `GDScript` and (mostly) follows the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html). Also static typing is used where possible.
+
 Extend the library of shapes by creating an issue or pull request! Share your idea for a shape or feature you would like to see added to the library.
 
 If you find any bugs, feel free to create an issue.

@@ -1,38 +1,38 @@
 extends EditorNode3DGizmoPlugin
 
-const ProtoRamp = preload("proto_ramp.gd")
-var camera_position: Vector3 = Vector3(0, 0, 0)
+const ProtoRamp := preload("proto_ramp.gd")
+var camera_position := Vector3(0, 0, 0)
 var width_gizmo_id: int
 var depth_gizmo_id: int
 var height_gizmo_id: int
 
-func _has_gizmo(node):
+func _has_gizmo(node) -> bool:
 	# Generate a random id for each gizmo
-	width_gizmo_id = randi_range(0, 1000000)
-	depth_gizmo_id = randi_range(0, 1000000)
-	height_gizmo_id = randi_range(0, 1000000)
+	width_gizmo_id = randi_range(0, 1_000_000)
+	depth_gizmo_id = randi_range(0, 1_000_000)
+	height_gizmo_id = randi_range(0, 1_000_000)
 	return node is ProtoRamp
 
-func _get_gizmo_name():
+func _get_gizmo_name() -> String:
 	return "ProtoRamp"
 
-func _init():
+func _init() -> void:
 	create_material("main", Color(1, 0, 0))
 	create_handle_material("handles")
 
-func _redraw(gizmo):
+func _redraw(gizmo: EditorNode3DGizmo) -> void:
 	gizmo.clear()
 
 	var node: ProtoRamp = gizmo.get_node_3d()
 	if !node.anchor_changed.is_connected(gizmo.get_node_3d().update_gizmos):
 		node.anchor_changed.connect(gizmo.get_node_3d().update_gizmos)
 
-	var true_depth = node.get_true_depth()
-	var true_height = node.get_true_height()
-	var anchor_offset = node.get_anchor_offset(node.anchor)
-	var depth_gizmo_position = Vector3(0, true_height / 2, true_depth) + anchor_offset
-	var width_gizmo_position = Vector3(node.width / 2, true_height / 2, true_depth / 2) + anchor_offset
-	var height_gizmo_position = Vector3(0, true_height, true_depth / 2) + anchor_offset
+	var true_depth: float = node.get_true_depth()
+	var true_height: float = node.get_true_height()
+	var anchor_offset: Vector3 = node.get_anchor_offset(node.anchor)
+	var depth_gizmo_position := Vector3(0, true_height / 2, true_depth) + anchor_offset
+	var width_gizmo_position := Vector3(node.width / 2, true_height / 2, true_depth / 2) + anchor_offset
+	var height_gizmo_position := Vector3(0, true_height, true_depth / 2) + anchor_offset
 
 	# When on the left, width gizmo is on the right
 	# When in the back (top, base), depth gizmo is on the front
@@ -64,7 +64,12 @@ func _redraw(gizmo):
 
 	gizmo.add_handles(handles, get_material("handles", gizmo), [depth_gizmo_id, width_gizmo_id, height_gizmo_id])
 
-func _set_handle(gizmo, handle_id, secondary, camera, screen_pos):
+func _set_handle(
+	gizmo: EditorNode3DGizmo,
+	handle_id: int,
+	secondary: bool,
+	camera: Camera3D,
+	screen_pos: Vector2) -> void:
 	match handle_id:
 		depth_gizmo_id:
 			_set_depth_handle(gizmo, camera, screen_pos)
@@ -75,16 +80,25 @@ func _set_handle(gizmo, handle_id, secondary, camera, screen_pos):
 
 	gizmo.get_node_3d().update_gizmos()
 
-func _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, offset_axis):
-	var quat_axis = node.quaternion.get_axis() if node.quaternion.get_axis().is_normalized() else Vector3.UP
-	var plane = _get_camera_oriented_plane(camera.position, gizmo_position, offset_axis, gizmo)
-	var offset = (plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - node.position).rotated(quat_axis, -node.quaternion.get_angle())
+func _get_handle_offset(
+	gizmo: EditorNode3DGizmo,
+	camera: Camera3D,
+	screen_pos: Vector2,
+	node: Node3D,
+	gizmo_position: Vector3,
+	offset_axis: Vector3) -> Vector3:
+	var quat_axis: Vector3 = node.quaternion.get_axis() if node.quaternion.get_axis().is_normalized() else Vector3.UP
+	var plane: Plane = _get_camera_oriented_plane(camera.position, gizmo_position, offset_axis, gizmo)
+	var offset: Vector3 = (plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - node.position).rotated(quat_axis, -node.quaternion.get_angle())
 	return offset
 
-func _set_width_handle(gizmo, camera, screen_pos):
+func _set_width_handle(
+	gizmo: EditorNode3DGizmo,
+	camera: Camera3D,
+	screen_pos: Vector2):
 	var node: ProtoRamp = gizmo.get_node_3d()
-	var gizmo_position = Vector3(node.width / 2, node.get_true_height() / 2, node.get_true_depth() / 2) + node.get_anchor_offset(node.anchor)
-	var offset = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(1, 0, 0)).x
+	var gizmo_position := Vector3(node.width / 2, node.get_true_height() / 2, node.get_true_depth() / 2) + node.get_anchor_offset(node.anchor)
+	var offset: float = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(1, 0, 0)).x
 	# If anchor is on the left, offset is negative
 	# If anchor is not centered, offset is divided by 2
 	match node.anchor:
@@ -102,11 +116,14 @@ func _set_width_handle(gizmo, camera, screen_pos):
 			offset = offset / 2
 	node.width = offset * 2
 
-func _set_depth_handle(gizmo, camera, screen_pos):
+func _set_depth_handle(
+	gizmo: EditorNode3DGizmo,
+	camera: Camera3D,
+	screen_pos: Vector2):
 	var node: ProtoRamp = gizmo.get_node_3d()
-	var gizmo_position = Vector3(0, node.get_true_height() / 2, node.get_true_depth()) + node.get_anchor_offset(node.anchor)
-	var offset = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(0, 0, 1)).z
-	if (node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS && node.type == ProtoRamp.Type.STAIRCASE):
+	var gizmo_position := Vector3(0, node.get_true_height() / 2, node.get_true_depth()) + node.get_anchor_offset(node.anchor)
+	var offset: float = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(0, 0, 1)).z
+	if node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS and node.type == ProtoRamp.Type.STAIRCASE:
 		offset = offset / node.steps
 	# If anchor is on the back, offset is negative
 	match node.anchor:
@@ -124,14 +141,17 @@ func _set_depth_handle(gizmo, camera, screen_pos):
 			offset = -offset
 	node.depth = offset
 
-func _set_height_handle(gizmo, camera, screen_pos):
+func _set_height_handle(
+	gizmo: EditorNode3DGizmo,
+	camera: Camera3D,
+	screen_pos: Vector2):
 	# print_debug("_set_width_handle")
 	var node: ProtoRamp = gizmo.get_node_3d()
-	var gizmo_position = Vector3(0, node.get_true_height(), node.get_true_depth() / 2) + node.get_anchor_offset(node.anchor)
-	var offset = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(0, 1, 0)).y
+	var gizmo_position := Vector3(0, node.get_true_height(), node.get_true_depth() / 2) + node.get_anchor_offset(node.anchor)
+	var offset: float = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(0, 1, 0)).y
 	#print_debug("Offset = " + str(offset))
 	# If anchor is TOP, offset is negative
-	if (node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS && node.type == ProtoRamp.Type.STAIRCASE):
+	if node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS && node.type == ProtoRamp.Type.STAIRCASE:
 		offset = offset / node.steps
 	match node.anchor:
 		ProtoRamp.Anchor.TOP_LEFT:
@@ -150,35 +170,35 @@ func _get_camera_oriented_plane(
 	# camera: Camera to orient the plane to
 	# gizmo_position: gizmo's current position in the world
 	# gizmo_axis: axis the gizmo is moving along
-	var node = gizmo.get_node_3d()
+	var node := gizmo.get_node_3d()
 	# Node's transformation
-	var quaternion = node.quaternion # Rotation in degrees for each axis
-	var quat_axis = quaternion.get_axis() if quaternion.get_axis().is_normalized() else Vector3.UP
+	var quaternion := node.quaternion # Rotation in degrees for each axis
+	var quat_axis: Vector3 = quaternion.get_axis() if quaternion.get_axis().is_normalized() else Vector3.UP
 
 	# Transform the local point
-	var local_gizmo_position = gizmo_position
-	var global_gizmo_position = gizmo_position.rotated(quat_axis, quaternion.get_angle()) * node.scale + node.position
-	var global_gizmo_axis = gizmo_axis.rotated(quat_axis, quaternion.get_angle()).normalized()
+	var local_gizmo_position: Vector3 = gizmo_position
+	var global_gizmo_position: Vector3 = gizmo_position.rotated(quat_axis, quaternion.get_angle()) * node.scale + node.position
+	var global_gizmo_axis: Vector3 = gizmo_axis.rotated(quat_axis, quaternion.get_angle()).normalized()
 	# gizmo_axis = node.transform.rotated(gizmo_axis).origin.normalized()
 	# gizmo_axis = gizmo_axis.normalized()
 	#print_debug("global_gizmo_axis = " + str(global_gizmo_axis))
 	#print_debug("gizmo_position = " + str(global_gizmo_position))
-	var closest_point_to_camera = _get_closest_point_on_line(global_gizmo_position, global_gizmo_axis, camera_position)
-	var closest_point_to_camera_difference = closest_point_to_camera - camera_position
-	var parallel_to_gizmo_dir = closest_point_to_camera - global_gizmo_position
+	var closest_point_to_camera: Vector3 = _get_closest_point_on_line(global_gizmo_position, global_gizmo_axis, camera_position)
+	var closest_point_to_camera_difference: Vector3 = closest_point_to_camera - camera_position
+	var parallel_to_gizmo_dir: Vector3 = closest_point_to_camera - global_gizmo_position
 	#print_debug("parallel = " + str(parallel_to_gizmo_dir))
-	var perpendicular_to_gizmo_dir = parallel_to_gizmo_dir.cross(closest_point_to_camera_difference).normalized()
+	var perpendicular_to_gizmo_dir: Vector3 = parallel_to_gizmo_dir.cross(closest_point_to_camera_difference).normalized()
 	#print_debug("perpendicular = " + str(perpendicular_to_gizmo_dir))
 
 	# Transform 3 points to global space
-	var x = global_gizmo_position
-	var y = global_gizmo_position + global_gizmo_axis
-	var z = global_gizmo_position + perpendicular_to_gizmo_dir
-	var plane = Plane(x, y, z)
+	var x: Vector3 = global_gizmo_position
+	var y: Vector3 = global_gizmo_position + global_gizmo_axis
+	var z: Vector3 = global_gizmo_position + perpendicular_to_gizmo_dir
+	var plane := Plane(x, y, z)
 
 	# Drawing
-	var lines = PackedVector3Array()
-	var debug_gizmo_position = gizmo_position + Vector3(0, 0, 1)
+	var lines := PackedVector3Array()
+	var debug_gizmo_position: Vector3 = gizmo_position + Vector3(0, 0, 1)
 
 	# Plane normal
 	lines.push_back(debug_gizmo_position)
@@ -195,13 +215,16 @@ func _get_camera_oriented_plane(
 
 	return plane
 
-func _get_closest_point_on_line(point_in_line: Vector3, line_dir: Vector3, point: Vector3) -> Vector3:
-	var A = point_in_line
-	var B = point_in_line + line_dir  # This can be any other point in the direction of the line
-	var AP = point - A
-	var AB = B - A
+func _get_closest_point_on_line(
+	point_in_line: Vector3,
+	line_dir: Vector3,
+	point: Vector3) -> Vector3:
+	var A := point_in_line
+	var B := point_in_line + line_dir  # This can be any other point in the direction of the line
+	var AP := point - A
+	var AB := B - A
 
-	var t = AP.dot(AB) / AB.dot(AB)
-	var closest_point = A + t * AB
+	var t := AP.dot(AB) / AB.dot(AB)
+	var closest_point := A + t * AB
 
 	return closest_point
