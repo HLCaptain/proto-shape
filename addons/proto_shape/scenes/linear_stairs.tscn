@@ -34,27 +34,24 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.6707, 0.972, 3.9)
 size = Vector3(10.952, 5.55505, 10.5952)
 
 [node name="ProtoRamp2" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(0.863105, 0.0532712, -0.502207, 9.31323e-10, 0.994422, 0.105483, 0.505025, -0.0910432, 0.85829, 2.18163, 0.626726, 0.543204)
+transform = Transform3D(0.687674, 0.147893, -0.710796, 0.0918932, 0.953429, 0.287281, 0.720181, -0.262874, 0.642058, 1.71886, 0.58961, -0.474499)
 script = ExtResource("2_i41uw")
 type = 0
-width = 1.47553
-height = 0.543226
-depth = 1.11963
-anchor = 0
+width = 0.696032
+height = 1.08182
+depth = 0.939182
+anchor = 1
 anchor_fixed = true
 
 [node name="ProtoRamp" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(0.863105, 0.0532712, -0.502207, 9.31323e-10, 0.994422, 0.105483, 0.505025, -0.0910432, 0.85829, -0.57791, 0.367765, -0.993943)
+transform = Transform3D(0.994847, -0.0936125, 0.038936, 0.0909167, 0.993668, 0.0660287, -0.04487, -0.0621487, 0.997058, -0.405063, 1.09748, -0.61506)
 script = ExtResource("2_i41uw")
-type = 1
-width = 1.76933
-height = 0.099425
-depth = 0.280056
-anchor = 2
-anchor_fixed = false
-calculation = 1
-steps = 8
-fill = true
+type = 0
+width = 1.05399
+height = 1.01559
+depth = 1.09819
+anchor = 0
+anchor_fixed = true
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.29666, -0.811041, -4.80418)
