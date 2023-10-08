@@ -309,7 +309,8 @@ func refresh_steps(new_steps: int) -> void:
 				box.position = Vector3()
 				add_child(box)
 		Type.RAMP:
-			add_ramp()
+			if new_steps > 0:
+				add_ramp()
 
 	refresh_children()
 
