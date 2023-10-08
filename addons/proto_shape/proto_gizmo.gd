@@ -7,9 +7,10 @@ var depth_gizmo_id: int
 var height_gizmo_id: int
 
 func _has_gizmo(node):
-	width_gizmo_id = randi_range(0, 100000)
-	depth_gizmo_id = randi_range(0, 100000)
-	height_gizmo_id = randi_range(0, 100000)
+	# Generate a random id for each gizmo
+	width_gizmo_id = randi_range(0, 1000000)
+	depth_gizmo_id = randi_range(0, 1000000)
+	height_gizmo_id = randi_range(0, 1000000)
 	return node is ProtoRamp
 
 func _get_gizmo_name():
@@ -74,16 +75,16 @@ func _set_handle(gizmo, handle_id, secondary, camera, screen_pos):
 
 	gizmo.get_node_3d().update_gizmos()
 
-func _set_width_handle(gizmo, camera, screen_pos):
-	# print_debug("_set_width_handle")
-	var node : ProtoRamp = gizmo.get_node_3d()
-	var anchor_offset = node.get_anchor_offset(node.anchor)
-	var gizmo_position = Vector3(node.width / 2, node.get_true_height() / 2, node.get_true_depth() / 2)
+func _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, offset_axis):
 	var quat_axis = node.quaternion.get_axis() if node.quaternion.get_axis().is_normalized() else Vector3.UP
-	#print_debug("Gizmo_pos = " + str(gizmo_position))
-	var plane = _get_camera_oriented_plane(camera.position, gizmo_position + anchor_offset, Vector3(1, 0, 0), gizmo)
-	var offset = ((plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - node.position).rotated(quat_axis, -node.quaternion.get_angle())).x
-	#print_debug("Offset = " + str(offset))
+	var plane = _get_camera_oriented_plane(camera.position, gizmo_position, offset_axis, gizmo)
+	var offset = (plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - node.position).rotated(quat_axis, -node.quaternion.get_angle())
+	return offset
+
+func _set_width_handle(gizmo, camera, screen_pos):
+	var node: ProtoRamp = gizmo.get_node_3d()
+	var gizmo_position = Vector3(node.width / 2, node.get_true_height() / 2, node.get_true_depth() / 2) + node.get_anchor_offset(node.anchor)
+	var offset = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(1, 0, 0)).x
 	# If anchor is on the left, offset is negative
 	# If anchor is not centered, offset is divided by 2
 	match node.anchor:
@@ -102,16 +103,9 @@ func _set_width_handle(gizmo, camera, screen_pos):
 	node.width = offset * 2
 
 func _set_depth_handle(gizmo, camera, screen_pos):
-	# print_debug("_set_depth_handle")
-	var node : ProtoRamp = gizmo.get_node_3d()
-	var anchor_offset = node.get_anchor_offset(node.anchor)
-	var gizmo_position = Vector3(0, node.get_true_height() / 2, node.get_true_depth())
-	var quat_axis = Vector3.UP
-	if node.quaternion.get_axis().is_normalized():
-		quat_axis = node.quaternion.get_axis()
-
-	var plane = _get_camera_oriented_plane(camera.position, gizmo_position + anchor_offset, Vector3(0, 0, 1), gizmo)
-	var offset = ((plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - node.position).rotated(quat_axis, -node.quaternion.get_angle())).z
+	var node: ProtoRamp = gizmo.get_node_3d()
+	var gizmo_position = Vector3(0, node.get_true_height() / 2, node.get_true_depth()) + node.get_anchor_offset(node.anchor)
+	var offset = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(0, 0, 1)).z
 	if (node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS && node.type == ProtoRamp.Type.STAIRCASE):
 		offset = offset / node.steps
 	# If anchor is on the back, offset is negative
@@ -132,13 +126,9 @@ func _set_depth_handle(gizmo, camera, screen_pos):
 
 func _set_height_handle(gizmo, camera, screen_pos):
 	# print_debug("_set_width_handle")
-	var node : ProtoRamp = gizmo.get_node_3d()
-	var anchor_offset = node.get_anchor_offset(node.anchor)
-	var gizmo_position = Vector3(0, node.get_true_height(), node.get_true_depth() / 2)
-	var quat_axis = node.quaternion.get_axis() if node.quaternion.get_axis().is_normalized() else Vector3.UP
-	#print_debug("Gizmo_pos = " + str(gizmo_position))
-	var plane = _get_camera_oriented_plane(camera.position, gizmo_position + anchor_offset, Vector3(0, 1, 0), gizmo)
-	var offset = ((plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - node.position).rotated(quat_axis, -node.quaternion.get_angle())).y
+	var node: ProtoRamp = gizmo.get_node_3d()
+	var gizmo_position = Vector3(0, node.get_true_height(), node.get_true_depth() / 2) + node.get_anchor_offset(node.anchor)
+	var offset = _get_handle_offset(gizmo, camera, screen_pos, node, gizmo_position, Vector3(0, 1, 0)).y
 	#print_debug("Offset = " + str(offset))
 	# If anchor is TOP, offset is negative
 	if (node.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS && node.type == ProtoRamp.Type.STAIRCASE):
