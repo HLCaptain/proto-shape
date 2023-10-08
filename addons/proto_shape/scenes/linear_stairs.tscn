@@ -25,8 +25,10 @@ environment = SubResource("Environment_sxnsr")
 camera_attributes = SubResource("CameraAttributesPhysical_miufq")
 
 [node name="Camera3D" type="Camera3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.09364, 13.7626)
+transform = Transform3D(-0.707107, -0.40558, 0.579228, 0, 0.819152, 0.573576, -0.707107, 0.40558, -0.579228, 4, 4, -4)
+projection = 1
 fov = 81.5625
+size = 2.0
 script = ExtResource("1_4m6yf")
 
 [node name="CSGBox3D" type="CSGBox3D" parent="WorldEnvironment"]
@@ -34,38 +36,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.6707, 0.972, 3.9)
 size = Vector3(10.952, 5.55505, 10.5952)
 
 [node name="ProtoRamp2" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(0.687674, 0.147893, -0.710796, 0.0918932, 0.953429, 0.287281, 0.720181, -0.262874, 0.642058, 1.99554, 0.742746, -0.0881755)
-script = ExtResource("2_i41uw")
-type = 1
-width = 0.965224
-height = 0.103641
-depth = 0.0999837
-anchor = 1
-anchor_fixed = false
-calculation = 1
-steps = 9
-fill = true
-
-[node name="ProtoRamp" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(0.994847, -0.0936125, 0.038936, 0.0909167, 0.993668, 0.0660287, -0.04487, -0.0621487, 0.997058, -0.405063, 1.09748, -0.61506)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 script = ExtResource("2_i41uw")
 type = 0
-width = 1.05399
-height = 1.01559
-depth = 1.09819
-anchor = 0
-anchor_fixed = true
+width = 1.001
+height = 1.001
+depth = 1.001
+anchor = 1
+anchor_fixed = false
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.29666, -0.811041, -4.80418)
 polygon = PackedVector2Array(2.51521, -1.5345, -1.03, 0.92, -0.6, -1.08)
 depth = 1.48
-
-[node name="ProtoRamp" type="CSGCombiner3D" parent="."]
-script = ExtResource("2_i41uw")
-type = 0
-width = 1.0
-height = 1.0
-depth = 1.0
-anchor = 0
-anchor_fixed = true
