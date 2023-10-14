@@ -1,9 +1,8 @@
 # ProtoShape - Godot Prototyping Extension for CSG
 
-ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics.
+<img src="addons/proto_shape/icon/proto-shape-icon.png" style="height: 25%; width: 25%; margin: 0 auto; display: block">
 
-<!-- Icon (addons/proto_shape/icon/proto-shape-icon.png) -->
-<img src="addons/proto_shape/icon/proto-shape-icon.png" style="height: 40%; width: 40%; margin: 0 auto; display: block">
+ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics.
 
 ## Installation
 
@@ -13,15 +12,15 @@ Enable the plugin inside Godot. `Project` -> `Project Settings` -> `Plugins` -> 
 
 ## Usage
 
-Added shapes:
+Add these shapes to your scene by searching for them in the `Add Child Node` menu.
 
-- `ProtoRamp`: ramp/staircase with adjustable height, width and length. Can adjust step count and various other parameters. Supports custom gizmos.
+### [ProtoRamp](addons/proto_shape/proto_ramp/README.md)
 
-### Create a ProtoRamp
+Ramp/staircase with adjustable height, width and length. Can adjust step count and various other parameters. Supports custom gizmos.
 
-When adding a new child node, search for `ProtoRamp` and add it to the scene.
-
-<!-- Add workflow snipets and video of a demo map -->
+<video controls>
+  <source src="addons/proto_shape/proto_ramp/assets/videos/supercut.mp4" type="video/mp4">
+</video>
 
 ## Contributing
 
