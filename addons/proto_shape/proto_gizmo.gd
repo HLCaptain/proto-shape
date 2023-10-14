@@ -66,22 +66,17 @@ func _redraw(gizmo: EditorNode3DGizmo) -> void:
 
 	gizmo.add_handles(handles, get_material("handles", gizmo), [depth_gizmo_id, width_gizmo_id, height_gizmo_id])
 
-	# _get_camera_oriented_plane(camera_position, depth_gizmo_position, Vector3(0, 0, 1), gizmo)
-	# _get_camera_oriented_plane(camera_position, width_gizmo_position, Vector3(1, 0, 0), gizmo)
-	# _get_camera_oriented_plane(camera_position, height_gizmo_position, Vector3(0, 1, 0), gizmo)
-
 	# Add collision triangles by generating TriangleMesh from node mesh
 	# Meshes can be empty when reparenting the node with an existing selection
-	# FIXME: This is only a temporary fix not to polluted the editor with errors
-	# print_debug("Node meshes: " + str(ramp.get_meshes()))
-	# if ramp.is_root_shape() and ramp.get_meshes().size() == 2 and ramp.get_meshes()[1].is_valid():
-	# 	gizmo.add_collision_triangles(ramp.get_meshes()[1].generate_triangle_mesh())
+	# FIXME: Behavior is inconsistent, as other gizmos can override the collision triangles._a
+	#  Node can be selected without a problem when reparenting with a single Node3D.
+	#  Node cannot be selected normally, when the new parent is a CSGShape3D.
+	#  CSGShape3D is updating its own collision triangles, which are overriding the ProtoRamp's.
+	#  Although in theory, ProtoRamp's Gizmo has more priority, it doesn't seem to work.
 
 	if ramp.get_meshes().size() > 1:
 		gizmo.add_collision_triangles(ramp.get_meshes()[1].generate_triangle_mesh())
 		gizmo.add_mesh(ramp.get_meshes()[1], get_material("selected", gizmo))
-
-	# var faces = ramp.
 
 func _set_handle(
 	gizmo: EditorNode3DGizmo,
