@@ -13,6 +13,10 @@ Enable the plugin inside Godot. `Project` -> `Project Settings` -> `Plugins` -> 
 
 ## Usage
 
+Added shapes:
+
+- `ProtoRamp`: ramp/staircase with adjustable height, width and length. Can adjust step count and various other parameters. Supports custom gizmos.
+
 ### Create a ProtoRamp
 
 When adding a new child node, search for `ProtoRamp` and add it to the scene.
@@ -21,7 +25,9 @@ When adding a new child node, search for `ProtoRamp` and add it to the scene.
 
 ## Contributing
 
-The library is written in `GDScript` and (mostly) follows the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html). Also static typing is used where possible.
+Feel free to open an issue for any bugs or feature requests. See more in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The library is written in `GDScript` and (mostly) follows the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html).
 
 Extend the library of shapes by creating an issue or pull request! Share your idea for a shape or feature you would like to see added to the library.
 
