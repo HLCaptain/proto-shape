@@ -18,9 +18,7 @@ Add these shapes to your scene by searching for them in the `Add Child Node` men
 
 Ramp/staircase with adjustable height, width and length. Can adjust step count and various other parameters. Supports custom gizmos.
 
-<video controls>
-  <source src="addons/proto_shape/proto_ramp/assets/videos/supercut.mp4" type="video/mp4">
-</video>
+https://github.com/HLCaptain/proto-shape/assets/22623259/730a527c-d6ba-4eaa-93b6-dbcbbd8aba52
 
 ## Contributing
 
