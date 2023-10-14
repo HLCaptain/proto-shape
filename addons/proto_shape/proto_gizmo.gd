@@ -25,8 +25,8 @@ func _redraw(gizmo: EditorNode3DGizmo) -> void:
 	gizmo.clear()
 
 	var ramp: ProtoRamp = gizmo.get_node_3d()
-	if !ramp.anchor_changed.is_connected(gizmo.get_node_3d().update_gizmos):
-		ramp.anchor_changed.connect(gizmo.get_node_3d().update_gizmos)
+	if !ramp.something_changed.is_connected(gizmo.get_node_3d().update_gizmos):
+		ramp.something_changed.connect(gizmo.get_node_3d().update_gizmos)
 
 	var true_depth: float = ramp.get_true_depth()
 	var true_height: float = ramp.get_true_height()

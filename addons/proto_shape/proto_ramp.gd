@@ -7,6 +7,27 @@ extends CSGCombiner3D
 ## Called when the anchor is changed. Used by the `proto_gizmo.dg` script to update gizmo handler positions.
 signal anchor_changed
 
+## Called when the width is changed.
+signal width_changed
+
+## Called when the height is changed.
+signal height_changed
+
+## Called when the depth is changed.
+signal depth_changed
+
+## Called when step count is changed.
+signal step_count_changed
+
+## Called when type is changed.
+signal type_changed
+
+## Called when fill is changed.
+signal fill_changed
+
+## Called when ramp/staircase is changed in any noticable way.
+signal something_changed
+
 ## Calculation mode for the staircase.
 enum Calculation {
 	STAIRCASE_DIMENSIONS, 	## Width, depth and height are the same size as the whole staircase.
@@ -230,6 +251,8 @@ func set_type(value: Type) -> void:
 					_height *= steps
 					_depth = (_depth + epsilon) * steps
 	refresh_type()
+	type_changed.emit()
+	something_changed.emit()
 
 ## Resets the steps and regenerates ramp/stairs.
 func refresh_type() -> void:
@@ -264,18 +287,26 @@ func refresh_children() -> void:
 func set_width(value: float) -> void:
 	_width = value
 	refresh_children()
+	width_changed.emit()
+	something_changed.emit()
 
 func set_height(value: float) -> void:
 	_height = value
 	refresh_children()
+	height_changed.emit()
+	something_changed.emit()
 
 func set_depth(value: float) -> void:
 	_depth = value
 	refresh_children()
+	depth_changed.emit()
+	something_changed.emit()
 
 func set_fill(value: bool) -> void:
 	_fill = value
 	refresh_children()
+	fill_changed.emit()
+	something_changed.emit()
 
 ## Translates the ramp/staircase to a new anchor point in local space.
 ## Then recalculates the stairs/ramp with the new offset.
@@ -285,6 +316,7 @@ func set_anchor(value: Anchor) -> void:
 	_anchor = value
 	refresh_children()
 	anchor_changed.emit()
+	something_changed.emit()
 
 ## Translates the ramp/staircase to a new anchor point in local space if anchor is not fixed.
 func translate_anchor(from_anchor: Anchor, to_anchor: Anchor) -> void:
@@ -297,6 +329,8 @@ func set_anchor_fixed(value: bool) -> void:
 func set_steps(value: int) -> void:
 	_steps = value
 	refresh_steps(value)
+	step_count_changed.emit()
+	something_changed.emit()
 
 ## Deletes all children and generates new steps/ramp.
 func refresh_steps(new_steps: int) -> void:
