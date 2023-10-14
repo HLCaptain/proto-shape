@@ -11,29 +11,19 @@ ProtoRamp is a dynamic ramp/staircase shape based on Godot's Constructive Solid 
 
 When adding a new child node, search for `ProtoRamp` and add it to the scene.
 
-<video controls>
-  <source src="assets/videos/create_protoramp.mp4" type="video/mp4">
-</video>
-
-https://youtu.be/wKXBYw4ZvnQ
+https://github.com/HLCaptain/proto-shape/assets/22623259/bccfb0e7-6799-4a94-82c4-84e5aa9d9563
 
 ### Use Gizmos
 
 ProtoRamp supports custom gizmos to adjust the shape.
 
-<video controls>
-  <source src="assets/videos/use_gizmos.mp4" type="video/mp4">
-</video>
-
-https://youtu.be/hQj8q3X_WAY
+https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33-7b03d44f62c7
 
 ### Adjust parameters
 
 Modify height, width, depth, anchor position and more!
 
-<video controls>
-  <source src="assets/videos/modify_dimensions.mp4" type="video/mp4">
-</video>
+https://github.com/HLCaptain/proto-shape/assets/22623259/cee061ee-5c15-4e56-9c48-6eedb77409db
 
 ### Change step counts in multiple ways
 
@@ -44,12 +34,8 @@ There are two ways of changing the step count:
 
 Fitting in more steps:
 
-<video controls>
-  <source src="assets/videos/change_step_count.mp4" type="video/mp4">
-</video>
+https://github.com/HLCaptain/proto-shape/assets/22623259/f14dd269-fa6b-4ee7-a195-23d64c7cb15a
 
-You can use both!
+You can also use both!
 
-<video controls>
-  <source src="assets/videos/change_step_count_2.mp4" type="video/mp4">
-</video>
+https://github.com/HLCaptain/proto-shape/assets/22623259/1fdcc87e-3231-4c03-bc8f-ab0252557574
