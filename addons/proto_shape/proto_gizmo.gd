@@ -112,7 +112,6 @@ func _get_handle_offset(
 	var global_offset_axis: Vector3 = local_offset_axis.rotated(quat_axis, quat_angle)
 	var plane: Plane = _get_camera_oriented_plane(camera.position, global_gizmo_position, global_offset_axis)
 	var offset: Vector3 = (plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - position).rotated(quat_axis, -quat_angle) / scale
-	print_debug("Offset: " + str(offset))
 	return offset
 
 func _set_width_handle(
