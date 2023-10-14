@@ -36,6 +36,9 @@ enum Type {
 ## Used to avoid setting properties traditionally on initialization to avoid bugs.
 var is_entered_tree := false
 
+## Storing CSG shapes for easy access without interfering with children.
+var csg_shapes: Array[CSGShape3D] = []
+
 ## Used to avoid z-fighting and incorrect snapping between steps.
 var epsilon: float = 0.0001
 
@@ -255,8 +258,8 @@ func set_calculation(value: Calculation) -> void:
 					_depth = (_depth + epsilon) / steps
 
 func refresh_children() -> void:
-	for child in get_children():
-		refresh_step(child.get_index())
+	for shape_index in range(csg_shapes.size()):
+		refresh_step(shape_index)
 
 func set_width(value: float) -> void:
 	_width = value
@@ -297,9 +300,9 @@ func set_steps(value: int) -> void:
 
 ## Deletes all children and generates new steps/ramp.
 func refresh_steps(new_steps: int) -> void:
-	var current_steps = get_child_count()
-	for child in get_children():
-		child.free()
+	for shape in csg_shapes:
+		shape.free()
+	csg_shapes.clear()
 
 	match type:
 		Type.STAIRCASE:
@@ -308,6 +311,7 @@ func refresh_steps(new_steps: int) -> void:
 				box.size = Vector3()
 				box.position = Vector3()
 				add_child(box)
+				csg_shapes.append(box)
 		Type.RAMP:
 			if new_steps > 0:
 				add_ramp()
@@ -327,10 +331,11 @@ func add_ramp() -> void:
 	polygon.translate(Vector3(0, 0, width / 2.0))
 	polygon.depth = width
 	add_child(polygon)
+	csg_shapes.append(polygon)
 
 ## Refreshes a single step based on dimensions and anchor offset.
 func refresh_step(i: int) -> void:
-	var node: Node3D = get_child(i)
+	var node: Node3D = csg_shapes[i]
 	node.position = Vector3()
 	var step_height: float = get_true_step_height()
 	var step_width: float = width
@@ -375,5 +380,6 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	# Remove all children
-	for child in get_children():
+	for child in csg_shapes:
 		child.queue_free()
+	csg_shapes.clear()
