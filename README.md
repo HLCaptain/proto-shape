@@ -1,9 +1,8 @@
 # ProtoShape - Godot Prototyping Extension for CSG
 
-ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics.
+<img src="addons/proto_shape/icon/proto-shape-icon.png" style="height: 25%; width: 25%; margin: 0 auto; display: block">
 
-<!-- Icon (addons/proto_shape/icon/proto-shape-icon.png) -->
-<img src="addons/proto_shape/icon/proto-shape-icon.png" style="height: 40%; width: 40%; margin: 0 auto; display: block">
+ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics.
 
 ## Installation
 
@@ -13,15 +12,19 @@ Enable the plugin inside Godot. `Project` -> `Project Settings` -> `Plugins` -> 
 
 ## Usage
 
-### Create a ProtoRamp
+Add these shapes to your scene by searching for them in the `Add Child Node` menu.
 
-When adding a new child node, search for `ProtoRamp` and add it to the scene.
+### [ProtoRamp](addons/proto_shape/proto_ramp/README.md)
 
-<!-- Add workflow snipets and video of a demo map -->
+Ramp/staircase with adjustable height, width and length. Can adjust step count and various other parameters. Supports custom gizmos.
+
+https://github.com/HLCaptain/proto-shape/assets/22623259/730a527c-d6ba-4eaa-93b6-dbcbbd8aba52
 
 ## Contributing
 
-The library is written in `GDScript` and (mostly) follows the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html). Also static typing is used where possible.
+Feel free to open an issue for any bugs or feature requests. See more in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The library is written in `GDScript` and (mostly) follows the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html).
 
 Extend the library of shapes by creating an issue or pull request! Share your idea for a shape or feature you would like to see added to the library.
 
