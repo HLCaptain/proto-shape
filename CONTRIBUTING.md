@@ -1,4 +1,4 @@
-# Contributing to Planty
+# Contributing to ProtoShape
 
 Extend the library of shapes by creating an issue or pull request! Share your idea for a shape or feature you would like to see added to the library.
 

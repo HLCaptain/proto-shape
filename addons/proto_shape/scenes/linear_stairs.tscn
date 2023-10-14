@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://drys0h14kvoud"]
+[gd_scene load_steps=8 format=3 uid="uid://drys0h14kvoud"]
 
 [ext_resource type="Script" path="res://camera.gd" id="1_4m6yf"]
 [ext_resource type="Script" path="res://addons/proto_shape/proto_ramp.gd" id="2_i41uw"]
@@ -17,6 +17,9 @@ ambient_light_color = Color(1, 1, 1, 1)
 reflected_light_source = 2
 
 [sub_resource type="CameraAttributesPhysical" id="CameraAttributesPhysical_miufq"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_8fq5c"]
+radius = 0.493361
 
 [node name="Linear Stairs" type="Node3D"]
 
@@ -37,15 +40,27 @@ size = Vector3(10.952, 5.55505, 10.5952)
 
 [node name="ProtoRamp2" type="CSGCombiner3D" parent="WorldEnvironment"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
+use_collision = true
 script = ExtResource("2_i41uw")
-type = 0
+type = 1
 width = 1.001
 height = 1.001
 depth = 1.001
 anchor = 1
 anchor_fixed = false
+calculation = 0
+steps = 8
+fill = true
 
 [node name="CSGPolygon3D" type="CSGPolygon3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.29666, -0.811041, -4.80418)
 polygon = PackedVector2Array(2.51521, -1.5345, -1.03, 0.92, -0.6, -1.08)
 depth = 1.48
+
+[node name="RigidBody3D" type="RigidBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.499645, 1.87208, -0.158321)
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="RigidBody3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RigidBody3D"]
+shape = SubResource("SphereShape3D_8fq5c")

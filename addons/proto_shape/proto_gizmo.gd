@@ -1,6 +1,6 @@
 extends EditorNode3DGizmoPlugin
 
-const ProtoRamp := preload("proto_ramp.gd")
+const ProtoRamp := preload("proto_ramp/proto_ramp.gd")
 var camera_position := Vector3(0, 0, 0)
 var width_gizmo_id: int
 var depth_gizmo_id: int
