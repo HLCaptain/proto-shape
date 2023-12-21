@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Test"
 run/main_scene="res://addons/proto_shape/scenes/prototype_scene.tscn"
-config/features=PackedStringArray("4.1", "Forward Plus")
+config/features=PackedStringArray("4.2", "Forward Plus")
 config/icon="res://addons/proto_shape/icon/proto-shape-icon.png"
 
 [editor_plugins]

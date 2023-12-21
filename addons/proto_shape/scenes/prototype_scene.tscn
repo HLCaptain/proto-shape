@@ -1,8 +1,8 @@
-[gd_scene load_steps=9 format=3 uid="uid://c8lxvil7soidw"]
+[gd_scene load_steps=9 format=3 uid="uid://kh6kodj0l0ld"]
 
 [ext_resource type="Script" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_shape.gd" id="1_7p0hl"]
 [ext_resource type="Script" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
+[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="3_r5jdn"]
 
 [sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_mt60a"]
 turbidity = 0.74
@@ -36,7 +36,7 @@ environment = SubResource("Environment_050vn")
 camera_attributes = SubResource("CameraAttributesPractical_6hoe0")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
-transform = Transform3D(0.123586, 0.941458, -0.31366, -0.696625, 0.307415, 0.648236, 0.706711, 0.138391, 0.693836, -0.962237, 1.98864, 2.12853)
+transform = Transform3D(0.123586, 0.941458, -0.31366, -0.696625, 0.307415, 0.648236, 0.706711, 0.138391, 0.693836, 2.88203, 1.98864, 9.43085)
 shadow_enabled = true
 
 [node name="CSGBox3D3" type="CSGBox3D" parent="WorldEnvironment"]
@@ -80,22 +80,17 @@ radius = 0.25
 height = 1.0
 sides = 16
 
-[node name="ProtoRamp" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 4)
-use_collision = true
-script = ExtResource("1_7p0hl")
-
-[node name="ProtoRamp2" type="CSGCombiner3D" parent="WorldEnvironment"]
-transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, -2)
-use_collision = true
-script = ExtResource("1_7p0hl")
-
 [node name="CSGBox3D" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.5, -1)
 use_collision = true
 size = Vector3(2, 1, 2)
 
 [node name="ProtoRamp" type="CSGCombiner3D" parent="."]
-transform = Transform3D(1, 0, 1.74846e-07, 0, 1, 0, -1.74846e-07, 0, 1, -4, 0, 4)
-use_collision = true
-script = ExtResource("1_7p0hl")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 4)
+script = ExtResource("3_r5jdn")
+type = 0
+width = 6.001
+height = 2.001
+depth = 2.51884
+anchor = 7
+anchor_fixed = true
