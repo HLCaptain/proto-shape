@@ -103,6 +103,8 @@ var anchor: Anchor: set = set_anchor, get = get_anchor
 ## Instead, the ramp/staircase will move in local space.
 var anchor_fixed: bool: set = set_anchor_fixed, get = get_anchor_fixed
 
+var material: Variant: set = set_material, get = get_material
+
 func _get_property_list() -> Array[Dictionary]:
 	var list: Array[Dictionary] = [
 		{"name": "type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"},
@@ -110,8 +112,9 @@ func _get_property_list() -> Array[Dictionary]:
 		{"name": "height", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "depth", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "anchor", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Bottom Center,Bottom Left,Bottom Right,Top Center,Top Left,Top Right,Base Center,Base Left,Base Right"},
-		{"name": "anchor_fixed", "type": TYPE_BOOL}
-	]
+		{"name": "anchor_fixed", "type": TYPE_BOOL},
+		{"name": "material","class_name": &"BaseMaterial3D,ShaderMaterial", "type": 24, "hint": 17, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": 6 }
+		]
 
 	# Staircase exclusive properties
 	if type == Type.STAIRCASE:
@@ -152,6 +155,9 @@ func _set(property: StringName, value: Variant) -> bool:
 		"anchor_fixed":
 			set_anchor_fixed(value)
 			return true
+		"material":
+			set_material(value)
+			return true
 
 	return false
 
@@ -181,6 +187,9 @@ func get_anchor() -> Anchor:
 
 func get_anchor_fixed() -> bool:
 	return _anchor_fixed
+
+func get_material() -> Variant:
+	return material
 
 ## Get the step depth of the staircase.
 func get_true_step_depth() -> float:
@@ -326,6 +335,11 @@ func translate_anchor(from_anchor: Anchor, to_anchor: Anchor) -> void:
 func set_anchor_fixed(value: bool) -> void:
 	_anchor_fixed = value
 
+func set_material(value: Variant) -> void:
+	material = value
+	for shape in csg_shapes:
+		shape.material = value
+
 func set_steps(value: int) -> void:
 	_steps = value
 	refresh_steps(value)
@@ -410,6 +424,8 @@ func refresh_step(i: int) -> void:
 func _enter_tree() -> void:
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
 	set_steps(steps)
+	if material:
+		set_material(material)
 	is_entered_tree = true
 
 func _exit_tree() -> void:
