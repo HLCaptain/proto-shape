@@ -1,20 +1,28 @@
 extends EditorNode3DGizmoPlugin
 
-const ProtoRamp := preload("proto_ramp/proto_ramp.gd")
+const ProtoArch := preload("../proto_arch/proto_arch.gd")
+const ProtoGizmoUtils := preload("../utils/gizmos/proto_gizmo_utils.gd")
+
+var gizmo_utils := ProtoGizmoUtils.new()
+
 var camera_position := Vector3(0, 0, 0)
 var width_gizmo_id: int
 var depth_gizmo_id: int
 var height_gizmo_id: int
 
+# Refresh ids for each gizmo
+func _refresh_gizmo_ids() -> void:
+	var ids := gizmo_utils.generate_gizmo_ids(3)
+	width_gizmo_id = ids[0]
+	depth_gizmo_id = ids[1]
+	height_gizmo_id = ids[2]
+
 func _has_gizmo(node: Node3D) -> bool:
-	# Generate a random id for each gizmo
-	width_gizmo_id = randi_range(0, 1_000_000)
-	depth_gizmo_id = randi_range(0, 1_000_000)
-	height_gizmo_id = randi_range(0, 1_000_000)
-	return node is ProtoRamp
+	_refresh_gizmo_ids()
+	return node is ProtoArch
 
 func _get_gizmo_name() -> String:
-	return "ProtoRamp"
+	return "ProtoRampGizmo"
 
 func _init() -> void:
 	create_material("main", Color(1, 0, 0))
@@ -24,7 +32,7 @@ func _init() -> void:
 func _redraw(gizmo: EditorNode3DGizmo) -> void:
 	gizmo.clear()
 
-	var ramp: ProtoRamp = gizmo.get_node_3d()
+	var ramp: ProtoArch = gizmo.get_node_3d()
 	if !ramp.something_changed.is_connected(gizmo.get_node_3d().update_gizmos):
 		ramp.something_changed.connect(gizmo.get_node_3d().update_gizmos)
 
@@ -39,23 +47,23 @@ func _redraw(gizmo: EditorNode3DGizmo) -> void:
 	# When in the back (top, base), depth gizmo is on the front
 	# When on the top, height gizmo is on the bottom
 	match ramp.anchor:
-		ProtoRamp.Anchor.BOTTOM_LEFT:
+		ProtoArch.Anchor.BOTTOM_LEFT:
 			width_gizmo_position.x = -ramp.width
-		ProtoRamp.Anchor.TOP_LEFT:
+		ProtoArch.Anchor.TOP_LEFT:
 			width_gizmo_position.x = -ramp.width
 			depth_gizmo_position.z = -true_depth
 			height_gizmo_position.y = -true_height
-		ProtoRamp.Anchor.BASE_LEFT:
+		ProtoArch.Anchor.BASE_LEFT:
 			width_gizmo_position.x = -ramp.width
 			depth_gizmo_position.z = -true_depth
-		ProtoRamp.Anchor.BASE_CENTER:
+		ProtoArch.Anchor.BASE_CENTER:
 			depth_gizmo_position.z = -true_depth
-		ProtoRamp.Anchor.BASE_RIGHT:
+		ProtoArch.Anchor.BASE_RIGHT:
 			depth_gizmo_position.z = -true_depth
-		ProtoRamp.Anchor.TOP_RIGHT:
+		ProtoArch.Anchor.TOP_RIGHT:
 			depth_gizmo_position.z = -true_depth
 			height_gizmo_position.y = -true_height
-		ProtoRamp.Anchor.TOP_CENTER:
+		ProtoArch.Anchor.TOP_CENTER:
 			depth_gizmo_position.z = -true_depth
 			height_gizmo_position.y = -true_height
 
