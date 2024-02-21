@@ -63,16 +63,27 @@ var csg_shapes: Array[CSGShape3D] = []
 ## Used to avoid z-fighting and incorrect snapping between steps.
 var epsilon: float = 0.0001
 
+## Default public values
+const _default_calculation := Calculation.STAIRCASE_DIMENSIONS
+const _default_steps: int = 8
+const _default_width: float = 1.0
+const _default_height: float = 1.0
+const _default_depth: float = 1.0
+const _default_fill := true
+const _default_type := Type.RAMP
+const _default_anchor := Anchor.BOTTOM_CENTER
+const _default_anchor_fixed := true
+
 ## Default private values
-var _calculation := Calculation.STAIRCASE_DIMENSIONS
-var _steps: int = 8
-var _width: float = 1.0
-var _height: float = 1.0
-var _depth: float = 1.0
-var _fill := true
-var _type := Type.RAMP
-var _anchor := Anchor.BOTTOM_CENTER
-var _anchor_fixed := true
+var _calculation := _default_calculation
+var _steps := _default_steps
+var _width := _default_width
+var _height := _default_height
+var _depth := _default_depth
+var _fill := _default_fill
+var _type := _default_type
+var _anchor := _default_anchor
+var _anchor_fixed := _default_anchor_fixed
 
 @export_category("Proto Ramp")
 ## Calculation method of width, depth and height.
@@ -160,6 +171,35 @@ func _set(property: StringName, value: Variant) -> bool:
 			return true
 
 	return false
+
+func _property_can_revert(property: StringName) -> bool:
+	if property in ["type", "calculation", "steps", "width", "height", "depth", "fill", "anchor", "anchor_fixed", "material"]:
+		return true
+	return false
+
+func _property_get_revert(property: StringName) -> Variant:
+	match property:
+		"type":
+			return _default_type
+		"calculation":
+			return _default_calculation
+		"steps":
+			return _default_steps
+		"width":
+			return _default_width
+		"height":
+			return _default_height
+		"depth":
+			return _default_depth
+		"fill":
+			return _default_fill
+		"anchor":
+			return _default_anchor
+		"anchor_fixed":
+			return _default_anchor_fixed
+		"material":
+			return null
+	return null
 
 func get_type() -> Type:
 	return _type
