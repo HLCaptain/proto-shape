@@ -392,6 +392,11 @@ func refresh_steps(new_steps: int) -> void:
 		shape.free()
 	csg_shapes.clear()
 
+	# Gracefully delete all steps related to the ramp/staircase
+	for child in get_children():
+		if child is CSGBox3D or child is CSGPolygon3D:
+			child.queue_free()
+
 	match type:
 		Type.STAIRCASE:
 			for i in range(new_steps):
@@ -460,6 +465,9 @@ func refresh_step(i: int) -> void:
 
 	# Restore anchor offset
 	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
+
+func refresh_all() -> void:
+	set_steps(steps)
 
 func _enter_tree() -> void:
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
