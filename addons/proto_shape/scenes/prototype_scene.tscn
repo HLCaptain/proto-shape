@@ -94,3 +94,4 @@ height = 2.001
 depth = 2.51884
 anchor = 7
 anchor_fixed = true
+material = null
