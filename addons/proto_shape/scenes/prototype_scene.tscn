@@ -75,10 +75,24 @@ node_to_look_at = NodePath("..")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WorldEnvironment/CharacterBody3D"]
 shape = SubResource("CapsuleShape3D_ou067")
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="WorldEnvironment/CharacterBody3D"]
+[node name="CSGCombiner3D" type="CSGCombiner3D" parent="WorldEnvironment/CharacterBody3D"]
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="WorldEnvironment/CharacterBody3D/CSGCombiner3D"]
 radius = 0.25
-height = 1.0
-sides = 16
+height = 0.5
+sides = 64
+
+[node name="CSGSphere3D2" type="CSGSphere3D" parent="WorldEnvironment/CharacterBody3D/CSGCombiner3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
+radius = 0.25
+radial_segments = 64
+rings = 32
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="WorldEnvironment/CharacterBody3D/CSGCombiner3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+radius = 0.25
+radial_segments = 64
+rings = 32
 
 [node name="CSGBox3D" type="CSGBox3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.5, -1)
@@ -87,6 +101,7 @@ size = Vector3(2, 1, 2)
 
 [node name="ProtoRamp" type="CSGCombiner3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 4)
+use_collision = true
 script = ExtResource("3_r5jdn")
 type = 0
 width = 6.001
