@@ -1,6 +1,5 @@
-[gd_scene load_steps=8 format=3 uid="uid://drys0h14kvoud"]
+[gd_scene load_steps=7 format=3 uid="uid://drys0h14kvoud"]
 
-[ext_resource type="Script" path="res://camera.gd" id="1_4m6yf"]
 [ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="2_i41uw"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_bk5re"]
@@ -32,7 +31,6 @@ transform = Transform3D(-0.707107, -0.40558, 0.579228, 0, 0.819152, 0.573576, -0
 projection = 1
 fov = 81.5625
 size = 2.0
-script = ExtResource("1_4m6yf")
 
 [node name="CSGBox3D" type="CSGBox3D" parent="WorldEnvironment"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.6707, 0.972, 3.9)
@@ -48,6 +46,7 @@ height = 1.001
 depth = 1.001
 anchor = 1
 anchor_fixed = false
+material = null
 calculation = 0
 steps = 8
 fill = true
