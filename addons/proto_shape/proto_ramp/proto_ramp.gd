@@ -651,11 +651,11 @@ func refresh_all() -> void:
 func _enter_tree() -> void:
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
 	set_steps(steps)
+	gizmo_utils = ProtoGizmoUtils.new()
 	if material:
 		set_material(material)
 	if get_parent() is ProtoGizmoWrapper:
 		var parent: ProtoGizmoWrapper = get_parent()
-		gizmo_utils = ProtoGizmoUtils.new()
 		parent.redraw_gizmos_for_child_signal.connect(redraw_gizmos)
 		parent.set_handle_for_child_signal.connect(set_handle)
 	is_entered_tree = true

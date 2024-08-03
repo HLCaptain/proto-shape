@@ -47,15 +47,13 @@ func debug_draw_handle_offset(
 	handles.push_back(offset)
 
 	# Push back gizmo positions like a grid on the plane
-	var grid_size: int = 10
+	# FIXME: there is a small offset in the corners of the grid
+	var grid_size: int = 11
 	for i in range(grid_size):
-		var x: Vector3 = local_gizmo_position + plane.normal * i
+		var x: Vector3 = local_gizmo_position + local_offset_axis.normalized() * (i - grid_size / 2)
 		for j in range(grid_size):
-			var y: Vector3 = x + plane.normal.cross(local_offset_axis) + local_offset_axis * j
-			# var z: Vector3 = y + global_offset_axis
-			handles.push_back(x)
+			var y: Vector3 = x + plane.normal.cross(local_offset_axis) * (j - grid_size / 2)
 			handles.push_back(y)
-			# handles.push_back(z)
 
 	gizmo.add_lines(handles, plugin.get_material("handles", gizmo))
 
