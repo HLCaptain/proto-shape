@@ -484,6 +484,14 @@ func init_gizmo(plugin: ProtoGizmoPlugin) -> void:
 	plugin.create_material("selected", Color(0, 0, 1, 0.1))
 	plugin.create_handle_material("handles")
 
+# Debug purposes
+
+var screen_pos: Vector2
+var local_gizmo_position: Vector3
+var local_offset_axis: Vector3
+var camera_position: Vector3
+var camera_projected_position: Vector3
+
 func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, node: Node) -> void:
 	if node != self:
 		return
@@ -532,7 +540,7 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, node: Nod
 
 	# Add collision triangles by generating TriangleMesh from node mesh
 	# Meshes can be empty when reparenting the node with an existing selection
-	# FIXME: Behavior is inconsistent, as other gizmos can override the collision triangles._a
+	# FIXME: Behavior is inconsistent, as other gizmos can override the collision triangles.
 	#  Node can be selected without a problem when reparenting with a single Node3D.
 	#  Node cannot be selected normally, when the new parent is a CSGShape3D.
 	#  CSGShape3D is updating its own collision triangles, which are overriding the ProtoRamp's.
@@ -542,6 +550,18 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, node: Nod
 		gizmo.add_collision_triangles(get_meshes()[1].generate_triangle_mesh())
 		gizmo.add_mesh(get_meshes()[1], plugin.get_material("selected", gizmo))
 
+	# Adding debug lines for gizmo
+	if screen_pos:
+		# Print each parameter for debugging
+		print_debug("Camera Position: " + str(camera_position))
+		print_debug("Camera Projected Position: " + str(camera_projected_position))
+		print_debug("Screen Pos: " + str(screen_pos))
+		print_debug("Local Gizmo Position: " + str(local_gizmo_position))
+		print_debug("Local Offset Axis: " + str(local_offset_axis))
+		print_debug("Depth Gizmo Position: " + str(depth_gizmo_position))
+
+		gizmo_utils.debug_draw_handle_offset(camera_position, camera_projected_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin)
+
 func set_handle(
 	gizmo: EditorNode3DGizmo,
 	handle_id: int,
@@ -549,23 +569,33 @@ func set_handle(
 	camera: Camera3D,
 	screen_pos: Vector2,
 	child: Node) -> void:
+
+	# Set debug parameters for redraw
+	self.screen_pos = screen_pos
+	self.local_gizmo_position = child.global_transform.origin
+	self.camera_position = camera.position
+	self.camera_projected_position = camera.project_position(screen_pos, 1.0)
 	if child != self:
 		return
 	match handle_id:
 		depth_gizmo_id:
-			_set_depth_handle(gizmo, camera, screen_pos)
+			local_offset_axis = Vector3(0, 0, 1)
+			local_gizmo_position = Vector3(0, get_true_height() / 2, get_true_depth()) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			_set_depth_handle(handle_offset.z)
 		width_gizmo_id:
-			_set_width_handle(gizmo, camera, screen_pos)
+			local_offset_axis = Vector3(1, 0, 0)
+			local_gizmo_position = Vector3(width / 2, get_true_height() / 2, get_true_depth() / 2) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			_set_width_handle(handle_offset.x)
 		height_gizmo_id:
-			_set_height_handle(gizmo, camera, screen_pos)
+			local_offset_axis = Vector3(0, 1, 0)
+			local_gizmo_position = Vector3(0, get_true_height(), get_true_depth() / 2) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			_set_height_handle(handle_offset.y)
 	update_gizmos()
 
-func _set_width_handle(
-	gizmo: EditorNode3DGizmo,
-	camera: Camera3D,
-	screen_pos: Vector2):
-	var gizmo_position := Vector3(width / 2, get_true_height() / 2, get_true_depth() / 2) + get_anchor_offset(anchor)
-	var offset: float = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, Vector3(1, 0, 0), self).x
+func _set_width_handle(offset: float):
 	# If anchor is on the left, offset is negative
 	# If anchor is not centered, offset is divided by 2
 	match anchor:
@@ -583,12 +613,7 @@ func _set_width_handle(
 			offset = offset / 2
 	width = offset * 2
 
-func _set_depth_handle(
-	gizmo: EditorNode3DGizmo,
-	camera: Camera3D,
-	screen_pos: Vector2):
-	var gizmo_position := Vector3(0, get_true_height() / 2, get_true_depth()) + get_anchor_offset(anchor)
-	var offset: float = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, Vector3(0, 0, 1), self).z
+func _set_depth_handle(offset: float):
 	if calculation == Calculation.STEP_DIMENSIONS and type == Type.STAIRCASE:
 		offset = offset / steps
 	# If anchor is on the back, offset is negative
@@ -607,12 +632,7 @@ func _set_depth_handle(
 			offset = -offset
 	depth = offset
 
-func _set_height_handle(
-	gizmo: EditorNode3DGizmo,
-	camera: Camera3D,
-	screen_pos: Vector2):
-	var gizmo_position := Vector3(0, get_true_height(), get_true_depth() / 2) + get_anchor_offset(anchor)
-	var offset: float = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, Vector3(0, 1, 0), self).y
+func _set_height_handle(offset: float):
 	# If anchor is TOP, offset is negative
 	if calculation == Calculation.STEP_DIMENSIONS and type == Type.STAIRCASE:
 		offset = offset / steps
