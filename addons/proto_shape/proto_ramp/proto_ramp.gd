@@ -475,21 +475,21 @@ func refresh_step(i: int) -> void:
 	# Restore anchor offset
 	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
 
-func init_gizmo() -> void:
+func init_gizmo(plugin: ProtoGizmoPlugin) -> void:
 	# Generate a random id for each gizmo
 	width_gizmo_id = randi_range(0, 1_000_000)
 	depth_gizmo_id = randi_range(0, 1_000_000)
 	height_gizmo_id = randi_range(0, 1_000_000)
+	plugin.create_material("main", Color(1, 0, 0))
+	plugin.create_material("selected", Color(0, 0, 1, 0.1))
+	plugin.create_handle_material("handles")
 
 func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, node: Node) -> void:
 	if node != self:
 		return
 
 	if width_gizmo_id == 0 or depth_gizmo_id == 0 or height_gizmo_id == 0:
-		plugin.create_material("main", Color(1, 0, 0))
-		plugin.create_material("selected", Color(0, 0, 1, 0.1))
-		plugin.create_handle_material("handles")
-		init_gizmo()
+		init_gizmo(plugin)
 
 	gizmo.clear()
 	var true_depth: float = get_true_depth()
