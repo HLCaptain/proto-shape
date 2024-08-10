@@ -490,7 +490,6 @@ var screen_pos: Vector2
 var local_gizmo_position: Vector3
 var local_offset_axis: Vector3
 var camera_position: Vector3
-var camera_projected_position: Vector3
 
 func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, node: Node) -> void:
 	if node != self:
@@ -554,13 +553,12 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, node: Nod
 	if screen_pos:
 		# Print each parameter for debugging
 		print_debug("Camera Position: " + str(camera_position))
-		print_debug("Camera Projected Position: " + str(camera_projected_position))
 		print_debug("Screen Pos: " + str(screen_pos))
 		print_debug("Local Gizmo Position: " + str(local_gizmo_position))
 		print_debug("Local Offset Axis: " + str(local_offset_axis))
 		print_debug("Depth Gizmo Position: " + str(depth_gizmo_position))
 
-		gizmo_utils.debug_draw_handle_offset(camera_position, camera_projected_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin)
+		gizmo_utils.debug_draw_handle_offset(camera_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin)
 
 func set_handle(
 	gizmo: EditorNode3DGizmo,
@@ -574,7 +572,6 @@ func set_handle(
 	self.screen_pos = screen_pos
 	self.local_gizmo_position = child.global_transform.origin
 	self.camera_position = camera.position
-	self.camera_projected_position = camera.project_position(screen_pos, 1.0)
 	if child != self:
 		return
 	match handle_id:
