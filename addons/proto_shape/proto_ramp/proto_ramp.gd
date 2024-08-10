@@ -116,10 +116,10 @@ var anchor_fixed: bool: set = set_anchor_fixed, get = get_anchor_fixed
 
 var material: Variant: set = set_material, get = get_material
 
-const ProtoGizmoPlugin := preload("res://addons/proto_shape/proto_gizmo.gd")
-const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
-const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo_utils.gd")
 # Implementing Gizmo
+const ProtoGizmoPlugin := preload("res://addons/proto_shape/proto_gizmo/proto_gizmo.gd")
+const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
+const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
 var width_gizmo_id: int
 var depth_gizmo_id: int
 var height_gizmo_id: int

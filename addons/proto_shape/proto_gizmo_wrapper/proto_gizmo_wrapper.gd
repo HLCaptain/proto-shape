@@ -1,7 +1,7 @@
 @tool
 extends Node
 
-const ProtoGizmoPlugin := preload("res://addons/proto_shape/proto_gizmo.gd")
+const ProtoGizmoPlugin := preload("res://addons/proto_shape/proto_gizmo/proto_gizmo.gd")
 
 signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, child: Node)
 signal set_handle_for_child_signal(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2, child: Node)
