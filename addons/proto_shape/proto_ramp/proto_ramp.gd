@@ -531,7 +531,7 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) ->
 	handles.push_back(width_gizmo_position)
 	handles.push_back(height_gizmo_position)
 
-	gizmo.add_handles(handles, plugin.get_material("handles", gizmo), [depth_gizmo_id, width_gizmo_id, height_gizmo_id])
+	gizmo.add_handles(handles, plugin.get_material("proto_handler", gizmo), [depth_gizmo_id, width_gizmo_id, height_gizmo_id])
 
 	# Add collision triangles by generating TriangleMesh from node mesh
 	# Meshes can be empty when reparenting the node with an existing selection
