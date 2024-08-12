@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
 
-const ProtoGizmo = preload("proto_gizmo.gd")
+const ProtoGizmo = preload("proto_gizmo/proto_gizmo.gd")
 
 var gizmo_plugin = ProtoGizmo.new()
 

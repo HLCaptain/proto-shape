@@ -19,6 +19,7 @@ func get_handle_offset(
 	var offset: Vector3 = (plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - position).rotated(quat_axis, -quat_angle) / scale
 	return offset
 
+# Adds debug lines for the plane the gizmo can move on
 func debug_draw_handle_offset(
 	camera_position: Vector3,
 	screen_pos: Vector2,
@@ -26,7 +27,8 @@ func debug_draw_handle_offset(
 	local_offset_axis: Vector3,
 	node: Node3D,
 	gizmo: EditorNode3DGizmo,
-	plugin: EditorNode3DGizmoPlugin) -> void:
+	plugin: EditorNode3DGizmoPlugin,
+	grid_size: float = 1.0) -> void:
 
 	var transform := node.global_transform
 	var position: Vector3 = node.global_position
@@ -38,18 +40,25 @@ func debug_draw_handle_offset(
 	var local_plane: Plane = get_camera_oriented_plane(local_camera_position, local_gizmo_position, local_offset_axis)
 
 	# Add debug lines
-	var handles = PackedVector3Array()
+	var plane_lines = PackedVector3Array()
 	# Push back gizmo positions like a grid on the plane
-	var grid_points = PackedVector3Array()
-	var grid_size: int = 11
-	for i in range(grid_size):
-		var x: Vector3 = local_gizmo_position + local_offset_axis.normalized() * (i - grid_size / 2)
-		for j in range(grid_size):
-			var y: Vector3 = x + local_plane.normal.cross(local_offset_axis) * (j - grid_size / 2)
-			handles.push_back(y)
+	var lines_on_grid: int = 11 # 11 lines in horizontal and vertical axis
+	# var gradient_granularity: int = 10 # 10 sub-lines with varying opacity with each line
+	for i in range(lines_on_grid):
+		var horizontal_distance: float = (i - lines_on_grid / 2) * grid_size / lines_on_grid
+		var horizontal_axis: Vector3 = local_gizmo_position + local_offset_axis.normalized() * horizontal_distance
+		for j in range(lines_on_grid):
+			var vertical_distance: float = (j - lines_on_grid / 2) * grid_size / lines_on_grid
+			var vertical_axis: Vector3 = local_plane.normal.cross(local_offset_axis) * vertical_distance
+			plane_lines.push_back(horizontal_axis + vertical_axis - local_plane.normal * 0.2 * grid_size / lines_on_grid)
+			plane_lines.push_back(horizontal_axis + vertical_axis + local_plane.normal * 0.2 * grid_size / lines_on_grid)
+			plane_lines.push_back(horizontal_axis + local_offset_axis.normalized() * 0.25 * grid_size / lines_on_grid + vertical_axis)
+			plane_lines.push_back(horizontal_axis - local_offset_axis.normalized() * 0.25 * grid_size / lines_on_grid + vertical_axis)
+			plane_lines.push_back(horizontal_axis + vertical_axis + local_plane.normal.cross(local_offset_axis) * 0.25 * grid_size / lines_on_grid)
+			plane_lines.push_back(horizontal_axis + vertical_axis - local_plane.normal.cross(local_offset_axis) * 0.25 * grid_size / lines_on_grid)
+			# TODO: set the opacity of the lines based on the distance from the center
 
-	gizmo.add_lines(handles, plugin.get_material("handles", gizmo))
-
+	gizmo.add_lines(plane_lines, plugin.get_material("main", gizmo))
 
 ## Gets the plane along [param gizmo_position] going through [param gizmo_axis] and facing towards the [param camera_position].
 ## Consider [param camera_position], [param gizmo_position] and [param gizmo_axis] in the same space.

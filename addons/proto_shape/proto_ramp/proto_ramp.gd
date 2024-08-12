@@ -117,7 +117,6 @@ var anchor_fixed: bool: set = set_anchor_fixed, get = get_anchor_fixed
 var material: Variant: set = set_material, get = get_material
 
 # Implementing Gizmo
-const ProtoGizmoPlugin := preload("res://addons/proto_shape/proto_gizmo/proto_gizmo.gd")
 const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
 const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
 var width_gizmo_id: int
@@ -475,14 +474,11 @@ func refresh_step(i: int) -> void:
 	# Restore anchor offset
 	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
 
-func init_gizmo(plugin: ProtoGizmoPlugin) -> void:
+func init_gizmo(plugin: EditorNode3DGizmoPlugin) -> void:
 	# Generate a random id for each gizmo
 	width_gizmo_id = randi_range(0, 1_000_000)
 	depth_gizmo_id = randi_range(0, 1_000_000)
 	height_gizmo_id = randi_range(0, 1_000_000)
-	plugin.create_material("main", Color(1, 0, 0))
-	plugin.create_material("selected", Color(0, 0, 1, 0.1))
-	plugin.create_handle_material("handles")
 
 # Debug purposes
 
@@ -491,8 +487,8 @@ var local_gizmo_position: Vector3
 var local_offset_axis: Vector3
 var camera_position: Vector3
 
-func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, node: Node) -> void:
-	if node != self:
+func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) -> void:
+	if gizmo.get_node_3d() != self:
 		return
 
 	if width_gizmo_id == 0 or depth_gizmo_id == 0 or height_gizmo_id == 0:
@@ -549,26 +545,31 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin, node: Nod
 		gizmo.add_collision_triangles(get_meshes()[1].generate_triangle_mesh())
 		gizmo.add_mesh(get_meshes()[1], plugin.get_material("selected", gizmo))
 
-	# Adding debug lines for gizmo
+	# Adding debug lines for gizmo if we have cursor screen position set
 	if screen_pos:
-		# Print each parameter for debugging
-		print_debug("Camera Position: " + str(camera_position))
-		print_debug("Screen Pos: " + str(screen_pos))
-		print_debug("Local Gizmo Position: " + str(local_gizmo_position))
-		print_debug("Local Offset Axis: " + str(local_offset_axis))
-		print_debug("Depth Gizmo Position: " + str(depth_gizmo_position))
-
-		gizmo_utils.debug_draw_handle_offset(camera_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin)
+		var grid_size_modifier = 1.0
+		# Grid size is always the max of the two other dimensions
+		match local_offset_axis:
+			Vector3(0, 0, 1):
+				# Setting depth
+				grid_size_modifier = max(get_true_height(), get_width())
+			Vector3(1, 0, 0):
+				# Setting width
+				grid_size_modifier = max(get_true_height(), get_true_depth())
+			Vector3(0, 1, 0):
+				# Setting height
+				grid_size_modifier = max(get_width(), get_true_depth())
+		gizmo_utils.debug_draw_handle_offset(camera_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin, grid_size_modifier)
 
 func set_handle(
 	gizmo: EditorNode3DGizmo,
+	plugin: EditorNode3DGizmoPlugin,
 	handle_id: int,
 	secondary: bool,
 	camera: Camera3D,
-	screen_pos: Vector2,
-	child: Node) -> void:
-
+	screen_pos: Vector2) -> void:
 	# Set debug parameters for redraw
+	var child := gizmo.get_node_3d()
 	self.screen_pos = screen_pos
 	self.local_gizmo_position = child.global_transform.origin
 	self.camera_position = camera.position
