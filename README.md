@@ -2,7 +2,7 @@
 
 <img src="addons/proto_shape/icon/proto-shape-icon.png" style="height: 25%; width: 25%; margin: 0 auto; display: block">
 
-ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics.
+ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godot's Constructive Solid Geometry (CSG) and custom gizmo utilities to create your own dynamic nodes. It is designed to be used for prototyping levels and game mechanics.
 
 [Feature Showcase](https://youtube.com/playlist?list=PL1C7-40JVAoKh9hsaS_wFPziyKAF1DTJ2&si=0ItpHT7-StKODXbC)
 
@@ -26,7 +26,7 @@ https://github.com/HLCaptain/proto-shape/assets/22623259/730a527c-d6ba-4eaa-93b6
 
 Nest your custom nodes under the `ProtoGizmoWrapper` and start adding custom gizmo functionality with a few lines of code. Embrace the power of dragging your cursor on the screen, with all the complex 3D math handled for you with [ProtoGizmoUtils](addons/proto_shape/proto_gizmo/README.md#protogizmoutils).
 
-Supports only `Node3D` nodes for now!
+Supports only `Node3D` nodes for now! Read the [documentation](addons/proto_shape/proto_gizmo_wrapper/README.md) to get to know gizmos and how to make your custom nodes compatible.
 
 ## Contributing
 
