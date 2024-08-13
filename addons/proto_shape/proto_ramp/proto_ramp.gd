@@ -122,7 +122,7 @@ const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizm
 var width_gizmo_id: int
 var depth_gizmo_id: int
 var height_gizmo_id: int
-var gizmo_utils: ProtoGizmoUtils
+var gizmo_utils := ProtoGizmoUtils.new()
 
 func _get_property_list() -> Array[Dictionary]:
 	var list: Array[Dictionary] = [
@@ -559,7 +559,7 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) ->
 			Vector3(0, 1, 0):
 				# Setting height
 				grid_size_modifier = max(get_width(), get_true_depth())
-		gizmo_utils.debug_draw_handle_offset(camera_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin, grid_size_modifier)
+		gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin, grid_size_modifier)
 
 func set_handle(
 	gizmo: EditorNode3DGizmo,
@@ -649,7 +649,6 @@ func refresh_all() -> void:
 func _enter_tree() -> void:
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
 	set_steps(steps)
-	gizmo_utils = ProtoGizmoUtils.new()
 	if material:
 		set_material(material)
 	if get_parent() is ProtoGizmoWrapper:

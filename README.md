@@ -22,6 +22,12 @@ Ramp/staircase with adjustable height, width and length. Can adjust step count a
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/730a527c-d6ba-4eaa-93b6-dbcbbd8aba52
 
+### [ProtoGizmoWrapper](addons/proto_shape/proto_gizmo_wrapper/README.md)
+
+Nest your custom nodes under the `ProtoGizmoWrapper` and start adding custom gizmo functionality with a few lines of code. Embrace the power of dragging your cursor on the screen, with all the complex 3D math handled for you with [ProtoGizmoUtils](addons/proto_shape/proto_gizmo/README.md#protogizmoutils).
+
+Supports only `Node3D` nodes for now!
+
 ## Contributing
 
 Feel free to open an issue for any bugs or feature requests. See more in [CONTRIBUTING.md](CONTRIBUTING.md).

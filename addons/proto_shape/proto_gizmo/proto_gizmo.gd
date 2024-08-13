@@ -6,8 +6,7 @@ const ProtoRamp := preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd")
 func _init() -> void:
 	create_material("main", Color(1, 0.3725, 0.3725, 0.5))
 	create_material("selected", Color(0, 0, 1, 0.1))
-	var proto_handler_texture: Texture2D = load("res://addons/proto_shape/icon/proto-gizmo-handler.png")
-	create_handle_material("proto_handler", false, proto_handler_texture)
+	create_handle_material("proto_handler", false, load("res://addons/proto_shape/icon/proto-gizmo-handler.png"))
 
 func _has_gizmo(node: Node3D) -> bool:
 	if node.get_parent() is ProtoGizmoWrapper or node is ProtoRamp:

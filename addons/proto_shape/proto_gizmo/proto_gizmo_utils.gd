@@ -15,12 +15,13 @@ func get_handle_offset(
 	var scale: Vector3 = transform.basis.get_scale()
 	var global_gizmo_position: Vector3 = local_gizmo_position.rotated(quat_axis, quat_angle) * scale + position
 	var global_offset_axis: Vector3 = local_offset_axis.rotated(quat_axis, quat_angle)
-	var plane: Plane = get_camera_oriented_plane(camera.position, global_gizmo_position, global_offset_axis)
-	var offset: Vector3 = (plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - position).rotated(quat_axis, -quat_angle) / scale
-	return offset
+	var global_plane: Plane = get_camera_oriented_plane(camera.position, global_gizmo_position, global_offset_axis)
+	var local_offset: Vector3 = (global_plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - position).rotated(quat_axis, -quat_angle) / scale
+	return local_offset
 
 # Adds debug lines for the plane the gizmo can move on
-func debug_draw_handle_offset(
+# Should only be called on gizmo redraw
+func debug_draw_handle_grid(
 	camera_position: Vector3,
 	screen_pos: Vector2,
 	local_gizmo_position: Vector3,
