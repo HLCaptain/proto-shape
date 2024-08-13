@@ -116,6 +116,14 @@ var anchor_fixed: bool: set = set_anchor_fixed, get = get_anchor_fixed
 
 var material: Variant: set = set_material, get = get_material
 
+# Implementing Gizmo
+const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
+const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
+var width_gizmo_id: int
+var depth_gizmo_id: int
+var height_gizmo_id: int
+var gizmo_utils := ProtoGizmoUtils.new()
+
 func _get_property_list() -> Array[Dictionary]:
 	var list: Array[Dictionary] = [
 		{"name": "type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"},
@@ -301,7 +309,7 @@ func set_type(value: Type) -> void:
 					_depth = (_depth + epsilon) * steps
 	refresh_type()
 	type_changed.emit()
-	something_changed.emit()
+	update_gizmos()
 
 ## Resets the steps and regenerates ramp/stairs.
 func refresh_type() -> void:
@@ -337,25 +345,25 @@ func set_width(value: float) -> void:
 	_width = value
 	refresh_children()
 	width_changed.emit()
-	something_changed.emit()
+	update_gizmos()
 
 func set_height(value: float) -> void:
 	_height = value
 	refresh_children()
 	height_changed.emit()
-	something_changed.emit()
+	update_gizmos()
 
 func set_depth(value: float) -> void:
 	_depth = value
 	refresh_children()
 	depth_changed.emit()
-	something_changed.emit()
+	update_gizmos()
 
 func set_fill(value: bool) -> void:
 	_fill = value
 	refresh_children()
 	fill_changed.emit()
-	something_changed.emit()
+	update_gizmos()
 
 ## Translates the ramp/staircase to a new anchor point in local space.
 ## Then recalculates the stairs/ramp with the new offset.
@@ -365,7 +373,7 @@ func set_anchor(value: Anchor) -> void:
 	_anchor = value
 	refresh_children()
 	anchor_changed.emit()
-	something_changed.emit()
+	update_gizmos()
 
 ## Translates the ramp/staircase to a new anchor point in local space if anchor is not fixed.
 func translate_anchor(from_anchor: Anchor, to_anchor: Anchor) -> void:
@@ -384,7 +392,7 @@ func set_steps(value: int) -> void:
 	_steps = value
 	refresh_steps(value)
 	step_count_changed.emit()
-	something_changed.emit()
+	update_gizmos()
 
 ## Deletes all children and generates new steps/ramp.
 func refresh_steps(new_steps: int) -> void:
@@ -466,6 +474,175 @@ func refresh_step(i: int) -> void:
 	# Restore anchor offset
 	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
 
+func init_gizmo(plugin: EditorNode3DGizmoPlugin) -> void:
+	# Generate a random id for each gizmo
+	width_gizmo_id = randi_range(0, 1_000_000)
+	depth_gizmo_id = randi_range(0, 1_000_000)
+	height_gizmo_id = randi_range(0, 1_000_000)
+
+# Debug purposes
+
+var screen_pos: Vector2
+var local_gizmo_position: Vector3
+var local_offset_axis: Vector3
+var camera_position: Vector3
+
+func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) -> void:
+	if gizmo.get_node_3d() != self:
+		return
+
+	if width_gizmo_id == 0 or depth_gizmo_id == 0 or height_gizmo_id == 0:
+		init_gizmo(plugin)
+
+	gizmo.clear()
+	var true_depth: float = get_true_depth()
+	var true_height: float = get_true_height()
+	var anchor_offset: Vector3 = get_anchor_offset(anchor)
+	var depth_gizmo_position := Vector3(0, true_height / 2, true_depth) + anchor_offset
+	var width_gizmo_position := Vector3(width / 2, true_height / 2, true_depth / 2) + anchor_offset
+	var height_gizmo_position := Vector3(0, true_height, true_depth / 2) + anchor_offset
+
+	# When on the left, width gizmo is on the right
+	# When in the back (top, base), depth gizmo is on the front
+	# When on the top, height gizmo is on the bottom
+	match anchor:
+		Anchor.BOTTOM_LEFT:
+			width_gizmo_position.x = -width
+		Anchor.TOP_LEFT:
+			width_gizmo_position.x = -width
+			depth_gizmo_position.z = -true_depth
+			height_gizmo_position.y = -true_height
+		Anchor.BASE_LEFT:
+			width_gizmo_position.x = -width
+			depth_gizmo_position.z = -true_depth
+		Anchor.BASE_CENTER:
+			depth_gizmo_position.z = -true_depth
+		Anchor.BASE_RIGHT:
+			depth_gizmo_position.z = -true_depth
+		Anchor.TOP_RIGHT:
+			depth_gizmo_position.z = -true_depth
+			height_gizmo_position.y = -true_height
+		Anchor.TOP_CENTER:
+			depth_gizmo_position.z = -true_depth
+			height_gizmo_position.y = -true_height
+
+	var handles = PackedVector3Array()
+	handles.push_back(depth_gizmo_position)
+	handles.push_back(width_gizmo_position)
+	handles.push_back(height_gizmo_position)
+
+	gizmo.add_handles(handles, plugin.get_material("proto_handler", gizmo), [depth_gizmo_id, width_gizmo_id, height_gizmo_id])
+
+	# Add collision triangles by generating TriangleMesh from node mesh
+	# Meshes can be empty when reparenting the node with an existing selection
+	# FIXME: Behavior is inconsistent, as other gizmos can override the collision triangles.
+	#  Node can be selected without a problem when reparenting with a single Node3D.
+	#  Node cannot be selected normally, when the new parent is a CSGShape3D.
+	#  CSGShape3D is updating its own collision triangles, which are overriding the ProtoRamp's.
+	#  Although in theory, ProtoRamp's Gizmo has more priority, it doesn't seem to work.
+
+	if get_meshes().size() > 1:
+		gizmo.add_collision_triangles(get_meshes()[1].generate_triangle_mesh())
+		gizmo.add_mesh(get_meshes()[1], plugin.get_material("selected", gizmo))
+
+	# Adding debug lines for gizmo if we have cursor screen position set
+	if screen_pos:
+		var grid_size_modifier = 1.0
+		# Grid size is always the max of the two other dimensions
+		match local_offset_axis:
+			Vector3(0, 0, 1):
+				# Setting depth
+				grid_size_modifier = max(get_true_height(), get_width())
+			Vector3(1, 0, 0):
+				# Setting width
+				grid_size_modifier = max(get_true_height(), get_true_depth())
+			Vector3(0, 1, 0):
+				# Setting height
+				grid_size_modifier = max(get_width(), get_true_depth())
+		gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin, grid_size_modifier)
+
+func set_handle(
+	gizmo: EditorNode3DGizmo,
+	plugin: EditorNode3DGizmoPlugin,
+	handle_id: int,
+	secondary: bool,
+	camera: Camera3D,
+	screen_pos: Vector2) -> void:
+	# Set debug parameters for redraw
+	var child := gizmo.get_node_3d()
+	self.screen_pos = screen_pos
+	self.local_gizmo_position = child.global_transform.origin
+	self.camera_position = camera.position
+	if child != self:
+		return
+	match handle_id:
+		depth_gizmo_id:
+			local_offset_axis = Vector3(0, 0, 1)
+			local_gizmo_position = Vector3(0, get_true_height() / 2, get_true_depth()) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			_set_depth_handle(handle_offset.z)
+		width_gizmo_id:
+			local_offset_axis = Vector3(1, 0, 0)
+			local_gizmo_position = Vector3(width / 2, get_true_height() / 2, get_true_depth() / 2) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			_set_width_handle(handle_offset.x)
+		height_gizmo_id:
+			local_offset_axis = Vector3(0, 1, 0)
+			local_gizmo_position = Vector3(0, get_true_height(), get_true_depth() / 2) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			_set_height_handle(handle_offset.y)
+	update_gizmos()
+
+func _set_width_handle(offset: float):
+	# If anchor is on the left, offset is negative
+	# If anchor is not centered, offset is divided by 2
+	match anchor:
+		Anchor.BOTTOM_LEFT:
+			offset = -offset / 2
+		Anchor.TOP_LEFT:
+			offset = -offset / 2
+		Anchor.BASE_LEFT:
+			offset = -offset / 2
+		Anchor.BOTTOM_RIGHT:
+			offset = offset / 2
+		Anchor.TOP_RIGHT:
+			offset = offset / 2
+		Anchor.BASE_RIGHT:
+			offset = offset / 2
+	width = offset * 2
+
+func _set_depth_handle(offset: float):
+	if calculation == Calculation.STEP_DIMENSIONS and type == Type.STAIRCASE:
+		offset = offset / steps
+	# If anchor is on the back, offset is negative
+	match anchor:
+		Anchor.BASE_CENTER:
+			offset = -offset
+		Anchor.BASE_RIGHT:
+			offset = -offset
+		Anchor.BASE_LEFT:
+			offset = -offset
+		Anchor.TOP_CENTER:
+			offset = -offset
+		Anchor.TOP_RIGHT:
+			offset = -offset
+		Anchor.TOP_LEFT:
+			offset = -offset
+	depth = offset
+
+func _set_height_handle(offset: float):
+	# If anchor is TOP, offset is negative
+	if calculation == Calculation.STEP_DIMENSIONS and type == Type.STAIRCASE:
+		offset = offset / steps
+	match anchor:
+		Anchor.TOP_LEFT:
+			offset = -offset
+		Anchor.TOP_CENTER:
+			offset = -offset
+		Anchor.TOP_RIGHT:
+			offset = -offset
+	height = offset
+
 func refresh_all() -> void:
 	set_steps(steps)
 
@@ -474,6 +651,10 @@ func _enter_tree() -> void:
 	set_steps(steps)
 	if material:
 		set_material(material)
+	if get_parent() is ProtoGizmoWrapper:
+		var parent: ProtoGizmoWrapper = get_parent()
+		parent.redraw_gizmos_for_child_signal.connect(redraw_gizmos)
+		parent.set_handle_for_child_signal.connect(set_handle)
 	is_entered_tree = true
 
 func _exit_tree() -> void:
@@ -481,3 +662,7 @@ func _exit_tree() -> void:
 	for child in csg_shapes:
 		child.queue_free()
 	csg_shapes.clear()
+	if get_parent() is ProtoGizmoWrapper:
+		var parent: ProtoGizmoWrapper = get_parent()
+		parent.redraw_gizmos_for_child_signal.disconnect(redraw_gizmos)
+		parent.set_handle_for_child_signal.disconnect(set_handle)
