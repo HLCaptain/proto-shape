@@ -1,4 +1,4 @@
-# ProtoShape - Godot Prototyping Extension for CSG
+# ProtoShape - Godot Prototyping Extension for CSG and Gizmos
 
 <img src="addons/proto_shape/icon/proto-shape-icon.png" style="height: 25%; width: 25%; margin: 0 auto; display: block">
 
