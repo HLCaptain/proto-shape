@@ -16,6 +16,8 @@ ProtoGizmoWrapper exposes 2 essential methods as signals to implement gizmo func
 
 To make your nodes respond to gizmo related changes, you need to subscribe to these signals.
 
+***To see a fully working example, check out `ProtoRamp` source code.***
+
 #### Redraw
 
 This signal is emitted when a wrapper's child node's gizmos need to be redrawn.

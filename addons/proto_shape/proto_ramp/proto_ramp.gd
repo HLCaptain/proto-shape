@@ -483,7 +483,6 @@ func init_gizmo(plugin: EditorNode3DGizmoPlugin) -> void:
 # Debug purposes
 
 var screen_pos: Vector2
-var local_gizmo_position: Vector3
 var local_offset_axis: Vector3
 var camera_position: Vector3
 
@@ -549,16 +548,20 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) ->
 	if screen_pos:
 		var grid_size_modifier = 1.0
 		# Grid size is always the max of the two other dimensions
+		var local_gizmo_position: Vector3
 		match local_offset_axis:
 			Vector3(0, 0, 1):
 				# Setting depth
 				grid_size_modifier = max(get_true_height(), get_width())
+				local_gizmo_position = depth_gizmo_position
 			Vector3(1, 0, 0):
 				# Setting width
 				grid_size_modifier = max(get_true_height(), get_true_depth())
+				local_gizmo_position = width_gizmo_position
 			Vector3(0, 1, 0):
 				# Setting height
 				grid_size_modifier = max(get_width(), get_true_depth())
+				local_gizmo_position = height_gizmo_position
 		gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin, grid_size_modifier)
 
 func set_handle(
@@ -571,25 +574,24 @@ func set_handle(
 	# Set debug parameters for redraw
 	var child := gizmo.get_node_3d()
 	self.screen_pos = screen_pos
-	self.local_gizmo_position = child.global_transform.origin
 	self.camera_position = camera.position
 	if child != self:
 		return
 	match handle_id:
 		depth_gizmo_id:
 			local_offset_axis = Vector3(0, 0, 1)
-			local_gizmo_position = Vector3(0, get_true_height() / 2, get_true_depth()) + get_anchor_offset(anchor)
-			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			var gizmo_position = Vector3(0, get_true_height() / 2, get_true_depth()) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, self)
 			_set_depth_handle(handle_offset.z)
 		width_gizmo_id:
 			local_offset_axis = Vector3(1, 0, 0)
-			local_gizmo_position = Vector3(width / 2, get_true_height() / 2, get_true_depth() / 2) + get_anchor_offset(anchor)
-			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			var gizmo_position = Vector3(width / 2, get_true_height() / 2, get_true_depth() / 2) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, self)
 			_set_width_handle(handle_offset.x)
 		height_gizmo_id:
 			local_offset_axis = Vector3(0, 1, 0)
-			local_gizmo_position = Vector3(0, get_true_height(), get_true_depth() / 2) + get_anchor_offset(anchor)
-			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+			var gizmo_position = Vector3(0, get_true_height(), get_true_depth() / 2) + get_anchor_offset(anchor)
+			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, self)
 			_set_height_handle(handle_offset.y)
 	update_gizmos()
 
