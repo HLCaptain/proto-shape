@@ -100,13 +100,16 @@ use_collision = true
 size = Vector3(2, 1, 2)
 
 [node name="ProtoRamp" type="CSGCombiner3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2.39955)
 use_collision = true
 script = ExtResource("3_r5jdn")
-type = 0
-width = 6.001
-height = 2.001
-depth = 2.51884
-anchor = 7
+type = 1
+width = 1.0
+height = 1.0
+depth = 1.0
+anchor = 0
 anchor_fixed = true
 material = null
+calculation = 0
+steps = 8
+fill = true
