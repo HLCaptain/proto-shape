@@ -19,6 +19,12 @@ ProtoRamp supports custom gizmos to adjust the shape.
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33-7b03d44f62c7
 
+#### ProtoRampGizmos
+
+Gizmo functionality is delegated to [ProtoRampGizmos](proto_ramp_gizmos.gd). It is a helper class that provides gizmo functionality for the `ProtoRamp` node, which only gets instantiated in the editor. This way, the packaged game will not rely on any editor-plugin specific code.
+
+`Engine.is_editor_hint()` is used in `ProtoRamp` itself to check if the game is running in the editor. If it is, the `ProtoRampGizmos` class is instantiated and added as a child node to the `ProtoRamp` node.
+
 ### Adjust parameters
 
 Modify height, width, depth, anchor position and more!

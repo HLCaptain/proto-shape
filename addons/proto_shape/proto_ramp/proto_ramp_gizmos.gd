@@ -14,7 +14,6 @@ func attach_ramp(node: ProtoRamp) -> void:
 		var parent: ProtoGizmoWrapper = ramp.get_parent()
 		parent.redraw_gizmos_for_child_signal.connect(redraw_gizmos)
 		parent.set_handle_for_child_signal.connect(set_handle)
-	print_debug("Ramp attached")
 
 func remove_ramp() -> void:
 	if ramp.get_parent() is ProtoGizmoWrapper:
@@ -22,11 +21,9 @@ func remove_ramp() -> void:
 		parent.redraw_gizmos_for_child_signal.disconnect(redraw_gizmos)
 		parent.set_handle_for_child_signal.disconnect(set_handle)
 	ramp = null
-	print_debug("Ramp removed")
 
 func init_gizmo(plugin: EditorNode3DGizmoPlugin) -> void:
 	# Generate a random id for each gizmo
-	print_debug("Initializing gizmos")
 	width_gizmo_id = randi_range(0, 1_000_000)
 	depth_gizmo_id = randi_range(0, 1_000_000)
 	height_gizmo_id = randi_range(0, 1_000_000)
@@ -37,10 +34,9 @@ var screen_pos: Vector2
 var local_offset_axis: Vector3
 var camera_position: Vector3
 
+## As gizmos can only be used in the Editor, we can cast the [gizmo] to [EditorNode3DGizmo] and [plugin] to [EditorNode3DGizmoPlugin].
 func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) -> void:
-	print_debug("Redrawing gizmos")
 	if gizmo.get_node_3d() != ramp:
-		print_debug("Not the same node")
 		return
 
 	if width_gizmo_id == 0 or depth_gizmo_id == 0 or height_gizmo_id == 0:
@@ -124,7 +120,6 @@ func set_handle(
 	secondary: bool,
 	camera: Camera3D,
 	screen_pos: Vector2) -> void:
-	print_debug("Setting handle")
 	# Set debug parameters for redraw
 	var child := gizmo.get_node_3d()
 	self.screen_pos = screen_pos

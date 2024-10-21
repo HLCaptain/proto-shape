@@ -1,8 +1,9 @@
-[gd_scene load_steps=9 format=3 uid="uid://kh6kodj0l0ld"]
+[gd_scene load_steps=10 format=3 uid="uid://kh6kodj0l0ld"]
 
 [ext_resource type="Script" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
 [ext_resource type="Script" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
 [ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="3_r5jdn"]
+[ext_resource type="Script" path="res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd" id="4_3jo5l"]
 
 [sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_mt60a"]
 turbidity = 0.74
@@ -113,3 +114,6 @@ material = null
 calculation = 0
 steps = 8
 fill = true
+
+[node name="ProtoGizmoWrapper" type="Node" parent="."]
+script = ExtResource("4_3jo5l")
