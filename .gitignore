@@ -3,8 +3,9 @@
 .vscode/
 **/*.import
 
-# Only allow the addon folder
-!addons/proto_shape/**
+# Allow only the proto_shape addons folder
+**/*
+!addons/proto_shape
 
 # Allow only specific scenes
 addons/proto_shape/scenes/*.tscn
