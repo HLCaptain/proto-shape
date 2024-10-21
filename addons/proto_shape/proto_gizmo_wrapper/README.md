@@ -16,7 +16,21 @@ ProtoGizmoWrapper exposes 2 essential methods as signals to implement gizmo func
 
 To make your nodes respond to gizmo related changes, you need to subscribe to these signals.
 
-***To see a fully working example, check out `ProtoRamp` source code.***
+The signals have `EditorNode3DGizmo` and `EditorNode3DGizmoPlugin` typed arguments, which are only available in the editor and not in packaged games. To avoid packaging issues, `gizmo` and `plugin` arguments are dynamically typed.
+
+So basically the signals are:
+
+```gdscript
+# This
+signal redraw_gizmos_for_child_signal(gizmo, plugin)
+
+# Instead of this
+signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin)
+```
+
+Just like in [ProtoRampGizmos](../proto_ramp/README.md#protorampgizmos), you can connect methods with static typing to these signals to avoid dynamic typing and runtime errors.
+
+***To see a fully working example, check out [ProtoRampGizmos](../proto_ramp/proto_ramp_gizmos.gd) source code.***
 
 #### Redraw
 
