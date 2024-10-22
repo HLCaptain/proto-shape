@@ -4,7 +4,7 @@
 **/*.import
 
 # Allow only the proto_shape addons folder
-**/*
+**
 !addons/proto_shape
 
 # Allow only specific scenes
