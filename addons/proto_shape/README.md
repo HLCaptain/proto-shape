@@ -14,6 +14,10 @@ The gizmo for `ProtoRamp` supports setting 3 properties:
 
 It utilizes `ProtoGizmoUtils` for advanced 3D math calculations and plane projections to get the desired handle drag offset and set the properties accordingly.
 
+### Undo/Redo support
+
+[ProtoRampGizmos](proto_ramp/proto_ramp_gizmos.gd) supports scene-wide undo/redo functionality. It uses the `EditorUndoRedoManager` to set up ramp properties, so the editor takes gizmo-based modifications into account! Editor now warns you to save on exit if you have unsaved changes made with the gizmos.
+
 ### [ProtoGizmoWrapper](proto_gizmo_wrapper/README.md)
 
 `ProtoGizmoWrapper` is an advanced wrapper for creating gizmo functionality for custom 3D nodes. It exposes 2 signals to implement custom gizmos for your nodes to *redraw* and *update* the properties of your node.
