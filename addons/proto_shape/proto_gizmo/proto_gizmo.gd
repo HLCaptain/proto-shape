@@ -3,6 +3,9 @@ extends EditorNode3DGizmoPlugin
 const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
 const ProtoRamp = preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd")
 
+# Must be initialized externally by ProtoShape plugin
+var undo_redo: EditorUndoRedoManager
+
 func _init() -> void:
 	create_material("main", Color(1, 0.3725, 0.3725, 0.5))
 	create_material("selected", Color(0, 0, 1, 0.1))
@@ -38,4 +41,18 @@ func _set_handle(
 		return
 	if node.get_parent() is ProtoGizmoWrapper:
 		node.get_parent().set_handle_for_child(gizmo, self, handle_id, secondary, camera, screen_pos)
+		return
+
+func _commit_handle(
+	gizmo: EditorNode3DGizmo,
+	handle_id: int,
+	secondary: bool,
+	restore: Variant,
+	cancel: bool) -> void:
+	var node := gizmo.get_node_3d()
+	if node is ProtoRamp:
+		node.gizmos.commit_handle(gizmo, handle_id, secondary, restore, cancel)
+		return
+	if node.get_parent() is ProtoGizmoWrapper:
+		node.get_parent().commit_handle_for_child(gizmo, handle_id, secondary, restore, cancel)
 		return

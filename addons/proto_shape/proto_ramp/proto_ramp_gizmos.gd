@@ -8,18 +8,23 @@ var height_gizmo_id: int
 var gizmo_utils := ProtoGizmoUtils.new()
 var ramp: ProtoRamp = null
 
+var undo_redo: EditorUndoRedoManager
+var is_editing := false
+
 func attach_ramp(node: ProtoRamp) -> void:
 	ramp = node
 	if ramp.get_parent() is ProtoGizmoWrapper:
 		var parent: ProtoGizmoWrapper = ramp.get_parent()
 		parent.redraw_gizmos_for_child_signal.connect(redraw_gizmos)
 		parent.set_handle_for_child_signal.connect(set_handle)
+		parent.commit_handle.connect(commit_handle)
 
 func remove_ramp() -> void:
 	if ramp.get_parent() is ProtoGizmoWrapper:
 		var parent: ProtoGizmoWrapper = ramp.get_parent()
 		parent.redraw_gizmos_for_child_signal.disconnect(redraw_gizmos)
 		parent.set_handle_for_child_signal.disconnect(set_handle)
+		parent.commit_handle.disconnect(commit_handle)
 	ramp = null
 
 func init_gizmo(plugin: EditorNode3DGizmoPlugin) -> void:
@@ -27,6 +32,7 @@ func init_gizmo(plugin: EditorNode3DGizmoPlugin) -> void:
 	width_gizmo_id = randi_range(0, 1_000_000)
 	depth_gizmo_id = randi_range(0, 1_000_000)
 	height_gizmo_id = randi_range(0, 1_000_000)
+	undo_redo = plugin.undo_redo
 
 # Debug purposes
 
@@ -113,6 +119,9 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) ->
 				local_gizmo_position = height_gizmo_position
 		gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, local_gizmo_position, local_offset_axis, ramp, gizmo, plugin, grid_size_modifier)
 
+var start_offset := 0.0
+var end_offset := 0.0
+
 func set_handle(
 	gizmo: EditorNode3DGizmo,
 	plugin: EditorNode3DGizmoPlugin,
@@ -122,29 +131,60 @@ func set_handle(
 	screen_pos: Vector2) -> void:
 	# Set debug parameters for redraw
 	var child := gizmo.get_node_3d()
-	self.screen_pos = screen_pos
-	self.camera_position = camera.position
 	if child != ramp:
 		return
+
+	self.screen_pos = screen_pos
+	self.camera_position = camera.position
+
 	match handle_id:
 		depth_gizmo_id:
-			local_offset_axis = Vector3(0, 0, 1)
-			var gizmo_position = Vector3(0, ramp.get_true_height() / 2, ramp.get_true_depth()) + ramp.get_anchor_offset(ramp.anchor)
-			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
-			_set_depth_handle(handle_offset.z)
+			end_offset = _get_depth_handle_offset(camera, screen_pos)
+			ramp.depth = _get_ramp_depth(end_offset)
 		width_gizmo_id:
-			local_offset_axis = Vector3(1, 0, 0)
-			var gizmo_position = Vector3(ramp.width / 2, ramp.get_true_height() / 2, ramp.get_true_depth() / 2) + ramp.get_anchor_offset(ramp.anchor)
-			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
-			_set_width_handle(handle_offset.x)
+			end_offset = _get_width_handle_offset(camera, screen_pos)
+			ramp.width = _get_ramp_width(end_offset)
 		height_gizmo_id:
-			local_offset_axis = Vector3(0, 1, 0)
-			var gizmo_position = Vector3(0, ramp.get_true_height(), ramp.get_true_depth() / 2) + ramp.get_anchor_offset(ramp.anchor)
-			var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
-			_set_height_handle(handle_offset.y)
+			end_offset = _get_height_handle_offset(camera, screen_pos)
+			ramp.height = _get_ramp_height(end_offset)
+
+	if !is_editing:
+		match handle_id:
+			depth_gizmo_id:
+				start_offset = _get_depth_handle_offset(camera, screen_pos)
+			width_gizmo_id:
+				start_offset = _get_width_handle_offset(camera, screen_pos)
+			height_gizmo_id:
+				start_offset = _get_height_handle_offset(camera, screen_pos)
+		is_editing = true
+
 	ramp.update_gizmos()
 
-func _set_width_handle(offset: float):
+func _get_depth_handle_offset(
+	camera: Camera3D,
+	screen_pos: Vector2) -> float:
+	local_offset_axis = Vector3(0, 0, 1)
+	var gizmo_position = Vector3(0, ramp.get_true_height() / 2, ramp.get_true_depth()) + ramp.get_anchor_offset(ramp.anchor)
+	var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	return handle_offset.z
+
+func _get_width_handle_offset(
+	camera: Camera3D,
+	screen_pos: Vector2) -> float:
+	local_offset_axis = Vector3(1, 0, 0)
+	var gizmo_position = Vector3(ramp.width / 2, ramp.get_true_height() / 2, ramp.get_true_depth() / 2) + ramp.get_anchor_offset(ramp.anchor)
+	var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	return handle_offset.x
+
+func _get_height_handle_offset(
+	camera: Camera3D,
+	screen_pos: Vector2) -> float:
+	local_offset_axis = Vector3(0, 1, 0)
+	var gizmo_position = Vector3(0, ramp.get_true_height(), ramp.get_true_depth() / 2) + ramp.get_anchor_offset(ramp.anchor)
+	var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	return handle_offset.y
+
+func _get_ramp_width(offset: float) -> float:
 	# If anchor is on the left, offset is negative
 	# If anchor is not centered, offset is divided by 2
 	match ramp.anchor:
@@ -160,11 +200,11 @@ func _set_width_handle(offset: float):
 			offset = offset / 2
 		ProtoRamp.Anchor.BASE_RIGHT:
 			offset = offset / 2
-	ramp.width = offset * 2
+	return offset * 2
 
-func _set_depth_handle(offset: float):
+func _get_ramp_depth(offset: float) -> float:
 	if ramp.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS and ramp.type == ProtoRamp.Type.STAIRCASE:
-		ramp.offset = ramp.offset / ramp.steps
+		offset = offset / ramp.steps
 	# If anchor is on the back, offset is negative
 	match ramp.anchor:
 		ProtoRamp.Anchor.BASE_CENTER:
@@ -179,12 +219,12 @@ func _set_depth_handle(offset: float):
 			offset = -offset
 		ProtoRamp.Anchor.TOP_LEFT:
 			offset = -offset
-	ramp.depth = offset
+	return offset
 
-func _set_height_handle(offset: float):
+func _get_ramp_height(offset: float) -> float:
 	# If anchor is TOP, offset is negative
 	if ramp.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS and ramp.type == ProtoRamp.Type.STAIRCASE:
-		ramp.offset = offset / ramp.steps
+		offset = offset / ramp.steps
 	match ramp.anchor:
 		ProtoRamp.Anchor.TOP_LEFT:
 			offset = -offset
@@ -192,4 +232,33 @@ func _set_height_handle(offset: float):
 			offset = -offset
 		ProtoRamp.Anchor.TOP_RIGHT:
 			offset = -offset
-	ramp.height = offset
+	return offset
+
+func commit_handle(
+	gizmo: EditorNode3DGizmo,
+	handle_id: int,
+	secondary: bool,
+	restore: Variant,
+	cancel: bool) -> void:
+	if gizmo.get_node_3d() != ramp:
+		return
+
+	match handle_id:
+		depth_gizmo_id:
+			restore = _get_ramp_depth(start_offset)
+			undo_redo.create_action("Edit ramp depth", 0, ramp, true)
+			undo_redo.add_do_property(ramp, "depth", _get_ramp_depth(end_offset))
+			undo_redo.add_undo_property(ramp, "depth", restore)
+		width_gizmo_id:
+			restore = _get_ramp_width(start_offset)
+			undo_redo.create_action("Edit ramp width", 0, ramp, true)
+			undo_redo.add_do_property(ramp, "width", _get_ramp_width(end_offset))
+			undo_redo.add_undo_property(ramp, "width", restore)
+		height_gizmo_id:
+			restore = _get_ramp_height(start_offset)
+			undo_redo.create_action("Edit ramp height", 0, ramp, true)
+			undo_redo.add_do_property(ramp, "height", _get_ramp_height(end_offset))
+			undo_redo.add_undo_property(ramp, "height", restore)
+
+	undo_redo.commit_action()
+	is_editing = false
