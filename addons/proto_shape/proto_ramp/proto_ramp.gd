@@ -57,6 +57,8 @@ var is_entered_tree := false
 ## Storing CSG shapes for easy access without interfering with children.
 var csg_shapes: Array[CSGShape3D] = []
 
+var collision_polygon: CollisionPolygon3D = null
+
 ## Used to avoid z-fighting and incorrect snapping between steps.
 var epsilon: float = 0.0001
 
@@ -70,6 +72,8 @@ const _default_fill := true
 const _default_type := Type.RAMP
 const _default_anchor := Anchor.BOTTOM_CENTER
 const _default_anchor_fixed := true
+const _default_collisions_enabled := true
+const _default_last_step_collision_enabled := false
 
 ## Default private values
 var _calculation := _default_calculation
@@ -81,6 +85,8 @@ var _fill := _default_fill
 var _type := _default_type
 var _anchor := _default_anchor
 var _anchor_fixed := _default_anchor_fixed
+var _collisions_enabled := _default_collisions_enabled
+var _last_step_collision_enabled := _default_last_step_collision_enabled
 
 @export_category("Proto Ramp")
 ## Calculation method of width, depth and height.
@@ -107,6 +113,12 @@ var type: Type: set = set_type, get = get_type
 ## Anchor point of the ramp/staircase.
 var anchor: Anchor: set = set_anchor, get = get_anchor
 
+## Collisions enabled for the ramp/staircase.
+var collisions_enabled: bool: set = set_collisions_enabled, get = get_collisions_enabled
+
+## Last step collision enabled for the staircase.
+var last_step_collision_enabled: bool: set = set_last_step_collision_enabled, get = get_last_step_collision_enabled
+
 ## If true, the anchor point will not move in global space changed when the anchor is changed.
 ## Instead, the ramp/staircase will move in local space.
 var anchor_fixed: bool: set = set_anchor_fixed, get = get_anchor_fixed
@@ -121,7 +133,8 @@ func _get_property_list() -> Array[Dictionary]:
 		{"name": "depth", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "anchor", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Bottom Center,Bottom Left,Bottom Right,Top Center,Top Left,Top Right,Base Center,Base Left,Base Right"},
 		{"name": "anchor_fixed", "type": TYPE_BOOL},
-		{"name": "material","class_name": &"BaseMaterial3D,ShaderMaterial", "type": 24, "hint": 17, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": 6 }
+		{"name": "material","class_name": &"BaseMaterial3D,ShaderMaterial", "type": 24, "hint": 17, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": 6 },
+		{"name": "collisions_enabled", "type": TYPE_BOOL}
 		]
 
 	# Staircase exclusive properties
@@ -129,7 +142,8 @@ func _get_property_list() -> Array[Dictionary]:
 		list += [
 			{"name": "calculation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Staircase Dimensions,Step Dimensions"},
 			{"name": "steps", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,100,1,or_greater"},
-			{"name": "fill", "type": TYPE_BOOL}
+			{"name": "fill", "type": TYPE_BOOL},
+			{"name": "last_step_collision_enabled", "type": TYPE_BOOL}
 		]
 
 	return list
@@ -166,11 +180,17 @@ func _set(property: StringName, value: Variant) -> bool:
 		"material":
 			set_material(value)
 			return true
+		"collisions_enabled":
+			set_collisions_enabled(value)
+			return true
+		"last_step_collision_enabled":
+			set_last_step_collision_enabled(value)
+			return true
 
 	return false
 
 func _property_can_revert(property: StringName) -> bool:
-	if property in ["type", "calculation", "steps", "width", "height", "depth", "fill", "anchor", "anchor_fixed", "material"]:
+	if property in ["type", "calculation", "steps", "width", "height", "depth", "fill", "anchor", "anchor_fixed", "material", "collisions_enabled", "last_step_collision_enabled"]:
 		return true
 	return false
 
@@ -196,6 +216,10 @@ func _property_get_revert(property: StringName) -> Variant:
 			return _default_anchor_fixed
 		"material":
 			return null
+		"collisions_enabled":
+			return _default_collisions_enabled
+		"last_step_collision_enabled":
+			return _default_last_step_collision_enabled
 	return null
 
 func get_type() -> Type:
@@ -221,6 +245,12 @@ func get_steps() -> int:
 
 func get_anchor() -> Anchor:
 	return _anchor
+
+func get_collisions_enabled() -> bool:
+	return _collisions_enabled
+
+func get_last_step_collision_enabled() -> bool:
+	return _last_step_collision_enabled
 
 func get_anchor_fixed() -> bool:
 	return _anchor_fixed
@@ -329,6 +359,31 @@ func set_calculation(value: Calculation) -> void:
 func refresh_children() -> void:
 	for shape_index in range(csg_shapes.size()):
 		refresh_step(shape_index)
+	refresh_collisions()
+
+func refresh_collisions() -> void:
+	if collision_polygon != null:
+		remove_child(collision_polygon)
+	if _collisions_enabled:
+		# Set polygons based on ramp geometry
+		var array := PackedVector2Array()
+		collision_polygon = CollisionPolygon3D.new()
+		match type:
+			Type.STAIRCASE:
+				for i in range(steps):
+					array.append(Vector2(0, i * get_true_step_depth()))
+					array.append(Vector2(width, i * get_true_step_depth()))
+					array.append(Vector2(width, (i + 1) * get_true_step_depth()))
+					array.append(Vector2(0, (i + 1) * get_true_step_depth()))
+			Type.RAMP:
+				array.append(Vector2(0, 0))
+				array.append(Vector2(depth, 0))
+				array.append(Vector2(depth, height))
+		collision_polygon.polygon = array
+		collision_polygon.rotate(Vector3.UP, -PI / 2.0)
+		collision_polygon.translate(Vector3(0, 0, width / 2.0))
+		collision_polygon.depth = width
+		add_child(collision_polygon)
 
 func set_width(value: float) -> void:
 	_width = value
@@ -363,6 +418,14 @@ func set_anchor(value: Anchor) -> void:
 	refresh_children()
 	anchor_changed.emit()
 	update_gizmos()
+
+func set_collisions_enabled(value: bool) -> void:
+	_collisions_enabled = value
+	refresh_collisions()
+
+func set_last_step_collision_enabled(value: bool) -> void:
+	_last_step_collision_enabled = value
+	refresh_collisions()
 
 ## Translates the ramp/staircase to a new anchor point in local space if anchor is not fixed.
 func translate_anchor(from_anchor: Anchor, to_anchor: Anchor) -> void:
@@ -473,6 +536,7 @@ var gizmos = null
 func _enter_tree() -> void:
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
 	set_steps(steps)
+	refresh_collisions()
 	if material:
 		set_material(material)
 	if Engine.is_editor_hint():
