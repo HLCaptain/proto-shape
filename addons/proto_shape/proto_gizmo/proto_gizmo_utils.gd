@@ -100,3 +100,8 @@ func get_closest_point_on_line(
 	var closest_point := A + t * AB
 
 	return closest_point
+
+func snap_to_grid(
+	value: float,
+	grid_unit: float) -> float:
+	return round(value / grid_unit) * grid_unit

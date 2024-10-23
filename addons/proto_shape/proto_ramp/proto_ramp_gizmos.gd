@@ -2,6 +2,7 @@
 const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
 const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
 const ProtoRamp = preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd")
+const ProtoGizmoPlugin = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo.gd")
 var width_gizmo_id: int
 var depth_gizmo_id: int
 var height_gizmo_id: int
@@ -27,21 +28,34 @@ func remove_ramp() -> void:
 		parent.commit_handle.disconnect(commit_handle)
 	ramp = null
 
-func init_gizmo(plugin: EditorNode3DGizmoPlugin) -> void:
+# Snapping to grid
+var snapping_enabled: bool = false
+var snap_unit: float = 1.0
+var fine_snapping_enabled: bool = false
+var fine_snap_unit: float = 0.1
+
+func init_gizmo(plugin: ProtoGizmoPlugin) -> void:
 	# Generate a random id for each gizmo
 	width_gizmo_id = randi_range(0, 1_000_000)
 	depth_gizmo_id = randi_range(0, 1_000_000)
 	height_gizmo_id = randi_range(0, 1_000_000)
 	undo_redo = plugin.undo_redo
+	plugin.fine_snapping_changed.connect(func (fine_snapping: bool) -> void:
+		fine_snapping_enabled = fine_snapping
+		ramp.update_gizmos()
+	)
+	plugin.snapping_changed.connect(func (snapping: bool) -> void:
+		snapping_enabled = snapping
+		ramp.update_gizmos()
+	)
 
 # Debug purposes
-
 var screen_pos: Vector2
 var local_offset_axis: Vector3
 var camera_position: Vector3
 
 ## As gizmos can only be used in the Editor, we can cast the [gizmo] to [EditorNode3DGizmo] and [plugin] to [EditorNode3DGizmoPlugin].
-func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) -> void:
+func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin) -> void:
 	if gizmo.get_node_3d() != ramp:
 		return
 
@@ -124,7 +138,7 @@ var end_offset := 0.0
 
 func set_handle(
 	gizmo: EditorNode3DGizmo,
-	plugin: EditorNode3DGizmoPlugin,
+	plugin: ProtoGizmoPlugin,
 	handle_id: int,
 	secondary: bool,
 	camera: Camera3D,
@@ -140,12 +154,24 @@ func set_handle(
 	match handle_id:
 		depth_gizmo_id:
 			end_offset = _get_depth_handle_offset(camera, screen_pos)
+			if snapping_enabled and not fine_snapping_enabled:
+				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
+			elif fine_snapping_enabled:
+				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.depth = _get_ramp_depth(end_offset)
 		width_gizmo_id:
 			end_offset = _get_width_handle_offset(camera, screen_pos)
+			if snapping_enabled and not fine_snapping_enabled:
+				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
+			elif fine_snapping_enabled:
+				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.width = _get_ramp_width(end_offset)
 		height_gizmo_id:
 			end_offset = _get_height_handle_offset(camera, screen_pos)
+			if snapping_enabled and not fine_snapping_enabled:
+				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
+			elif fine_snapping_enabled:
+				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.height = _get_ramp_height(end_offset)
 
 	if !is_editing:

@@ -19,6 +19,8 @@ ProtoRamp supports custom gizmos to adjust the shape.
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33-7b03d44f62c7
 
+#### Undo/Redo
+
 You can also undo/redo changes made with the gizmos.
 
 #### ProtoRampGizmos
@@ -32,6 +34,10 @@ Gizmo functionality is delegated to [ProtoRampGizmos](proto_ramp_gizmos.gd). It 
 Modify height, width, depth, anchor position and more!
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/cee061ee-5c15-4e56-9c48-6eedb77409db
+
+### Grid snapping
+
+Grid snapping is supported for `ProtoRamp` since `1.1.3`! Holding down <kbd>Ctrl</kbd> enables regular snapping by 1.0 units (ramp size, not node scale unit), while holding down <kbd>Ctrl</kbd> + <kbd>Shift</kbd> enables fine snapping by 0.1 units.
 
 ### Change step counts in multiple ways
 

@@ -6,6 +6,29 @@ const ProtoRamp = preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd")
 # Must be initialized externally by ProtoShape plugin
 var undo_redo: EditorUndoRedoManager
 
+signal snapping_changed(snapping: bool)
+signal fine_snapping_changed(fine_snapping: bool)
+
+# Must be initialized externally by ProtoShape plugin
+var _snapping: bool = false
+var snapping: bool: set = set_snapping, get = get_snapping
+var _fine_snapping: bool = false
+var fine_snapping: bool: set = set_fine_snapping, get = get_fine_snapping
+
+func set_snapping(snapping: bool) -> void:
+	_snapping = snapping
+	snapping_changed.emit(snapping)
+
+func set_fine_snapping(fine_snapping: bool) -> void:
+	_fine_snapping = fine_snapping
+	fine_snapping_changed.emit(fine_snapping)
+
+func get_snapping() -> bool:
+	return _snapping
+
+func get_fine_snapping() -> bool:
+	return _fine_snapping
+
 func _init() -> void:
 	create_material("main", Color(1, 0.3725, 0.3725, 0.5))
 	create_material("selected", Color(0, 0, 1, 0.1))
