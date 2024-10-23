@@ -31,7 +31,6 @@ func _exit_tree():
 
 func _shortcut_input(event: InputEvent) -> void:
 	if event.is_action_pressed("snap_to_grid"):
-		print_debug(event)
 		if event is InputEventKey:
 			if event.keycode == KEY_CTRL:
 				gizmo_plugin.snapping = true
@@ -40,7 +39,6 @@ func _shortcut_input(event: InputEvent) -> void:
 				else:
 					gizmo_plugin.fine_snapping = false
 	if event.is_action_pressed("fine_snap_to_grid"):
-		print_debug(event)
 		if event is InputEventKey:
 			if event.keycode == KEY_SHIFT and event.ctrl_pressed:
 				gizmo_plugin.fine_snapping = true
@@ -48,9 +46,7 @@ func _shortcut_input(event: InputEvent) -> void:
 				gizmo_plugin.snapping = false
 				gizmo_plugin.fine_snapping = false
 	if event.is_action_released("snap_to_grid"):
-		print_debug(event)
 		gizmo_plugin.snapping = false
 		gizmo_plugin.fine_snapping = false
 	if event.is_action_released("fine_snap_to_grid"):
-		print_debug(event)
 		gizmo_plugin.fine_snapping = false
