@@ -101,19 +101,21 @@ use_collision = true
 size = Vector3(2, 1, 2)
 
 [node name="ProtoRamp" type="CSGCombiner3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
 use_collision = true
 script = ExtResource("3_r5jdn")
 type = 1
-width = 3.0
+width = 2.94118
 height = 0.25
-depth = 0.1875
+depth = 0.5
 anchor = 1
 anchor_fixed = false
 material = null
+collisions_enabled = true
 calculation = 1
 steps = 8
 fill = true
+last_step_collision_enabled = false
 
 [node name="ProtoGizmoWrapper" type="Node" parent="."]
 script = ExtResource("4_3jo5l")

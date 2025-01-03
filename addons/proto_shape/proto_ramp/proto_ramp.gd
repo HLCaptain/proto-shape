@@ -1,5 +1,5 @@
 @tool
-extends CSGCombiner3D
+extends Node3D
 ## Dynamic ramp/staircase shape
 ##
 ## This node can generate ramps and staircases with a variety of parameters.
@@ -55,9 +55,9 @@ enum Type {
 var is_entered_tree := false
 
 ## Storing CSG shapes for easy access without interfering with children.
-var csg_shapes: Array[CSGShape3D] = []
+var shape_polygon: CSGPolygon3D = null
 
-var collision_polygon: CollisionPolygon3D = null
+var collision_polygon: CSGPolygon3D = null
 
 ## Used to avoid z-fighting and incorrect snapping between steps.
 var epsilon: float = 0.0001
@@ -70,6 +70,7 @@ const _default_height: float = 1.0
 const _default_depth: float = 1.0
 const _default_fill := true
 const _default_type := Type.RAMP
+const _default_collision_type := Type.RAMP
 const _default_anchor := Anchor.BOTTOM_CENTER
 const _default_anchor_fixed := true
 const _default_collisions_enabled := true
@@ -83,6 +84,7 @@ var _height := _default_height
 var _depth := _default_depth
 var _fill := _default_fill
 var _type := _default_type
+var _collision_type := _default_collision_type
 var _anchor := _default_anchor
 var _anchor_fixed := _default_anchor_fixed
 var _collisions_enabled := _default_collisions_enabled
@@ -110,6 +112,9 @@ var fill: bool: set = set_fill, get = get_fill
 ## Act as a ramp or staircase with steps.
 var type: Type: set = set_type, get = get_type
 
+## Collision body is staircase or ramp.
+var collision_type: Type: set = set_collision_type, get = get_collision_type
+
 ## Anchor point of the ramp/staircase.
 var anchor: Anchor: set = set_anchor, get = get_anchor
 
@@ -128,6 +133,7 @@ var material: Variant: set = set_material, get = get_material
 func _get_property_list() -> Array[Dictionary]:
 	var list: Array[Dictionary] = [
 		{"name": "type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"},
+		{"name": "collision_type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"},
 		{"name": "width", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "height", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "depth", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
@@ -152,6 +158,9 @@ func _set(property: StringName, value: Variant) -> bool:
 	match property:
 		"type":
 			set_type(value)
+			return true
+		"collision_type":
+			set_collision_type(value)
 			return true
 		"calculation":
 			set_calculation(value)
@@ -190,7 +199,7 @@ func _set(property: StringName, value: Variant) -> bool:
 	return false
 
 func _property_can_revert(property: StringName) -> bool:
-	if property in ["type", "calculation", "steps", "width", "height", "depth", "fill", "anchor", "anchor_fixed", "material", "collisions_enabled", "last_step_collision_enabled"]:
+	if property in ["type", "collision_type", "calculation", "steps", "width", "height", "depth", "fill", "anchor", "anchor_fixed", "material", "collisions_enabled", "last_step_collision_enabled"]:
 		return true
 	return false
 
@@ -198,6 +207,8 @@ func _property_get_revert(property: StringName) -> Variant:
 	match property:
 		"type":
 			return _default_type
+		"collision_type":
+			return _default_collision_type
 		"calculation":
 			return _default_calculation
 		"steps":
@@ -224,6 +235,9 @@ func _property_get_revert(property: StringName) -> Variant:
 
 func get_type() -> Type:
 	return _type
+
+func get_collision_type() -> Type:
+	return _collision_type
 
 func get_calculation() -> Calculation:
 	return _calculation
@@ -330,15 +344,16 @@ func set_type(value: Type) -> void:
 	type_changed.emit()
 	update_gizmos()
 
+func set_collision_type(value: Type) -> void:
+	_collision_type = value
+	notify_property_list_changed()
+	refresh_collisions()
+	type_changed.emit()
+	update_gizmos()
+
 ## Resets the steps and regenerates ramp/stairs.
 func refresh_type() -> void:
-	refresh_steps(0)
-	match type:
-		Type.STAIRCASE:
-			refresh_steps(steps)
-		Type.RAMP:
-			add_ramp()
-			refresh_step(0)
+	refresh_shape()
 
 ## Sets the calculation method and recalculates the dimensions of the ramp/staircase.
 func set_calculation(value: Calculation) -> void:
@@ -356,56 +371,54 @@ func set_calculation(value: Calculation) -> void:
 					_height /= steps
 					_depth = (_depth + epsilon) / steps
 
-func refresh_children() -> void:
-	for shape_index in range(csg_shapes.size()):
-		refresh_step(shape_index)
+func refresh_all() -> void:
+	refresh_shape()
 	refresh_collisions()
 
 func refresh_collisions() -> void:
 	if collision_polygon != null:
 		remove_child(collision_polygon)
+		collision_polygon.queue_free()
+		collision_polygon = null
 	if _collisions_enabled:
 		# Set polygons based on ramp geometry
-		var array := PackedVector2Array()
-		collision_polygon = CollisionPolygon3D.new()
-		match type:
+		if collision_polygon == null:
+			collision_polygon = CSGPolygon3D.new()
+			var material := StandardMaterial3D.new()
+			material.albedo_color = Color.AQUA
+			collision_polygon.use_collision = true
+			collision_polygon.material = material
+			collision_polygon.rotate(Vector3.UP, -PI / 2.0)
+			collision_polygon.translate(Vector3(0, 0, width / 2.0))
+			collision_polygon.depth = width
+		match collision_type:
 			Type.STAIRCASE:
-				for i in range(steps):
-					array.append(Vector2(0, i * get_true_step_depth()))
-					array.append(Vector2(width, i * get_true_step_depth()))
-					array.append(Vector2(width, (i + 1) * get_true_step_depth()))
-					array.append(Vector2(0, (i + 1) * get_true_step_depth()))
+				collision_polygon.polygon = create_staircase_array()
 			Type.RAMP:
-				array.append(Vector2(0, 0))
-				array.append(Vector2(depth, 0))
-				array.append(Vector2(depth, height))
-		collision_polygon.polygon = array
-		collision_polygon.rotate(Vector3.UP, -PI / 2.0)
-		collision_polygon.translate(Vector3(0, 0, width / 2.0))
-		collision_polygon.depth = width
+				collision_polygon.polygon = create_ramp_array()
 		add_child(collision_polygon)
 
 func set_width(value: float) -> void:
 	_width = value
-	refresh_children()
+	refresh_all()
 	width_changed.emit()
 	update_gizmos()
 
 func set_height(value: float) -> void:
 	_height = value
-	refresh_children()
+	refresh_all()
 	height_changed.emit()
 	update_gizmos()
 
 func set_depth(value: float) -> void:
 	_depth = value
-	refresh_children()
+	refresh_all()
 	depth_changed.emit()
 	update_gizmos()
 
 func set_fill(value: bool) -> void:
 	_fill = value
-	refresh_children()
+	refresh_all()
 	fill_changed.emit()
 	update_gizmos()
 
@@ -415,7 +428,7 @@ func set_anchor(value: Anchor) -> void:
 	# Transform node to new anchor
 	translate_anchor(anchor, value)
 	_anchor = value
-	refresh_children()
+	refresh_all()
 	anchor_changed.emit()
 	update_gizmos()
 
@@ -437,97 +450,71 @@ func set_anchor_fixed(value: bool) -> void:
 
 func set_material(value: Variant) -> void:
 	material = value
-	for shape in csg_shapes:
-		shape.material = value
+	shape_polygon.material = value
 
 func set_steps(value: int) -> void:
 	_steps = value
-	refresh_steps(value)
+	refresh_all()
 	step_count_changed.emit()
 	update_gizmos()
 
 ## Deletes all children and generates new steps/ramp.
-func refresh_steps(new_steps: int) -> void:
-	for shape in csg_shapes:
-		shape.free()
-	csg_shapes.clear()
+func refresh_shape() -> void:
+	if shape_polygon != null:
+		remove_child(shape_polygon)
+		shape_polygon.queue_free()
 
-	# Gracefully delete all steps related to the ramp/staircase
-	for child in get_children():
-		if child is CSGBox3D or child is CSGPolygon3D:
-			child.queue_free()
+	shape_polygon = CSGPolygon3D.new()
 
 	match type:
 		Type.STAIRCASE:
-			for i in range(new_steps):
-				var box := CSGBox3D.new()
-				box.size = Vector3()
-				box.position = Vector3()
-				add_child(box)
-				csg_shapes.append(box)
+			shape_polygon.polygon = create_staircase_array()
 		Type.RAMP:
-			if new_steps > 0:
-				add_ramp()
+			shape_polygon.polygon = create_ramp_array()
 
-	refresh_children()
+	shape_polygon.rotate(Vector3.UP, -PI / 2.0)
+	shape_polygon.translate(Vector3(0, 0, width / 2.0))
+	shape_polygon.depth = width
+	add_child(shape_polygon)
+
 
 ## Adds a new ramp based on current dimensions (without any anchor offset).
-func add_ramp() -> void:
+func create_ramp_array() -> PackedVector2Array:
 	# Create a single CSGPolygon3D
-	var polygon := CSGPolygon3D.new()
 	var array := PackedVector2Array()
 	array.append(Vector2(0, 0))
 	array.append(Vector2(depth, 0))
 	array.append(Vector2(depth, height))
-	polygon.polygon = array
-	polygon.rotate(Vector3.UP, -PI / 2.0)
-	polygon.translate(Vector3(0, 0, width / 2.0))
-	polygon.depth = width
-	add_child(polygon)
-	csg_shapes.append(polygon)
+	return array
 
-## Refreshes a single step based on dimensions and anchor offset.
-func refresh_step(i: int) -> void:
-	var node: Node3D = csg_shapes[i]
-	node.position = Vector3()
-	var step_height: float = get_true_step_height()
-	var step_width: float = width
-	var step_depth: float = get_true_step_depth()
-	var offset: Vector3 = get_anchor_offset(anchor)
+func create_staircase_array() -> PackedVector2Array:
+	# Create a staircase with CSGBox3Ds
+	var array := PackedVector2Array()
 
-	# Resetting anchor offset to 0,0,0 to avoid problems during step calculations
-	translate_anchor(anchor, Anchor.BOTTOM_CENTER)
+	# Base:
+	# 4
+	# |
+	# |		   1
+	# |        |
+	# 3--------2
+	array.append(Vector2(0, get_true_step_height())) # 1
+	array.append(Vector2(0, 0)) # 2
+	array.append(Vector2(depth, 0)) # 3
+	array.append(Vector2(depth, height)) # 4
 
-	match type:
-		# Filled with CSGBox3Ds
-		Type.STAIRCASE:
-			if fill:
-				node.size.y = (i + 1) * step_height
-				node.position.y = (i + 1) * step_height / 2.0
-			else:
-				node.size.y = step_height
-				node.position.y = i * step_height + step_height / 2.0
+	# Steps:
+	# 4---5
+	# |   |
+	# |	  6---7
+	# |       |
+	# |       8---1
+	# |           |
+	# 3-----------2
+	for i in range(steps - 1):
+		array.append(Vector2(depth - get_true_step_depth() * (i + 1), height - get_true_step_height() * i))
+		array.append(Vector2(depth - get_true_step_depth() * (i + 1), height - get_true_step_height() * (i + 1)))
 
-			node.position.z = step_depth * i + step_depth / 2.0
-			node.size.x = step_width
-			node.size.z = step_depth - epsilon # Avoid z-fighting and snapping
-		# With only one CSGPolygon3D
-		Type.RAMP:
-			if node is CSGPolygon3D:
-				node.polygon[0] = Vector2(0, 0)
-				node.polygon[1] = Vector2(step_depth, 0)
-				node.polygon[2] = Vector2(step_depth, step_height)
-				node.depth = step_width
-				node.position.x = -step_width / 2.0
-
-	# Apply anchor offset
-	node.position += offset
-
-	# Restore anchor offset
-	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
-
-func refresh_all() -> void:
-	set_steps(steps)
+	return array
 
 ## Using dynamic type for gizmos to avoid packaging errors.
 ## See proto_ramp_gizmos.gd for more information.
@@ -535,8 +522,7 @@ var gizmos = null
 
 func _enter_tree() -> void:
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
-	set_steps(steps)
-	refresh_collisions()
+	refresh_all()
 	if material:
 		set_material(material)
 	if Engine.is_editor_hint():
@@ -548,8 +534,9 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	# Remove all children
-	for child in csg_shapes:
-		child.queue_free()
-	csg_shapes.clear()
+	remove_child(shape_polygon)
+	remove_child(collision_polygon)
+	shape_polygon.queue_free()
+	collision_polygon.queue_free()
 	if Engine.is_editor_hint():
 		gizmos.remove_ramp()
