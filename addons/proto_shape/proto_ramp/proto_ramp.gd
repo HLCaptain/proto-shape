@@ -133,14 +133,21 @@ var material: Variant: set = set_material, get = get_material
 func _get_property_list() -> Array[Dictionary]:
 	var list: Array[Dictionary] = [
 		{"name": "type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"},
-		{"name": "collision_type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"},
+		{"name": "collisions_enabled", "type": TYPE_BOOL}
+		]
+
+	if collisions_enabled:
+		list += [
+			{"name": "collision_type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"}
+			]
+
+	list += [
 		{"name": "width", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "height", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "depth", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "anchor", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Bottom Center,Bottom Left,Bottom Right,Top Center,Top Left,Top Right,Base Center,Base Left,Base Right"},
 		{"name": "anchor_fixed", "type": TYPE_BOOL},
-		{"name": "material","class_name": &"BaseMaterial3D,ShaderMaterial", "type": 24, "hint": 17, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": 6 },
-		{"name": "collisions_enabled", "type": TYPE_BOOL}
+		{"name": "material","class_name": &"BaseMaterial3D,ShaderMaterial", "type": 24, "hint": 17, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": 6 }
 		]
 
 	# Staircase exclusive properties
@@ -150,7 +157,7 @@ func _get_property_list() -> Array[Dictionary]:
 			{"name": "steps", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,100,1,or_greater"},
 			{"name": "fill", "type": TYPE_BOOL},
 			{"name": "last_step_collision_enabled", "type": TYPE_BOOL}
-		]
+			]
 
 	return list
 
@@ -376,27 +383,35 @@ func refresh_all() -> void:
 	refresh_collisions()
 
 func refresh_collisions() -> void:
+	var offset := get_anchor_offset(get_anchor())
+	var polygon_offset := Vector3(offset.z, offset.y, -offset.x) + Vector3(0, 0, width / 2.0)
+
+	# Resetting anchor offset to 0,0,0 to avoid problems during step calculations
+	translate_anchor(anchor, Anchor.BOTTOM_CENTER)
+
 	if collision_polygon != null:
 		remove_child(collision_polygon)
 		collision_polygon.queue_free()
 		collision_polygon = null
 	if _collisions_enabled:
 		# Set polygons based on ramp geometry
-		if collision_polygon == null:
-			collision_polygon = CSGPolygon3D.new()
-			var material := StandardMaterial3D.new()
-			material.albedo_color = Color.AQUA
-			collision_polygon.use_collision = true
-			collision_polygon.material = material
-			collision_polygon.rotate(Vector3.UP, -PI / 2.0)
-			collision_polygon.translate(Vector3(0, 0, width / 2.0))
-			collision_polygon.depth = width
+		collision_polygon = CSGPolygon3D.new()
+		collision_polygon.use_collision = true
+		var material := StandardMaterial3D.new()
+		material.albedo_color = Color.AQUA
+		collision_polygon.material = material
+		collision_polygon.rotate(Vector3.UP, -PI / 2.0)
+		collision_polygon.translate(polygon_offset)
+		collision_polygon.depth = width
 		match collision_type:
 			Type.STAIRCASE:
 				collision_polygon.polygon = create_staircase_array()
 			Type.RAMP:
 				collision_polygon.polygon = create_ramp_array()
 		add_child(collision_polygon)
+
+	# Restore anchor offset
+	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
 
 func set_width(value: float) -> void:
 	_width = value
@@ -434,6 +449,7 @@ func set_anchor(value: Anchor) -> void:
 
 func set_collisions_enabled(value: bool) -> void:
 	_collisions_enabled = value
+	notify_property_list_changed()
 	refresh_collisions()
 
 func set_last_step_collision_enabled(value: bool) -> void:
@@ -460,11 +476,18 @@ func set_steps(value: int) -> void:
 
 ## Deletes all children and generates new steps/ramp.
 func refresh_shape() -> void:
+	var offset := get_anchor_offset(get_anchor())
+	var polygon_offset := Vector3(offset.z, offset.y, -offset.x) + Vector3(0, 0, width / 2.0)
+
+	# Resetting anchor offset to 0,0,0 to avoid problems during step calculations
+	translate_anchor(anchor, Anchor.BOTTOM_CENTER)
+
 	if shape_polygon != null:
 		remove_child(shape_polygon)
 		shape_polygon.queue_free()
 
 	shape_polygon = CSGPolygon3D.new()
+	shape_polygon.use_collision = false
 
 	match type:
 		Type.STAIRCASE:
@@ -473,18 +496,20 @@ func refresh_shape() -> void:
 			shape_polygon.polygon = create_ramp_array()
 
 	shape_polygon.rotate(Vector3.UP, -PI / 2.0)
-	shape_polygon.translate(Vector3(0, 0, width / 2.0))
+	shape_polygon.translate(polygon_offset)
 	shape_polygon.depth = width
 	add_child(shape_polygon)
 
+	# Restore anchor offset
+	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
 
 ## Adds a new ramp based on current dimensions (without any anchor offset).
 func create_ramp_array() -> PackedVector2Array:
 	# Create a single CSGPolygon3D
 	var array := PackedVector2Array()
 	array.append(Vector2(0, 0))
-	array.append(Vector2(depth, 0))
-	array.append(Vector2(depth, height))
+	array.append(Vector2(get_true_depth(), 0))
+	array.append(Vector2(get_true_depth(), get_true_height()))
 	return array
 
 func create_staircase_array() -> PackedVector2Array:
@@ -499,8 +524,8 @@ func create_staircase_array() -> PackedVector2Array:
 	# 3--------2
 	array.append(Vector2(0, get_true_step_height())) # 1
 	array.append(Vector2(0, 0)) # 2
-	array.append(Vector2(depth, 0)) # 3
-	array.append(Vector2(depth, height)) # 4
+	array.append(Vector2(get_true_depth(), 0)) # 3
+	array.append(Vector2(get_true_depth(), get_true_height())) # 4
 
 	# Steps:
 	# 4---5
@@ -511,8 +536,8 @@ func create_staircase_array() -> PackedVector2Array:
 	# |           |
 	# 3-----------2
 	for i in range(steps - 1):
-		array.append(Vector2(depth - get_true_step_depth() * (i + 1), height - get_true_step_height() * i))
-		array.append(Vector2(depth - get_true_step_depth() * (i + 1), height - get_true_step_height() * (i + 1)))
+		array.append(Vector2(get_true_depth() - get_true_step_depth() * (i + 1), get_true_height() - get_true_step_height() * i))
+		array.append(Vector2(get_true_depth() - get_true_step_depth() * (i + 1), get_true_height() - get_true_step_height() * (i + 1)))
 
 	return array
 
