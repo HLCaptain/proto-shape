@@ -70,11 +70,9 @@ const _default_height: float = 1.0
 const _default_depth: float = 1.0
 const _default_fill := true
 const _default_type := Type.RAMP
-const _default_collision_type := Type.RAMP
 const _default_anchor := Anchor.BOTTOM_CENTER
 const _default_anchor_fixed := true
 const _default_collisions_enabled := true
-const _default_last_step_collision_enabled := false
 
 ## Default private values
 var _calculation := _default_calculation
@@ -84,11 +82,9 @@ var _height := _default_height
 var _depth := _default_depth
 var _fill := _default_fill
 var _type := _default_type
-var _collision_type := _default_collision_type
 var _anchor := _default_anchor
 var _anchor_fixed := _default_anchor_fixed
 var _collisions_enabled := _default_collisions_enabled
-var _last_step_collision_enabled := _default_last_step_collision_enabled
 
 @export_category("Proto Ramp")
 ## Calculation method of width, depth and height.
@@ -112,17 +108,11 @@ var fill: bool: set = set_fill, get = get_fill
 ## Act as a ramp or staircase with steps.
 var type: Type: set = set_type, get = get_type
 
-## Collision body is staircase or ramp.
-var collision_type: Type: set = set_collision_type, get = get_collision_type
-
 ## Anchor point of the ramp/staircase.
 var anchor: Anchor: set = set_anchor, get = get_anchor
 
 ## Collisions enabled for the ramp/staircase.
 var collisions_enabled: bool: set = set_collisions_enabled, get = get_collisions_enabled
-
-## Last step collision enabled for the staircase.
-var last_step_collision_enabled: bool: set = set_last_step_collision_enabled, get = get_last_step_collision_enabled
 
 ## If true, the anchor point will not move in global space changed when the anchor is changed.
 ## Instead, the ramp/staircase will move in local space.
@@ -133,15 +123,7 @@ var material: Variant: set = set_material, get = get_material
 func _get_property_list() -> Array[Dictionary]:
 	var list: Array[Dictionary] = [
 		{"name": "type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"},
-		{"name": "collisions_enabled", "type": TYPE_BOOL}
-		]
-
-	if collisions_enabled:
-		list += [
-			{"name": "collision_type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"}
-			]
-
-	list += [
+		{"name": "collisions_enabled", "type": TYPE_BOOL},
 		{"name": "width", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "height", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "depth", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
@@ -155,8 +137,7 @@ func _get_property_list() -> Array[Dictionary]:
 		list += [
 			{"name": "calculation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Staircase Dimensions,Step Dimensions"},
 			{"name": "steps", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,100,1,or_greater"},
-			{"name": "fill", "type": TYPE_BOOL},
-			{"name": "last_step_collision_enabled", "type": TYPE_BOOL}
+			{"name": "fill", "type": TYPE_BOOL}
 			]
 
 	return list
@@ -165,9 +146,6 @@ func _set(property: StringName, value: Variant) -> bool:
 	match property:
 		"type":
 			set_type(value)
-			return true
-		"collision_type":
-			set_collision_type(value)
 			return true
 		"calculation":
 			set_calculation(value)
@@ -199,9 +177,6 @@ func _set(property: StringName, value: Variant) -> bool:
 		"collisions_enabled":
 			set_collisions_enabled(value)
 			return true
-		"last_step_collision_enabled":
-			set_last_step_collision_enabled(value)
-			return true
 
 	return false
 
@@ -214,8 +189,6 @@ func _property_get_revert(property: StringName) -> Variant:
 	match property:
 		"type":
 			return _default_type
-		"collision_type":
-			return _default_collision_type
 		"calculation":
 			return _default_calculation
 		"steps":
@@ -236,15 +209,10 @@ func _property_get_revert(property: StringName) -> Variant:
 			return null
 		"collisions_enabled":
 			return _default_collisions_enabled
-		"last_step_collision_enabled":
-			return _default_last_step_collision_enabled
 	return null
 
 func get_type() -> Type:
 	return _type
-
-func get_collision_type() -> Type:
-	return _collision_type
 
 func get_calculation() -> Calculation:
 	return _calculation
@@ -269,9 +237,6 @@ func get_anchor() -> Anchor:
 
 func get_collisions_enabled() -> bool:
 	return _collisions_enabled
-
-func get_last_step_collision_enabled() -> bool:
-	return _last_step_collision_enabled
 
 func get_anchor_fixed() -> bool:
 	return _anchor_fixed
@@ -347,20 +312,9 @@ func set_type(value: Type) -> void:
 				Type.RAMP:
 					_height *= steps
 					_depth = (_depth + epsilon) * steps
-	refresh_type()
-	type_changed.emit()
-	update_gizmos()
-
-func set_collision_type(value: Type) -> void:
-	_collision_type = value
-	notify_property_list_changed()
-	refresh_collisions()
-	type_changed.emit()
-	update_gizmos()
-
-## Resets the steps and regenerates ramp/stairs.
-func refresh_type() -> void:
 	refresh_shape()
+	type_changed.emit()
+	update_gizmos()
 
 ## Sets the calculation method and recalculates the dimensions of the ramp/staircase.
 func set_calculation(value: Calculation) -> void:
@@ -380,38 +334,6 @@ func set_calculation(value: Calculation) -> void:
 
 func refresh_all() -> void:
 	refresh_shape()
-	refresh_collisions()
-
-func refresh_collisions() -> void:
-	var offset := get_anchor_offset(get_anchor())
-	var polygon_offset := Vector3(offset.z, offset.y, -offset.x) + Vector3(0, 0, width / 2.0)
-
-	# Resetting anchor offset to 0,0,0 to avoid problems during step calculations
-	translate_anchor(anchor, Anchor.BOTTOM_CENTER)
-
-	if collision_polygon != null:
-		remove_child(collision_polygon)
-		collision_polygon.queue_free()
-		collision_polygon = null
-	if _collisions_enabled:
-		# Set polygons based on ramp geometry
-		collision_polygon = CSGPolygon3D.new()
-		collision_polygon.use_collision = true
-		var material := StandardMaterial3D.new()
-		material.albedo_color = Color.AQUA
-		collision_polygon.material = material
-		collision_polygon.rotate(Vector3.UP, -PI / 2.0)
-		collision_polygon.translate(polygon_offset)
-		collision_polygon.depth = width
-		match collision_type:
-			Type.STAIRCASE:
-				collision_polygon.polygon = create_staircase_array()
-			Type.RAMP:
-				collision_polygon.polygon = create_ramp_array()
-		add_child(collision_polygon)
-
-	# Restore anchor offset
-	translate_anchor(Anchor.BOTTOM_CENTER, anchor)
 
 func set_width(value: float) -> void:
 	_width = value
@@ -450,11 +372,7 @@ func set_anchor(value: Anchor) -> void:
 func set_collisions_enabled(value: bool) -> void:
 	_collisions_enabled = value
 	notify_property_list_changed()
-	refresh_collisions()
-
-func set_last_step_collision_enabled(value: bool) -> void:
-	_last_step_collision_enabled = value
-	refresh_collisions()
+	refresh_shape()
 
 ## Translates the ramp/staircase to a new anchor point in local space if anchor is not fixed.
 func translate_anchor(from_anchor: Anchor, to_anchor: Anchor) -> void:
@@ -476,7 +394,7 @@ func set_steps(value: int) -> void:
 
 ## Deletes all children and generates new steps/ramp.
 func refresh_shape() -> void:
-	var offset := get_anchor_offset(get_anchor())
+	var offset := get_anchor_offset(anchor)
 	var polygon_offset := Vector3(offset.z, offset.y, -offset.x) + Vector3(0, 0, width / 2.0)
 
 	# Resetting anchor offset to 0,0,0 to avoid problems during step calculations
@@ -498,6 +416,13 @@ func refresh_shape() -> void:
 	shape_polygon.rotate(Vector3.UP, -PI / 2.0)
 	shape_polygon.translate(polygon_offset)
 	shape_polygon.depth = width
+
+	shape_polygon.use_collision = collisions_enabled
+	if collisions_enabled:
+		var shape_material := StandardMaterial3D.new()
+		shape_material.albedo_color = Color.AQUA
+		shape_polygon.material = shape_material
+
 	add_child(shape_polygon)
 
 	# Restore anchor offset

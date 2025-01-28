@@ -125,9 +125,8 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin) -> void:
 		newMesh.clear_surfaces()
 		mdt.commit_to_surface(newMesh)
 		mdt.clear()
-		# Transform mesh with transform
 		gizmo.add_collision_triangles(newMesh.generate_triangle_mesh())
-		gizmo.add_mesh(newMesh, plugin.get_material("selected", gizmo))
+		gizmo.add_mesh(newMesh.create_outline(0.001), plugin.get_material("selected", gizmo))
 
 	# Adding debug lines for gizmo if we have cursor screen position set
 	if screen_pos:
