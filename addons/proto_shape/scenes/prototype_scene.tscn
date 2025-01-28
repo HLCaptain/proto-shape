@@ -2,8 +2,8 @@
 
 [ext_resource type="Script" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
 [ext_resource type="Script" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="3_r5jdn"]
 [ext_resource type="Script" path="res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd" id="4_3jo5l"]
+[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="4_durks"]
 
 [sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_mt60a"]
 turbidity = 0.74
@@ -100,22 +100,17 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.99632, 0.505769, -0.994963
 use_collision = true
 size = Vector3(2, 1, 2)
 
-[node name="ProtoRamp" type="CSGCombiner3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
-use_collision = true
-script = ExtResource("3_r5jdn")
-type = 1
-width = 2.94118
-height = 0.25
-depth = 0.5
-anchor = 1
-anchor_fixed = false
-material = null
-collisions_enabled = true
-calculation = 1
-steps = 8
-fill = true
-last_step_collision_enabled = false
-
 [node name="ProtoGizmoWrapper" type="Node" parent="."]
 script = ExtResource("4_3jo5l")
+
+[node name="ProtoRamp" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 4)
+script = ExtResource("4_durks")
+type = 0
+collisions_enabled = true
+width = 4.0
+height = 2.0
+depth = 3.0
+anchor = 7
+anchor_fixed = true
+material = null
