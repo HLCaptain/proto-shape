@@ -25,6 +25,12 @@ https://github.com/HLCaptain/proto-shape/assets/22623259/730a527c-d6ba-4eaa-93b6
 > [!TIP]
 > `ProtoRamp` supports [undo/redo](addons/proto_shape/README.md#undoredo-support) and [grid snapping](addons/proto_shape/proto_ramp/README.md#grid-snapping).
 
+#### Grid snapping and fill
+
+ProtoRamp features standard (1.0 unit) and fine (0.1 unit) grid snapping, besides making the ramp hollow to create an underpass.
+
+https://github.com/user-attachments/assets/abb87cb9-2757-455d-8a05-6a6886eaed40
+
 ### [ProtoGizmoWrapper](addons/proto_shape/proto_gizmo_wrapper/README.md)
 
 Nest your custom nodes under the `ProtoGizmoWrapper` and start adding custom gizmo functionality with a few lines of code. Embrace the power of dragging your cursor on the screen, with all the complex 3D math handled for you with [ProtoGizmoUtils](addons/proto_shape/proto_gizmo/README.md#protogizmoutils).
