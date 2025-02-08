@@ -261,9 +261,6 @@ func _get_height_handle_offset(
 	var local_offset_axis = Vector3(0, 1, 0)
 	var gizmo_position = Vector3(0, ramp.get_true_height(), ramp.get_true_depth() / 2) + ramp.get_anchor_offset(ramp.anchor)
 	var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
-	print_debug("Handle offset: ", handle_offset)
-	print_debug("Local offset axis: ", local_offset_axis)
-	print_debug("Gizmo position: ", gizmo_position)
 	return handle_offset.y
 
 func _get_fill_handle_offset(
@@ -276,21 +273,12 @@ func _get_fill_handle_offset(
 	var gizmo_position := Vector3(0, fill_gizmo_offset.y, fill_gizmo_offset.z) + ramp.get_anchor_offset(ramp.anchor) + gizmo_position_offset
 	var local_plane_normal := Vector3(1, 0, 0)
 	var handle_offset = gizmo_utils.get_handle_offset_by_plane(camera, screen_pos, gizmo_position, local_plane_normal, ramp)
-	handle_offset.x = 0
-	handle_offset.z += ramp.get_true_depth()
 	var gizmo_base_position := Vector3(0, 0, ramp.get_true_depth())
-	handle_offset = handle_offset - gizmo_base_position
+	handle_offset -= gizmo_base_position
 	var gizmo_max_position := fill_gizmo_axis - gizmo_base_position
-	print_debug("Projection vector: ", fill_gizmo_axis)
-	print_debug("Gizmo position: ", gizmo_position)
-	print_debug("Gizmo base position: ", gizmo_base_position)
-	print_debug("Gizmo max position: ", gizmo_max_position)
-	print_debug("Handle offset: ", handle_offset)
-	print_debug("Project: ", 1 - (handle_offset.project(gizmo_max_position).length() / gizmo_max_position.length()))
-	# print_debug("Dot: ", 1 - (gizmo_max_position.dot(handle_offset) / gizmo_max_position.length()))
-	# return 1 - (handle_offset.length() / fill_gizmo_axis.length())
-	# return min(1.0, max(0.0, 1 - (handle_offset.length() / fill_gizmo_axis.length())))
-	# return min(1.0, max(0.0, 1 - (gizmo_max_position.dot(handle_offset) / gizmo_max_position.length())))
+	gizmo_max_position.x = 0
+	handle_offset -= ramp.get_anchor_offset(ramp.anchor)
+	handle_offset.x = 0
 	if (handle_offset.dot(gizmo_max_position) < 0):
 		return 1
 	return min(1.0, max(0.0, 1 - handle_offset.project(gizmo_max_position).length() / gizmo_max_position.length()))

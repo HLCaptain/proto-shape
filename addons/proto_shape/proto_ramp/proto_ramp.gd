@@ -330,30 +330,27 @@ func set_calculation(value: Calculation) -> void:
 					_height /= steps
 					_depth = (_depth + epsilon) / steps
 
-func refresh_all() -> void:
-	refresh_shape()
-
 func set_width(value: float) -> void:
 	_width = value
-	refresh_all()
+	refresh_shape()
 	width_changed.emit()
 	update_gizmos()
 
 func set_height(value: float) -> void:
 	_height = value
-	refresh_all()
+	refresh_shape()
 	height_changed.emit()
 	update_gizmos()
 
 func set_depth(value: float) -> void:
 	_depth = value
-	refresh_all()
+	refresh_shape()
 	depth_changed.emit()
 	update_gizmos()
 
 func set_fill(value: float) -> void:
 	_fill = max(0.0, min(1.0, value))
-	refresh_all()
+	refresh_shape()
 	fill_changed.emit()
 	update_gizmos()
 
@@ -363,7 +360,7 @@ func set_anchor(value: Anchor) -> void:
 	# Transform node to new anchor
 	translate_anchor(anchor, value)
 	_anchor = value
-	refresh_all()
+	refresh_shape()
 	anchor_changed.emit()
 	update_gizmos()
 
@@ -382,11 +379,11 @@ func set_anchor_fixed(value: bool) -> void:
 
 func set_material(value: Variant) -> void:
 	material = value
-	shape_polygon.material = value
+	refresh_shape()
 
 func set_steps(value: int) -> void:
 	_steps = value
-	refresh_all()
+	refresh_shape()
 	step_count_changed.emit()
 	update_gizmos()
 
@@ -416,10 +413,12 @@ func refresh_shape() -> void:
 	shape_polygon.depth = width
 
 	shape_polygon.use_collision = collisions_enabled
-	if collisions_enabled:
+	if collisions_enabled and material == null:
 		var shape_material := StandardMaterial3D.new()
 		shape_material.albedo_color = Color.AQUA
 		shape_polygon.material = shape_material
+	else:
+		shape_polygon.material = material
 
 	add_child(shape_polygon)
 
@@ -510,7 +509,7 @@ var gizmos = null
 
 func _enter_tree() -> void:
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
-	refresh_all()
+	refresh_shape()
 	if material:
 		set_material(material)
 	if Engine.is_editor_hint():
