@@ -57,8 +57,6 @@ var is_entered_tree := false
 ## Storing CSG shapes for easy access without interfering with children.
 var shape_polygon: CSGPolygon3D = null
 
-var collision_polygon: CSGPolygon3D = null
-
 ## Used to avoid z-fighting and incorrect snapping between steps.
 var epsilon: float = 0.0001
 
@@ -68,7 +66,7 @@ const _default_steps: int = 8
 const _default_width: float = 1.0
 const _default_height: float = 1.0
 const _default_depth: float = 1.0
-const _default_fill := true
+const _default_fill: float = 1.0
 const _default_type := Type.RAMP
 const _default_anchor := Anchor.BOTTOM_CENTER
 const _default_anchor_fixed := true
@@ -102,8 +100,8 @@ var height: float: set = set_height, get = get_height
 ## Depth of the ramp/staircase.
 var depth: float: set = set_depth, get = get_depth
 
-## Fill the staircase or leave the space under the staircase empty.
-var fill: bool: set = set_fill, get = get_fill
+## Percentage of non-empty space under the ramp/staircase.
+var fill: float: set = set_fill, get = get_fill
 
 ## Act as a ramp or staircase with steps.
 var type: Type: set = set_type, get = get_type
@@ -129,6 +127,7 @@ func _get_property_list() -> Array[Dictionary]:
 		{"name": "depth", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
 		{"name": "anchor", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Bottom Center,Bottom Left,Bottom Right,Top Center,Top Left,Top Right,Base Center,Base Left,Base Right"},
 		{"name": "anchor_fixed", "type": TYPE_BOOL},
+		{"name": "fill", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.000,1.000,0.001"},
 		{"name": "material","class_name": &"BaseMaterial3D,ShaderMaterial", "type": 24, "hint": 17, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": 6 }
 		]
 
@@ -137,7 +136,6 @@ func _get_property_list() -> Array[Dictionary]:
 		list += [
 			{"name": "calculation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Staircase Dimensions,Step Dimensions"},
 			{"name": "steps", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,100,1,or_greater"},
-			{"name": "fill", "type": TYPE_BOOL}
 			]
 
 	return list
@@ -181,7 +179,7 @@ func _set(property: StringName, value: Variant) -> bool:
 	return false
 
 func _property_can_revert(property: StringName) -> bool:
-	if property in ["type", "collision_type", "calculation", "steps", "width", "height", "depth", "fill", "anchor", "anchor_fixed", "material", "collisions_enabled", "last_step_collision_enabled"]:
+	if property in ["type", "calculation", "steps", "width", "height", "depth", "fill", "anchor", "anchor_fixed", "material", "collisions_enabled"]:
 		return true
 	return false
 
@@ -226,7 +224,7 @@ func get_height() -> float:
 func get_depth() -> float:
 	return _depth
 
-func get_fill() -> bool:
+func get_fill() -> float:
 	return _fill
 
 func get_steps() -> int:
@@ -353,8 +351,8 @@ func set_depth(value: float) -> void:
 	depth_changed.emit()
 	update_gizmos()
 
-func set_fill(value: bool) -> void:
-	_fill = value
+func set_fill(value: float) -> void:
+	_fill = max(0.0, min(1.0, value))
 	refresh_all()
 	fill_changed.emit()
 	update_gizmos()
@@ -432,25 +430,65 @@ func refresh_shape() -> void:
 func create_ramp_array() -> PackedVector2Array:
 	# Create a single CSGPolygon3D
 	var array := PackedVector2Array()
-	array.append(Vector2(0, 0))
-	array.append(Vector2(get_true_depth(), 0))
-	array.append(Vector2(get_true_depth(), get_true_height()))
+	if fill == 1:
+		array.append(Vector2(0, 0))
+		array.append(Vector2(get_true_depth(), 0))
+		array.append(Vector2(get_true_depth(), get_true_height()))
+
+	if fill == 0:
+		array.append(Vector2(0, 0))
+		array.append(Vector2(get_true_depth() * 0.001, 0))
+		array.append(Vector2(get_true_depth(), get_true_height() * 0.999))
+		array.append(Vector2(get_true_depth(), get_true_height()))
+
+	if fill < 1.0 and fill > 0.0:
+		array.append(Vector2(0, 0))
+		array.append(Vector2(get_true_depth() * fill, 0))
+		array.append(Vector2(get_true_depth(), get_true_height() * (1 - fill)))
+		array.append(Vector2(get_true_depth(), get_true_height()))
+
 	return array
 
 func create_staircase_array() -> PackedVector2Array:
 	# Create a staircase with CSGBox3Ds
 	var array := PackedVector2Array()
 
-	# Base:
-	# 4
-	# |
-	# |		   1
-	# |        |
-	# 3--------2
-	array.append(Vector2(0, get_true_step_height())) # 1
-	array.append(Vector2(0, 0)) # 2
-	array.append(Vector2(get_true_depth(), 0)) # 3
-	array.append(Vector2(get_true_depth(), get_true_height())) # 4
+	if fill == 1:
+		# Base:
+		# 4
+		# |
+		# |		   1
+		# |        |
+		# 3--------2
+		array.append(Vector2(0, get_true_step_height())) # 1
+		array.append(Vector2(0, 0)) # 2
+		array.append(Vector2(get_true_depth(), 0)) # 3
+		array.append(Vector2(get_true_depth(), get_true_height())) # 4
+
+	if fill == 0:
+		# Base:
+		# 4
+		#   \
+		#  	  \	   1
+		#       \  |
+		#          2
+		array.append(Vector2(0, get_true_step_height())) # 1
+		array.append(Vector2(0, 0)) # 2
+		# No #3 present
+		array.append(Vector2(get_true_depth(), get_true_height())) # 4
+
+	if fill < 1.0 and fill > 0.0:
+		# Base:
+		# 4
+		# |
+		# 3b	   1
+		#   \      |
+		#     3a---2
+		array.append(Vector2(0, get_true_step_height())) # 1
+		array.append(Vector2(0, 0)) # 2
+		array.append(Vector2(get_true_depth() * fill, 0)) # 3a
+		array.append(Vector2(get_true_depth(), get_true_height() * (1 - fill))) # 3b
+		array.append(Vector2(get_true_depth(), get_true_height())) # 4
 
 	# Steps:
 	# 4---5
@@ -485,8 +523,6 @@ func _enter_tree() -> void:
 func _exit_tree() -> void:
 	# Remove all children
 	remove_child(shape_polygon)
-	remove_child(collision_polygon)
 	shape_polygon.queue_free()
-	collision_polygon.queue_free()
 	if Engine.is_editor_hint():
 		gizmos.remove_ramp()

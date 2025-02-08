@@ -19,6 +19,25 @@ func get_handle_offset(
 	var local_offset: Vector3 = (global_plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - position).rotated(quat_axis, -quat_angle) / scale
 	return local_offset
 
+func get_handle_offset_by_plane(
+	camera: Camera3D,
+	screen_pos: Vector2,
+	local_gizmo_position: Vector3,
+	plane_normal: Vector3,
+	node: Node3D) -> Vector3:
+
+	var transform := node.global_transform
+	var position: Vector3 = node.global_position
+	var quat: Quaternion = transform.basis.get_rotation_quaternion()
+	var quat_axis: Vector3 = quat.get_axis() if quat.get_axis().is_normalized() else Vector3.UP
+	var quat_angle: float = quat.get_angle()
+	var scale: Vector3 = transform.basis.get_scale()
+	var global_gizmo_position: Vector3 = local_gizmo_position.rotated(quat_axis, quat_angle) * scale + position
+	var global_plane_normal: Vector3 = plane_normal.rotated(quat_axis, quat_angle)
+	var global_plane: Plane = Plane(global_plane_normal, global_gizmo_position)
+	var local_offset: Vector3 = (global_plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - position).rotated(quat_axis, -quat_angle) / scale
+	return local_offset
+
 # Adds debug lines for the plane the gizmo can move on
 # Should only be called on gizmo redraw
 func debug_draw_handle_grid(
