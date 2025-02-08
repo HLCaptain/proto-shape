@@ -13,6 +13,8 @@ When adding a new child node, search for `ProtoRamp` and add it to the scene.
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/bccfb0e7-6799-4a94-82c4-84e5aa9d9563
 
+Since `1.1.4`, ProtoRamp node is now independent from `CSGShape3D` base class for correct shape generation.
+
 ### Use Gizmos
 
 ProtoRamp supports custom gizmos to adjust the shape.
@@ -22,6 +24,12 @@ https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33
 #### Undo/Redo
 
 You can also undo/redo changes made with the gizmos.
+
+### Enable collisions and bake Navigation Meshes
+
+ProtoRamp supports navigation mesh generation. It also features a toggle to enable collisions (aqua blue if enabled).
+
+![Navigation mesh on ProtoRamp](navigation_mesh_proto_ramp.png)
 
 #### ProtoRampGizmos
 
