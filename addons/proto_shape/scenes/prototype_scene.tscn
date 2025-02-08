@@ -1,9 +1,11 @@
-[gd_scene load_steps=10 format=3 uid="uid://kh6kodj0l0ld"]
+[gd_scene load_steps=11 format=3 uid="uid://kh6kodj0l0ld"]
 
 [ext_resource type="Script" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
 [ext_resource type="Script" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="3_r5jdn"]
 [ext_resource type="Script" path="res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd" id="4_3jo5l"]
+[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="4_durks"]
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_s4hfa"]
 
 [sub_resource type="PhysicalSkyMaterial" id="PhysicalSkyMaterial_mt60a"]
 turbidity = 0.74
@@ -32,6 +34,52 @@ height = 1.0
 
 [node name="prototype_scene" type="Node3D"]
 
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.371784, 0)
+navigation_mesh = SubResource("NavigationMesh_s4hfa")
+
+[node name="CSGBox3D3" type="CSGBox3D" parent="NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 1, -2)
+use_collision = true
+size = Vector3(1, 3, 20)
+
+[node name="CSGBox3D4" type="CSGBox3D" parent="NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 1, -7)
+size = Vector3(1, 3, 10)
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -7)
+use_collision = true
+size = Vector3(10, 1, 10)
+
+[node name="CSGBox3D5" type="CSGBox3D" parent="NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 3)
+use_collision = true
+size = Vector3(10, 1, 10)
+
+[node name="CSGBox3D6" type="CSGBox3D" parent="NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.5, 6)
+use_collision = true
+size = Vector3(6, 2, 4)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -1)
+use_collision = true
+size = Vector3(2, 1, 2)
+
+[node name="ProtoRamp" type="Node3D" parent="NavigationRegion3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, -0.5, 4)
+script = ExtResource("4_durks")
+type = 0
+collisions_enabled = true
+width = 3.0
+height = 2.0
+depth = 3.0
+anchor = 7
+anchor_fixed = true
+fill = 0.1
+material = null
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_050vn")
 camera_attributes = SubResource("CameraAttributesPractical_6hoe0")
@@ -40,32 +88,8 @@ camera_attributes = SubResource("CameraAttributesPractical_6hoe0")
 transform = Transform3D(0.123586, 0.941458, -0.31366, -0.696625, 0.307415, 0.648236, 0.706711, 0.138391, 0.693836, 2.88203, 1.98864, 9.43085)
 shadow_enabled = true
 
-[node name="CSGBox3D3" type="CSGBox3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 1.5, -2)
-use_collision = true
-size = Vector3(1, 3, 20)
-
-[node name="CSGBox3D4" type="CSGBox3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 1.5, -7)
-size = Vector3(1, 3, 10)
-
-[node name="CSGBox3D2" type="CSGBox3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -7)
-use_collision = true
-size = Vector3(10, 1, 10)
-
-[node name="CSGBox3D" type="CSGBox3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 3)
-use_collision = true
-size = Vector3(10, 1, 10)
-
-[node name="CSGBox3D5" type="CSGBox3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 1, 6)
-use_collision = true
-size = Vector3(6, 2, 4)
-
 [node name="CharacterBody3D" type="CharacterBody3D" parent="WorldEnvironment"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.51595, 1, 4.69945)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 4)
 script = ExtResource("1_4rry8")
 
 [node name="Camera3D" type="Camera3D" parent="WorldEnvironment/CharacterBody3D" node_paths=PackedStringArray("node_to_look_at")]
@@ -94,26 +118,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
 radius = 0.25
 radial_segments = 64
 rings = 32
-
-[node name="CSGBox3D" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.99632, 0.505769, -0.994963)
-use_collision = true
-size = Vector3(2, 1, 2)
-
-[node name="ProtoRamp" type="CSGCombiner3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 2.5)
-use_collision = true
-script = ExtResource("3_r5jdn")
-type = 1
-width = 3.0
-height = 0.25
-depth = 0.1875
-anchor = 1
-anchor_fixed = false
-material = null
-calculation = 1
-steps = 8
-fill = true
 
 [node name="ProtoGizmoWrapper" type="Node" parent="."]
 script = ExtResource("4_3jo5l")

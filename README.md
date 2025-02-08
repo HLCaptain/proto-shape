@@ -18,12 +18,18 @@ Add these shapes to your scene by searching for them in the `Add Child Node` men
 
 ### [ProtoRamp](addons/proto_shape/proto_ramp/README.md)
 
-Ramp/staircase with adjustable height, width and length. Can adjust step count and various other parameters. Supports custom gizmos.
+Ramp/staircase with adjustable height, width and length. Can adjust step count and various other parameters. Supports custom gizmos and navigation meshes.
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/730a527c-d6ba-4eaa-93b6-dbcbbd8aba52
 
 > [!TIP]
 > `ProtoRamp` supports [undo/redo](addons/proto_shape/README.md#undoredo-support) and [grid snapping](addons/proto_shape/proto_ramp/README.md#grid-snapping).
+
+#### Grid snapping and fill
+
+ProtoRamp features standard (1.0 unit) and fine (0.1 unit) grid snapping, besides making the ramp hollow to create an underpass.
+
+https://github.com/user-attachments/assets/abb87cb9-2757-455d-8a05-6a6886eaed40
 
 ### [ProtoGizmoWrapper](addons/proto_shape/proto_gizmo_wrapper/README.md)
 
