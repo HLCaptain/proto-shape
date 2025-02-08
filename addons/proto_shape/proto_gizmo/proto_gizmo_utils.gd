@@ -59,6 +59,35 @@ func debug_draw_handle_grid(
 	var local_camera_position: Vector3 = (camera_position - position).rotated(quat_axis, -quat_angle) / scale
 	var local_plane: Plane = get_camera_oriented_plane(local_camera_position, local_gizmo_position, local_offset_axis)
 
+	debug_draw_grid_on_plane(local_gizmo_position, local_offset_axis, gizmo, plugin, local_plane, grid_size)
+
+func debug_draw_handle_grid_on_plane(
+	local_gizmo_position: Vector3,
+	local_offset_axis: Vector3,
+	plane_normal: Vector3,
+	node: Node3D,
+	gizmo: EditorNode3DGizmo,
+	plugin: EditorNode3DGizmoPlugin,
+	grid_size: float = 1.0) -> void:
+
+	var transform := node.global_transform
+	var position: Vector3 = node.global_position
+	var quat: Quaternion = transform.basis.get_rotation_quaternion()
+	var quat_axis: Vector3 = quat.get_axis() if quat.get_axis().is_normalized() else Vector3.UP
+	var quat_angle: float = quat.get_angle()
+	var scale: Vector3 = transform.basis.get_scale()
+	var local_plane: Plane = Plane(plane_normal, local_gizmo_position)
+
+	debug_draw_grid_on_plane(local_gizmo_position, local_offset_axis, gizmo, plugin, local_plane, grid_size)
+
+func debug_draw_grid_on_plane(
+	local_gizmo_position: Vector3,
+	local_offset_axis: Vector3,
+	gizmo: EditorNode3DGizmo,
+	plugin: EditorNode3DGizmoPlugin,
+ 	local_plane: Plane,
+	grid_size: float = 1.0
+	) -> void:
 	# Add debug lines
 	var plane_lines = PackedVector3Array()
 	# Push back gizmo positions like a grid on the plane

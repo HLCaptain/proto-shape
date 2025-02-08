@@ -137,36 +137,36 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin) -> void:
 	if screen_pos:
 		var grid_size_modifier = 1.0
 		# Grid size is always the max of the two other dimensions
-		var local_gizmo_position: Vector3
-		var local_offset_axis: Vector3
 		match debug_gizmo_handler_id:
 			depth_gizmo_id:
 				# Setting depth
 				grid_size_modifier = max(ramp.get_true_height(), ramp.get_width())
-				local_gizmo_position = depth_gizmo_position
-				local_offset_axis = Vector3(0, 0, 1)
+				var local_offset_axis = Vector3(0, 0, 1)
+				gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, depth_gizmo_position, local_offset_axis, ramp, gizmo, plugin, grid_size_modifier)
 			width_gizmo_id:
 				# Setting width
 				grid_size_modifier = max(ramp.get_true_height(), ramp.get_true_depth())
-				local_gizmo_position = width_gizmo_position
-				local_offset_axis = Vector3(1, 0, 0)
+				var local_offset_axis = Vector3(1, 0, 0)
+				gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, width_gizmo_position, local_offset_axis, ramp, gizmo, plugin, grid_size_modifier)
 			height_gizmo_id:
 				# Setting height
 				grid_size_modifier = max(ramp.get_width(), ramp.get_true_depth())
-				local_gizmo_position = height_gizmo_position
-				local_offset_axis = Vector3(0, 1, 0)
+				var local_offset_axis = Vector3(0, 1, 0)
+				gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, height_gizmo_position, local_offset_axis, ramp, gizmo, plugin, grid_size_modifier)
 			fill_gizmo_id1:
 				# Setting fill 1
 				grid_size_modifier = max(ramp.get_true_height(), ramp.get_true_depth())
-				local_gizmo_position = fill_gizmo_position1
-				local_offset_axis = _get_fill_max_offset().normalized()
+				var local_plane_normal = Vector3(1, 0, 0)
+				var local_offset_axis = _get_fill_max_offset().normalized()
+				local_offset_axis.z = -local_offset_axis.z
+				gizmo_utils.debug_draw_handle_grid_on_plane(fill_gizmo_position1, local_offset_axis, local_plane_normal, ramp, gizmo, plugin, grid_size_modifier)
 			fill_gizmo_id2:
 				# Setting fill 2
 				grid_size_modifier = max(ramp.get_true_height(), ramp.get_true_depth())
-				local_gizmo_position = fill_gizmo_position2
-				local_offset_axis = _get_fill_max_offset().normalized()
-
-		gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, local_gizmo_position, local_offset_axis, ramp, gizmo, plugin, grid_size_modifier)
+				var local_plane_normal = Vector3(1, 0, 0)
+				var local_offset_axis = _get_fill_max_offset().normalized()
+				local_offset_axis.z = -local_offset_axis.z
+				gizmo_utils.debug_draw_handle_grid_on_plane(fill_gizmo_position2, local_offset_axis, local_plane_normal, ramp, gizmo, plugin, grid_size_modifier)
 
 var start_offset := 0.0
 var end_offset := 0.0
@@ -226,14 +226,19 @@ func set_handle(
 	if !is_editing:
 		match handle_id:
 			depth_gizmo_id:
+				debug_gizmo_handler_id = depth_gizmo_id
 				start_offset = _get_depth_handle_offset(camera, screen_pos)
 			width_gizmo_id:
+				debug_gizmo_handler_id = width_gizmo_id
 				start_offset = _get_width_handle_offset(camera, screen_pos)
 			height_gizmo_id:
+				debug_gizmo_handler_id = height_gizmo_id
 				start_offset = _get_height_handle_offset(camera, screen_pos)
 			fill_gizmo_id1:
+				debug_gizmo_handler_id = fill_gizmo_id1
 				start_offset = _get_fill_handle_offset(camera, screen_pos, Vector3(-ramp.width / 2, 0, 0))
 			fill_gizmo_id2:
+				debug_gizmo_handler_id = fill_gizmo_id2
 				start_offset = _get_fill_handle_offset(camera, screen_pos, Vector3(ramp.width / 2, 0, 0))
 		is_editing = true
 
