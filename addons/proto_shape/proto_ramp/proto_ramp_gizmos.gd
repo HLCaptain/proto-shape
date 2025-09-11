@@ -31,9 +31,7 @@ func remove_ramp() -> void:
 	ramp = null
 
 # Snapping to grid
-var snapping_enabled: bool = false
 var snap_unit: float = 1.0
-var fine_snapping_enabled: bool = false
 var fine_snap_unit: float = 0.1
 
 func init_gizmo(plugin: ProtoGizmoPlugin) -> void:
@@ -44,14 +42,6 @@ func init_gizmo(plugin: ProtoGizmoPlugin) -> void:
 	fill_gizmo_id1 = width_gizmo_id + 3
 	fill_gizmo_id2 = width_gizmo_id + 4
 	undo_redo = plugin.undo_redo
-	plugin.fine_snapping_changed.connect(func (fine_snapping: bool) -> void:
-		fine_snapping_enabled = fine_snapping
-		ramp.update_gizmos()
-	)
-	plugin.snapping_changed.connect(func (snapping: bool) -> void:
-		snapping_enabled = snapping
-		ramp.update_gizmos()
-	)
 
 # Debug purposes
 var screen_pos: Vector2
@@ -189,38 +179,47 @@ func set_handle(
 	match handle_id:
 		depth_gizmo_id:
 			end_offset = _get_depth_handle_offset(camera, screen_pos)
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+			# Enable Snapping
+			if Input.is_key_pressed(KEY_CTRL):
+				# Enable Fine Snapping
+				if(Input.is_key_pressed(KEY_SHIFT)):
+					end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+				# Regular Snap Otherwise
+				else:
+					end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			ramp.depth = _get_ramp_depth(end_offset)
 		width_gizmo_id:
 			end_offset = _get_width_handle_offset(camera, screen_pos)
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+
+			if Input.is_key_pressed(KEY_CTRL):
+				if(Input.is_key_pressed(KEY_SHIFT)):
+					end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+				else:
+					end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			ramp.width = _get_ramp_width(end_offset)
 		height_gizmo_id:
 			end_offset = _get_height_handle_offset(camera, screen_pos)
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+			if Input.is_key_pressed(KEY_CTRL):
+				if(Input.is_key_pressed(KEY_SHIFT)):
+					end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+				else:
+					end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			ramp.height = _get_ramp_height(end_offset)
 		fill_gizmo_id1:
 			end_offset = _get_fill_handle_offset(camera, screen_pos, Vector3(-ramp.width / 2, 0, 0))
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+			if Input.is_key_pressed(KEY_CTRL):
+				if(Input.is_key_pressed(KEY_SHIFT)):
+					end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+				else:
+					end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			ramp.fill = end_offset
 		fill_gizmo_id2:
 			end_offset = _get_fill_handle_offset(camera, screen_pos, Vector3(ramp.width / 2, 0, 0))
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+			if Input.is_key_pressed(KEY_CTRL):
+				if(Input.is_key_pressed(KEY_SHIFT)):
+					end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+				else:
+					end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			ramp.fill = end_offset
 
 	if !is_editing:
