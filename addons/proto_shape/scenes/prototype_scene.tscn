@@ -1,9 +1,9 @@
 [gd_scene load_steps=11 format=3 uid="uid://kh6kodj0l0ld"]
 
-[ext_resource type="Script" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
-[ext_resource type="Script" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd" id="4_3jo5l"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="4_durks"]
+[ext_resource type="Script" uid="uid://dbi1dsujlxbfx" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
+[ext_resource type="Script" uid="uid://7a8og04b8bqs" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
+[ext_resource type="Script" uid="uid://wr0twoe15d87" path="res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd" id="4_3jo5l"]
+[ext_resource type="Script" uid="uid://briioihkxilxm" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="4_durks"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_s4hfa"]
 

@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3 uid="uid://drys0h14kvoud"]
 
-[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="2_i41uw"]
+[ext_resource type="Script" uid="uid://briioihkxilxm" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="2_i41uw"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_bk5re"]
 sun_angle_max = 60.0

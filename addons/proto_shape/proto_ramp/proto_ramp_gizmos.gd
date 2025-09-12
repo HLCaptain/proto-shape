@@ -28,6 +28,15 @@ func remove_ramp() -> void:
 		parent.redraw_gizmos_for_child_signal.disconnect(redraw_gizmos)
 		parent.set_handle_for_child_signal.disconnect(set_handle)
 		parent.commit_handle.disconnect(commit_handle)
+	# Disconnecting any leftover connections
+	if plugin != null:
+		if current_fine_snap_callable != null:
+			if plugin.fine_snapping_changed.is_connected(current_fine_snap_callable):
+				plugin.fine_snapping_changed.disconnect(current_fine_snap_callable)
+		if current_snap_callable != null:
+			if plugin.snapping_changed.is_connected(current_snap_callable):
+				plugin.snapping_changed.disconnect(current_snap_callable)
+		plugin = null
 	ramp = null
 
 # Snapping to grid
@@ -36,22 +45,47 @@ var snap_unit: float = 1.0
 var fine_snapping_enabled: bool = false
 var fine_snap_unit: float = 0.1
 
+# Captured arguments required for signal connections
+#  ramp: ProtoRamp - on closing a scene, the ramp is freed, so we need to check for null
+#    Unfortunately, disconnecting does not work (bug?), the lambda is still called afterwards
+#  plugin: ProtoGizmoPlugin - captured plugin argument will not be null (even after setting the field to null in remove_ramp)
+func node_snap_listener(ramp: ProtoRamp, plugin: ProtoGizmoPlugin) -> Callable:
+	return func (enabled: bool) -> void:
+		snapping_enabled = enabled
+		if ramp != null:
+			ramp.update_gizmos()
+		else:
+			plugin.snapping_changed.disconnect(current_snap_callable)
+
+func node_fine_snap_listener(ramp: ProtoRamp, plugin: ProtoGizmoPlugin) -> Callable:
+	return func (enabled: bool) -> void:
+		fine_snapping_enabled = enabled
+		if ramp != null:
+			ramp.update_gizmos()
+		else:
+			plugin.fine_snapping_changed.disconnect(current_fine_snap_callable)
+
+var current_snap_callable: Callable
+
+var current_fine_snap_callable: Callable
+
+var plugin: ProtoGizmoPlugin
+
 func init_gizmo(plugin: ProtoGizmoPlugin) -> void:
-	# Generate a random id for each gizmo
-	width_gizmo_id = randi_range(1_000, 1_000_000)
+	# Generate a "random" id for each gizmo
+	width_gizmo_id = Time.get_ticks_usec()
 	depth_gizmo_id = width_gizmo_id + 1
 	height_gizmo_id = width_gizmo_id + 2
 	fill_gizmo_id1 = width_gizmo_id + 3
 	fill_gizmo_id2 = width_gizmo_id + 4
 	undo_redo = plugin.undo_redo
-	plugin.fine_snapping_changed.connect(func (fine_snapping: bool) -> void:
-		fine_snapping_enabled = fine_snapping
-		ramp.update_gizmos()
-	)
-	plugin.snapping_changed.connect(func (snapping: bool) -> void:
-		snapping_enabled = snapping
-		ramp.update_gizmos()
-	)
+	plugin = plugin
+	current_snap_callable = node_snap_listener(ramp, plugin)
+	current_fine_snap_callable = node_fine_snap_listener(ramp, plugin)
+	plugin.fine_snapping_changed.connect(current_fine_snap_callable)
+	plugin.snapping_changed.connect(current_snap_callable)
+	snapping_enabled = plugin.snapping
+	fine_snapping_enabled = plugin.fine_snapping
 
 # Debug purposes
 var screen_pos: Vector2
