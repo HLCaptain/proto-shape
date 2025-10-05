@@ -12,12 +12,12 @@ config_version=5
 
 config/name="Test"
 run/main_scene="res://addons/proto_shape/scenes/prototype_scene.tscn"
-config/features=PackedStringArray("4.4", "Forward Plus")
+config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://addons/proto_shape/icon/proto-shape-icon.png"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/kenyoni/plugin_reloader/plugin.cfg", "res://addons/proto_shape/plugin.cfg")
+enabled=PackedStringArray("res://addons/addon_toggler/plugin.cfg", "res://addons/proto_shape/plugin.cfg")
 
 [input]
 
@@ -54,7 +54,27 @@ ui_down={
 ]
 }
 
+[internationalization]
+
+rendering/screen_space_reflection/roughness_quality=1
+rendering/ssil/quality=2
+rendering/ssao/quality=2
+rendering/sdfgi/probe_ray_count=1
+rendering/voxel_gi/quality=0
+rendering/sky_reflections/texture_array_reflections.mobile=false
+rendering/directional_shadow/soft_shadow_filter_quality.mobile=0
+rendering/directional_shadow/soft_shadow_filter_quality=2
+rendering/quality/screen_space_aa=0
+
 [rendering]
 
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=5
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality.mobile=2
+global_illumination/voxel_gi/quality=1
+environment/ssao/quality=3
+environment/ssil/quality=3
 anti_aliasing/quality/msaa_2d=3
 anti_aliasing/quality/msaa_3d=3
+environment/screen_space_reflection/roughness_quality=3
+global_illumination/sdfgi/probe_ray_count=5
+anti_aliasing/quality/screen_space_aa=2

@@ -1,5 +1,8 @@
 @tool
 extends Node3D
+
+const ProtoRamp = preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd")
+
 ## Dynamic ramp/staircase shape
 ##
 ## This node can generate ramps and staircases with a variety of parameters.
@@ -398,8 +401,10 @@ func refresh_shape() -> void:
 	if shape_polygon != null:
 		remove_child(shape_polygon)
 		shape_polygon.queue_free()
+		shape_polygon = null
 
-	shape_polygon = CSGPolygon3D.new()
+	if shape_polygon == null:
+		shape_polygon = CSGPolygon3D.new()
 	shape_polygon.use_collision = false
 
 	match type:
@@ -503,11 +508,46 @@ func create_staircase_array() -> PackedVector2Array:
 
 	return array
 
+## Deletes all duplicated CSGPolygon3D children with the same polygon as shape_polygon.
+## If shape_polygon is null, it tries to find an existing CSGPolygon3D child with the same polygon as the current ramp calculation.
+func find_shape_polygon_and_delete_duplicates() -> void:
+	var children = get_children()
+
+	# Find existing shape_polygon if it exists
+	if shape_polygon == null:
+		# No shape_polygon found, finding a new one with the same generated vectorArray.
+
+		# PackedVector2Array seems to have correct equals operator
+		# (not using references, based on elements' equality).
+		var vectorArray: PackedVector2Array
+		# Create the vectorArray based on the current calculation mode
+		if calculation == Calculation.STAIRCASE_DIMENSIONS:
+			vectorArray = create_staircase_array()
+		else:
+			vectorArray = create_ramp_array()
+		for child in children:
+			if child is CSGPolygon3D and child.polygon == vectorArray:
+				# We found an existing shape_polygon.
+				shape_polygon = child
+				break
+
+	if shape_polygon != null:
+		# shape_polygon already exists or recently found.
+		# Deleting equal children.
+		for child in children:
+			# Type and vectorArray equality check
+			if child is CSGPolygon3D and child.polygon == shape_polygon.polygon:
+				# Reference equality check
+				if child != shape_polygon:
+					remove_child(child)
+					child.queue_free()
+
 ## Using dynamic type for gizmos to avoid packaging errors.
 ## See proto_ramp_gizmos.gd for more information.
 var gizmos = null
 
 func _enter_tree() -> void:
+	find_shape_polygon_and_delete_duplicates()
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
 	refresh_shape()
 	if material:
@@ -525,3 +565,8 @@ func _exit_tree() -> void:
 	shape_polygon.queue_free()
 	if Engine.is_editor_hint():
 		gizmos.remove_ramp()
+
+func equals(other: ProtoRamp) -> bool:
+	if other is ProtoRamp:
+		return other == self
+	return false
