@@ -1,7 +1,7 @@
 [gd_scene load_steps=11 format=3 uid="uid://kh6kodj0l0ld"]
 
-[ext_resource type="Script" uid="uid://dbi1dsujlxbfx" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
-[ext_resource type="Script" uid="uid://7a8og04b8bqs" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
+[ext_resource type="Script" uid="uid://bcipb23u4pl4r" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
+[ext_resource type="Script" uid="uid://co8u718hksndb" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
 [ext_resource type="Script" uid="uid://wr0twoe15d87" path="res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd" id="4_3jo5l"]
 [ext_resource type="Script" uid="uid://briioihkxilxm" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="4_durks"]
 
@@ -73,7 +73,7 @@ script = ExtResource("4_durks")
 type = 0
 collisions_enabled = true
 width = 3.0
-height = 2.0
+height = 2.8264313
 depth = 3.0
 anchor = 7
 anchor_fixed = true
