@@ -1,5 +1,6 @@
 # Allow only the proto_shape addons folder
 *
+!AGENTS.md
 !addons/
 !addons/proto_shape/
 !addons/proto_shape/**
