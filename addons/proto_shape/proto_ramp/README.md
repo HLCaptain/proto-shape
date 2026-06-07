@@ -33,9 +33,9 @@ ProtoRamp supports navigation mesh generation. It also features a toggle to enab
 
 #### ProtoRampGizmos
 
-Gizmo functionality is delegated to [ProtoRampGizmos](proto_ramp_gizmos.gd). It is a helper class that provides gizmo functionality for the `ProtoRamp` node, which only gets instantiated in the editor. This way, the packaged game will not rely on any editor-plugin specific code.
+Gizmo functionality is delegated to [ProtoRampGizmos](proto_ramp_gizmos.gd). It is a provider class returned by `ProtoRamp.get_proto_gizmo_provider()` and only gets instantiated in the editor. This way, the packaged game will not rely on any editor-plugin specific code.
 
-`Engine.is_editor_hint()` is used in `ProtoRamp` itself to check if the game is running in the editor. If it is, the `ProtoRampGizmos` class is instantiated and added as a child node to the `ProtoRamp` node.
+`Engine.is_editor_hint()` is used in `ProtoRamp` itself to check if the game is running in the editor. If it is, the `ProtoRampGizmos` class is instantiated and stored as the ramp's gizmo provider.
 
 ### Adjust parameters
 

@@ -1,5 +1,4 @@
 # Implementing Gizmo
-const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
 const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
 const ProtoRamp = preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd")
 const ProtoGizmoPlugin = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo.gd")
@@ -16,18 +15,8 @@ var is_editing := false
 
 func attach_ramp(node: ProtoRamp) -> void:
 	ramp = node
-	if ramp.get_parent() is ProtoGizmoWrapper:
-		var parent: ProtoGizmoWrapper = ramp.get_parent()
-		parent.redraw_gizmos_for_child_signal.connect(redraw_gizmos)
-		parent.set_handle_for_child_signal.connect(set_handle)
-		parent.commit_handle.connect(commit_handle)
 
 func remove_ramp() -> void:
-	if ramp.get_parent() is ProtoGizmoWrapper:
-		var parent: ProtoGizmoWrapper = ramp.get_parent()
-		parent.redraw_gizmos_for_child_signal.disconnect(redraw_gizmos)
-		parent.set_handle_for_child_signal.disconnect(set_handle)
-		parent.commit_handle.disconnect(commit_handle)
 	# Disconnecting any leftover connections
 	if plugin != null:
 		if current_fine_snap_callable != null:
@@ -49,21 +38,21 @@ var fine_snap_unit: float = 0.1
 #  ramp: ProtoRamp - on closing a scene, the ramp is freed, so we need to check for null
 #    Unfortunately, disconnecting does not work (bug?), the lambda is still called afterwards
 #  plugin: ProtoGizmoPlugin - captured plugin argument will not be null (even after setting the field to null in remove_ramp)
-func node_snap_listener(ramp: ProtoRamp, plugin: ProtoGizmoPlugin) -> Callable:
+func node_snap_listener(ramp: ProtoRamp, gizmo_plugin: ProtoGizmoPlugin) -> Callable:
 	return func (enabled: bool) -> void:
 		snapping_enabled = enabled
 		if ramp != null:
 			ramp.update_gizmos()
 		else:
-			plugin.snapping_changed.disconnect(current_snap_callable)
+			gizmo_plugin.snapping_changed.disconnect(current_snap_callable)
 
-func node_fine_snap_listener(ramp: ProtoRamp, plugin: ProtoGizmoPlugin) -> Callable:
+func node_fine_snap_listener(ramp: ProtoRamp, gizmo_plugin: ProtoGizmoPlugin) -> Callable:
 	return func (enabled: bool) -> void:
 		fine_snapping_enabled = enabled
 		if ramp != null:
 			ramp.update_gizmos()
 		else:
-			plugin.fine_snapping_changed.disconnect(current_fine_snap_callable)
+			gizmo_plugin.fine_snapping_changed.disconnect(current_fine_snap_callable)
 
 var current_snap_callable: Callable
 
@@ -71,21 +60,21 @@ var current_fine_snap_callable: Callable
 
 var plugin: ProtoGizmoPlugin
 
-func init_gizmo(plugin: ProtoGizmoPlugin) -> void:
+func init_gizmo(gizmo_plugin: ProtoGizmoPlugin) -> void:
 	# Generate a "random" id for each gizmo
 	width_gizmo_id = Time.get_ticks_usec()
 	depth_gizmo_id = width_gizmo_id + 1
 	height_gizmo_id = width_gizmo_id + 2
 	fill_gizmo_id1 = width_gizmo_id + 3
 	fill_gizmo_id2 = width_gizmo_id + 4
-	undo_redo = plugin.undo_redo
-	plugin = plugin
-	current_snap_callable = node_snap_listener(ramp, plugin)
-	current_fine_snap_callable = node_fine_snap_listener(ramp, plugin)
-	plugin.fine_snapping_changed.connect(current_fine_snap_callable)
-	plugin.snapping_changed.connect(current_snap_callable)
-	snapping_enabled = plugin.snapping
-	fine_snapping_enabled = plugin.fine_snapping
+	undo_redo = gizmo_plugin.undo_redo
+	plugin = gizmo_plugin
+	current_snap_callable = node_snap_listener(ramp, gizmo_plugin)
+	current_fine_snap_callable = node_fine_snap_listener(ramp, gizmo_plugin)
+	gizmo_plugin.fine_snapping_changed.connect(current_fine_snap_callable)
+	gizmo_plugin.snapping_changed.connect(current_snap_callable)
+	snapping_enabled = gizmo_plugin.snapping
+	fine_snapping_enabled = gizmo_plugin.fine_snapping
 
 # Debug purposes
 var screen_pos: Vector2
@@ -384,6 +373,7 @@ func _get_fill_max_offset() -> Vector3:
 
 func commit_handle(
 	gizmo: EditorNode3DGizmo,
+	_plugin: ProtoGizmoPlugin,
 	handle_id: int,
 	secondary: bool,
 	restore: Variant,

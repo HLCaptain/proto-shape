@@ -1,6 +1,6 @@
 # ProtoGizmoWrapper
 
-ProtoGizmoWrapper is a wrapper to create 3D gizmos for custom nodes in Godot. With the use of [ProtoGizmoUtils](../proto_gizmo/README.md#protogizmoutils) and only 2 method implementations, you can implement custom gizmos for your nodes.
+ProtoGizmoWrapper is a wrapper to create 3D gizmos for custom nodes in Godot. With the use of [ProtoGizmoUtils](../proto_gizmo/README.md#protogizmoutils), you can implement custom gizmos for child nodes by reacting to wrapper signals.
 
 <img src="../icon/proto-gizmo-wrapper-icon.svg" style="height: 40%; width: 40%; margin: 0 auto; display: block">
 
@@ -12,9 +12,11 @@ When adding a new child node, search for `ProtoGizmoWrapper` and add it to the s
 
 ### Make your nodes compatible with gizmos
 
-ProtoGizmoWrapper exposes 2 essential methods as signals to implement gizmo functionality.
+ProtoGizmoWrapper exposes editor gizmo callbacks as signals to implement gizmo functionality.
 
 To make your nodes respond to gizmo related changes, you need to subscribe to these signals.
+
+If the custom shape can be used in exported games, keep editor-only helpers behind `Engine.is_editor_hint()` and use dynamic typing for editor-only arguments.
 
 The signals have `EditorNode3DGizmo` and `EditorNode3DGizmoPlugin` typed arguments, which are only available in the editor and not in packaged games. To avoid packaging issues, `gizmo` and `plugin` arguments are dynamically typed.
 
@@ -23,6 +25,8 @@ So basically the signals are:
 ```gdscript
 # This
 signal redraw_gizmos_for_child_signal(gizmo, plugin)
+signal set_handle_for_child_signal(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2)
+signal commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool)
 
 # Instead of this
 signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin)
@@ -145,6 +149,16 @@ func set_handle(
     update_gizmos()
 ```
 
+#### Commit handle
+
+This signal is emitted when a handle drag is committed or cancelled. Use it to create an `EditorUndoRedoManager` action for inspector/editor undo support.
+
+Propagating `EditorNode3DGizmoPlugin::_commit_handle`.
+
+```gdscript
+signal commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool)
+```
+
 #### Initializing your nodes
 
 To use gizmos and `ProtoGizmoUtils` for getting handle offsets, you need to initialize an instance of it in your node, for example:
@@ -161,6 +175,7 @@ func _enter_tree() -> void:
         var parent: ProtoGizmoWrapper = get_parent()
         parent.redraw_gizmos_for_child_signal.connect(redraw_gizmos)
         parent.set_handle_for_child_signal.connect(set_handle)
+        parent.commit_handle.connect(commit_handle)
 
 func _exit_tree() -> void:
     if get_parent() is ProtoGizmoWrapper:
@@ -168,6 +183,7 @@ func _exit_tree() -> void:
         var parent: ProtoGizmoWrapper = get_parent()
         parent.redraw_gizmos_for_child_signal.disconnect(redraw_gizmos)
         parent.set_handle_for_child_signal.disconnect(set_handle)
+        parent.commit_handle.disconnect(commit_handle)
 ```
 
 ### Setup node hierarchy

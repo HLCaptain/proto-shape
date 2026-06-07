@@ -8,11 +8,15 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="Test"
 run/main_scene="res://addons/proto_shape/scenes/prototype_scene.tscn"
-config/features=PackedStringArray("4.5", "Forward Plus")
+config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://addons/proto_shape/icon/proto-shape-icon.png"
 
 [editor_plugins]
@@ -75,6 +79,6 @@ environment/ssao/quality=3
 environment/ssil/quality=3
 anti_aliasing/quality/msaa_2d=3
 anti_aliasing/quality/msaa_3d=3
-environment/screen_space_reflection/roughness_quality=3
 global_illumination/sdfgi/probe_ray_count=5
 anti_aliasing/quality/screen_space_aa=2
+environment/screen_space_reflection/roughness_quality=3

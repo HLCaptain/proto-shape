@@ -546,6 +546,9 @@ func find_shape_polygon_and_delete_duplicates() -> void:
 ## See proto_ramp_gizmos.gd for more information.
 var gizmos = null
 
+func get_proto_gizmo_provider() -> Variant:
+	return gizmos
+
 func _enter_tree() -> void:
 	find_shape_polygon_and_delete_duplicates()
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
@@ -563,7 +566,7 @@ func _exit_tree() -> void:
 	# Remove all children
 	remove_child(shape_polygon)
 	shape_polygon.queue_free()
-	if Engine.is_editor_hint():
+	if Engine.is_editor_hint() and gizmos != null:
 		gizmos.remove_ramp()
 
 func equals(other: ProtoRamp) -> bool:

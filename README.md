@@ -8,6 +8,8 @@ ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godo
 
 ## Installation
 
+ProtoShape 1.2.0 targets Godot 4.6.
+
 Install plugin from the AssetLib inside Godot or download the latest release from the [releases page](https://github.com/HLCaptain/proto-shape/releases/latest).
 
 Enable the plugin inside Godot. `Project` -> `Project Settings` -> `Plugins` -> Enable `ProtoShape`.

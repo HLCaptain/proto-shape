@@ -2,6 +2,31 @@
 
 ProtoGizmo is an `EditorNode3DGizmoPlugin` that provides a base for creating custom gizmos in the Godot editor. It is used to create custom gizmos for the `ProtoShape` addon. With the use of `ProtoGizmoWrapper`, you can create custom gizmos for your 3D nodes.
 
+## Generic gizmo providers
+
+`ProtoGizmo` can draw and edit any `Node3D` that exposes a gizmo provider:
+
+```gdscript
+func get_proto_gizmo_provider() -> Variant:
+	return gizmos
+```
+
+The returned provider must implement these editor-only methods:
+
+```gdscript
+func redraw_gizmos(gizmo, plugin) -> void
+func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2) -> void
+func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool) -> void
+```
+
+`commit_handle` is optional for draw-only gizmos, but editable handles should implement it and use `EditorUndoRedoManager` through the `plugin.undo_redo` reference.
+
+Keep editor-only provider scripts loaded behind `Engine.is_editor_hint()` when they use `EditorNode3DGizmo`, `EditorNode3DGizmoPlugin`, or `EditorUndoRedoManager` types. `ProtoRamp` uses this provider pattern through `proto_ramp_gizmos.gd`.
+
+Handle direction vectors do not need to be static. A provider can calculate the handle position and local direction axis on every `redraw_gizmos` and `set_handle` call, then pass that dynamic axis into `ProtoGizmoUtils`.
+
+See [examples](examples/README.md) for provider-based custom shapes, dynamic handle axes, and `ProtoGizmoWrapper` signal usage.
+
 ## Default materials
 
 - `proto_handler` - Same as internal "handlers" material for gizmo handles, but blue instead of redish color.
