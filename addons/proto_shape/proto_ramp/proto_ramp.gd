@@ -399,7 +399,8 @@ func refresh_shape() -> void:
 	translate_anchor(anchor, Anchor.BOTTOM_CENTER)
 
 	if shape_polygon != null:
-		remove_child(shape_polygon)
+		if shape_polygon.get_parent() == self:
+			remove_child(shape_polygon)
 		shape_polygon.queue_free()
 		shape_polygon = null
 
@@ -549,6 +550,9 @@ var gizmos = null
 func get_proto_gizmo_provider() -> Variant:
 	return gizmos
 
+func get_proto_gizmo_selection_nodes() -> Array:
+	return [shape_polygon]
+
 func _enter_tree() -> void:
 	find_shape_polygon_and_delete_duplicates()
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
@@ -564,8 +568,10 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	# Remove all children
-	remove_child(shape_polygon)
-	shape_polygon.queue_free()
+	if shape_polygon != null:
+		if shape_polygon.get_parent() == self:
+			remove_child(shape_polygon)
+		shape_polygon.queue_free()
 	if Engine.is_editor_hint() and gizmos != null:
 		gizmos.remove_ramp()
 

@@ -137,25 +137,6 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin) -> void:
 
 	gizmo.add_handles(handles, plugin.get_material("proto_handler", gizmo), [depth_gizmo_id, width_gizmo_id, height_gizmo_id, fill_gizmo_id1, fill_gizmo_id2])
 
-	if ramp.shape_polygon != null and ramp.shape_polygon.get_meshes().size() > 1:
-		var offset := ramp.get_anchor_offset(ramp.anchor)
-		var polygon_offset := offset - Vector3(ramp.width / 2, 0, 0)
-		var mesh: Mesh = ramp.shape_polygon.get_meshes()[1]
-		var mdt := MeshDataTool.new()
-		mdt.create_from_surface(mesh, 0)
-		for i in range(mdt.get_vertex_count()):
-			var vertex := mdt.get_vertex(i)
-			vertex = vertex.rotated(Vector3.UP, -PI / 2.0)
-			vertex += polygon_offset
-			mdt.set_vertex(i, vertex)
-
-		var newMesh: Mesh = ArrayMesh.new()
-		newMesh.clear_surfaces()
-		mdt.commit_to_surface(newMesh)
-		mdt.clear()
-		gizmo.add_collision_triangles(newMesh.generate_triangle_mesh())
-		gizmo.add_mesh(newMesh.create_outline(0.001), plugin.get_material("selected", gizmo))
-
 	# Adding debug lines for gizmo if we have cursor screen position set
 	if screen_pos:
 		var grid_size_modifier = 1.0
