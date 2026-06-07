@@ -15,6 +15,9 @@ var gizmos = null
 func get_proto_gizmo_provider() -> Variant:
 	return gizmos
 
+func get_proto_gizmo_selection_nodes() -> Array:
+	return [shape_box]
+
 func get_width() -> float:
 	return _width
 

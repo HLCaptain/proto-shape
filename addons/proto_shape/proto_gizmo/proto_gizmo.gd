@@ -44,11 +44,13 @@ func _redraw(gizmo: EditorNode3DGizmo) -> void:
 	var provider = _get_gizmo_provider(node)
 	if provider != null:
 		provider.redraw_gizmos(gizmo, self)
+		_add_selection_meshes(gizmo, node, provider)
 		return
 
 	var wrapper := _get_gizmo_wrapper(node)
 	if wrapper != null:
 		wrapper.redraw_gizmos_for_child(gizmo, self)
+		_add_selection_meshes(gizmo, node, null)
 		return
 
 func _set_handle(
@@ -106,3 +108,72 @@ func _get_gizmo_wrapper(node: Node3D) -> ProtoGizmoWrapper:
 	if node.get_parent() is ProtoGizmoWrapper:
 		return node.get_parent()
 	return null
+
+func _add_selection_meshes(gizmo: EditorNode3DGizmo, node: Node3D, provider: Variant) -> void:
+	var selection_nodes := _get_selection_nodes(node, provider)
+	for selection_node in selection_nodes:
+		if selection_node == null or not (selection_node is Node3D):
+			continue
+
+		var mesh_data := _get_selection_mesh_data(selection_node)
+		if mesh_data.is_empty():
+			continue
+
+		var mesh: Mesh = mesh_data["mesh"]
+		var mesh_global_transform: Transform3D = mesh_data["global_transform"]
+		var local_transform: Transform3D = node.global_transform.affine_inverse() * mesh_global_transform
+		var transformed_mesh := _transform_mesh(mesh, local_transform)
+		if transformed_mesh == null:
+			continue
+
+		var triangle_mesh := transformed_mesh.generate_triangle_mesh()
+		if triangle_mesh != null:
+			gizmo.add_collision_triangles(triangle_mesh)
+
+		var outline_mesh := transformed_mesh.create_outline(0.001)
+		if outline_mesh != null:
+			gizmo.add_mesh(outline_mesh, get_material("selected", gizmo))
+
+func _get_selection_nodes(node: Node3D, provider: Variant) -> Array:
+	if provider != null and provider.has_method("get_proto_gizmo_selection_nodes"):
+		var provider_selection_nodes: Variant = provider.get_proto_gizmo_selection_nodes()
+		if provider_selection_nodes is Array:
+			return provider_selection_nodes
+
+	if node.has_method("get_proto_gizmo_selection_nodes"):
+		var node_selection_nodes: Variant = node.get_proto_gizmo_selection_nodes()
+		if node_selection_nodes is Array:
+			return node_selection_nodes
+
+	return []
+
+func _get_selection_mesh_data(selection_node: Node3D) -> Dictionary:
+	if selection_node is MeshInstance3D and selection_node.mesh != null:
+		return {"mesh": selection_node.mesh, "global_transform": selection_node.global_transform}
+
+	if selection_node is CSGShape3D:
+		var meshes: Array = selection_node.get_meshes()
+		if meshes.size() > 1 and meshes[1] is Mesh:
+			var mesh_transform := Transform3D.IDENTITY
+			if meshes[0] is Transform3D:
+				mesh_transform = meshes[0]
+
+			var global_transform := selection_node.global_transform
+			if mesh_transform != Transform3D.IDENTITY and selection_node.get_parent() is Node3D:
+				global_transform = selection_node.get_parent().global_transform * mesh_transform
+
+			return {"mesh": meshes[1], "global_transform": global_transform}
+
+	return {}
+
+func _transform_mesh(mesh: Mesh, transform: Transform3D) -> ArrayMesh:
+	var transformed_mesh := ArrayMesh.new()
+	for surface_index in range(mesh.get_surface_count()):
+		var arrays := mesh.surface_get_arrays(surface_index)
+		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		for vertex_index in range(vertices.size()):
+			vertices[vertex_index] = transform * vertices[vertex_index]
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		transformed_mesh.add_surface_from_arrays(mesh.surface_get_primitive_type(surface_index), arrays)
+
+	return transformed_mesh

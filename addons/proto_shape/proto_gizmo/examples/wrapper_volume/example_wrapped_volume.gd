@@ -18,6 +18,9 @@ var editing_handle := 0
 var start_value := 0.0
 var end_value := 0.0
 
+func get_proto_gizmo_selection_nodes() -> Array:
+	return [cylinder]
+
 func get_radius() -> float:
 	return _radius
 

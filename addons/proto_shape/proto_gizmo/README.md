@@ -21,6 +21,15 @@ func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Vari
 
 `commit_handle` is optional for draw-only gizmos, but editable handles should implement it and use `EditorUndoRedoManager` through the `plugin.undo_redo` reference.
 
+Nodes or providers can optionally expose generated visual nodes for click-selection:
+
+```gdscript
+func get_proto_gizmo_selection_nodes() -> Array:
+	return [generated_csg_shape]
+```
+
+`ProtoGizmo` uses these nodes to add collision triangles and a selected outline in the gizmo, so clicking the generated shape selects the owner node. `CSGShape3D` and `MeshInstance3D` nodes are supported.
+
 Keep editor-only provider scripts loaded behind `Engine.is_editor_hint()` when they use `EditorNode3DGizmo`, `EditorNode3DGizmoPlugin`, or `EditorUndoRedoManager` types. `ProtoRamp` uses this provider pattern through `proto_ramp_gizmos.gd`.
 
 Handle direction vectors do not need to be static. A provider can calculate the handle position and local direction axis on every `redraw_gizmos` and `set_handle` call, then pass that dynamic axis into `ProtoGizmoUtils`.
