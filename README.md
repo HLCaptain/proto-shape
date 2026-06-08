@@ -45,6 +45,8 @@ Feel free to open an issue for any bugs or feature requests. See more in [CONTRI
 
 The library is written in `GDScript` and (mostly) follows the [GDScript style guide](https://docs.godotengine.org/en/stable/tutorials/scripting/gdscript/gdscript_styleguide.html).
 
+When adding new shapes, follow the [Shape Development Guide](addons/proto_shape/SHAPE_DEVELOPMENT.md).
+
 Extend the library of shapes by creating an issue or pull request! Share your idea for a shape or feature you would like to see added to the library.
 
 If you find any bugs, feel free to create an issue.

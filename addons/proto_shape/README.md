@@ -19,6 +19,8 @@ It utilizes `ProtoGizmoUtils` for advanced 3D math calculations and plane projec
 
 See [ProtoGizmo examples](proto_gizmo/examples/README.md) for custom shapes using provider-based gizmos, dynamic handle axes, and wrapper signals.
 
+See [Shape Development Guide](SHAPE_DEVELOPMENT.md) for the shared implementation pattern and documentation requirements for new shapes.
+
 ### Undo/Redo support
 
 [ProtoRampGizmos](proto_ramp/proto_ramp_gizmos.gd) supports scene-wide undo/redo functionality. It uses the `EditorUndoRedoManager` to set up ramp properties, so the editor takes gizmo-based modifications into account! Editor now warns you to save on exit if you have unsaved changes made with the gizmos.

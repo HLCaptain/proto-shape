@@ -19,6 +19,7 @@ The addon lives under `addons/proto_shape/`. Keep plugin resources, preloads, ic
 
 ## Documentation
 
+- Follow `addons/proto_shape/SHAPE_DEVELOPMENT.md` when adding new shapes or larger shape features.
 - Update `README.md` and the relevant `addons/proto_shape/**/README.md` when adding larger features, shapes, gizmos, or user-visible behavior.
 - Keep feature docs understandable but not excessive, and link related files or docs when useful.
 - Put diagrams, sketches, videos, or screenshots in an appropriate local `assets` folder only when they clarify the feature.
