@@ -6,8 +6,11 @@ const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/
 const HANDLE_RADIUS := 1
 const HANDLE_HEIGHT := 2
 
-var _radius := 1.0
-var _height := 1.5
+const _default_radius := 1.0
+const _default_height := 1.5
+
+var _radius := _default_radius
+var _height := _default_height
 
 @export var radius: float: set = set_radius, get = get_radius
 @export var height: float: set = set_height, get = get_height
@@ -20,6 +23,17 @@ var end_value := 0.0
 
 func get_proto_gizmo_selection_nodes() -> Array:
 	return [cylinder]
+
+func _property_can_revert(property: StringName) -> bool:
+	return property in [&"radius", &"height"]
+
+func _property_get_revert(property: StringName) -> Variant:
+	match property:
+		&"radius":
+			return _default_radius
+		&"height":
+			return _default_height
+	return null
 
 func get_radius() -> float:
 	return _radius
@@ -79,7 +93,8 @@ func _exit_tree() -> void:
 		if parent.commit_handle.is_connected(commit_handle):
 			parent.commit_handle.disconnect(commit_handle)
 	if cylinder != null:
-		remove_child(cylinder)
+		if cylinder.get_parent() == self:
+			remove_child(cylinder)
 		cylinder.queue_free()
 		cylinder = null
 	gizmo_utils = null

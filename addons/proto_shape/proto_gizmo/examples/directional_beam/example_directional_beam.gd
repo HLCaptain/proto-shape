@@ -1,10 +1,15 @@
 @tool
 extends Node3D
 
-var _length := 3.0
-var _height := 0.5
-var _thickness := 0.5
-var _direction_degrees := 35.0
+const _default_length := 3.0
+const _default_height := 0.5
+const _default_thickness := 0.5
+const _default_direction_degrees := 35.0
+
+var _length := _default_length
+var _height := _default_height
+var _thickness := _default_thickness
+var _direction_degrees := _default_direction_degrees
 
 @export var length: float: set = set_length, get = get_length
 @export var height: float: set = set_height, get = get_height
@@ -19,6 +24,21 @@ func get_proto_gizmo_provider() -> Variant:
 
 func get_proto_gizmo_selection_nodes() -> Array:
 	return [shape_box]
+
+func _property_can_revert(property: StringName) -> bool:
+	return property in [&"length", &"height", &"thickness", &"direction_degrees"]
+
+func _property_get_revert(property: StringName) -> Variant:
+	match property:
+		&"length":
+			return _default_length
+		&"height":
+			return _default_height
+		&"thickness":
+			return _default_thickness
+		&"direction_degrees":
+			return _default_direction_degrees
+	return null
 
 func get_length() -> float:
 	return _length
@@ -88,6 +108,7 @@ func _exit_tree() -> void:
 	if Engine.is_editor_hint() and gizmos != null:
 		gizmos.remove_shape()
 	if shape_box != null:
-		remove_child(shape_box)
+		if shape_box.get_parent() == self:
+			remove_child(shape_box)
 		shape_box.queue_free()
 		shape_box = null

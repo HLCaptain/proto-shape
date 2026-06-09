@@ -18,7 +18,7 @@ To make your nodes respond to gizmo related changes, you need to subscribe to th
 
 If the custom shape can be used in exported games, keep editor-only helpers behind `Engine.is_editor_hint()` and use dynamic typing for editor-only arguments.
 
-The signals have `EditorNode3DGizmo` and `EditorNode3DGizmoPlugin` typed arguments, which are only available in the editor and not in packaged games. To avoid packaging issues, `gizmo` and `plugin` arguments are dynamically typed.
+The editor callbacks pass `EditorNode3DGizmo` and `EditorNode3DGizmoPlugin` objects, which are only available in the editor and not in packaged games. To avoid packaging issues, `gizmo` and `plugin` arguments are dynamically typed.
 
 So basically the signals are:
 
@@ -32,9 +32,9 @@ signal commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Va
 signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin)
 ```
 
-Just like in [ProtoRampGizmos](../proto_ramp/README.md#protorampgizmos), you can connect methods with static typing to these signals to avoid dynamic typing and runtime errors.
+Just like in [ProtoRampGizmos](../proto_ramp/README.md#protorampgizmos), keep editor-only `gizmo` and `plugin` arguments dynamically typed. Use static typing for runtime-safe values such as `Camera3D`, `Vector2`, handles, and your generated nodes.
 
-***To see a fully working example, check out [ProtoRampGizmos](../proto_ramp/proto_ramp_gizmos.gd) source code.***
+***To see a runtime-safe wrapper example, check out [ExampleWrappedVolume](../proto_gizmo/examples/wrapper_volume/example_wrapped_volume.gd) source code.***
 
 #### Redraw
 
@@ -45,7 +45,7 @@ When a `ProtoGizmoWrapper` has multiple child nodes (each subscribed to this sig
 Propagating `EditorNode3DGizmoPlugin::_redraw`.
 
 ```gdscript
-signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin)
+signal redraw_gizmos_for_child_signal(gizmo, plugin)
 ```
 
 Each child is responsible to initialize their handles (generate UID for each handle, to use them later). In case of [ProtoRamp](../proto_ramp/README.md), the handles are initialized this way:
@@ -62,7 +62,7 @@ var local_gizmo_position: Vector3
 var local_offset_axis: Vector3
 var camera_position: Vector3
 
-func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) -> void:
+func redraw_gizmos(gizmo, plugin) -> void:
 
     # Check if this is the affected node
     if gizmo.get_node_3d() != self:
@@ -102,13 +102,13 @@ With identifying the affected handle, being drawn by `handle_id` on the affected
 Propagating `EditorNode3DGizmoPlugin::_set_handle`.
 
 ```gdscript
-signal set_handle_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2)
+signal set_handle_for_child_signal(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2)
 ```
 
 ```gdscript
 func set_handle(
-    gizmo: EditorNode3DGizmo,
-    plugin: EditorNode3DGizmoPlugin,
+    gizmo,
+    plugin,
     handle_id: int,
     secondary: bool,
     camera: Camera3D,
@@ -164,13 +164,16 @@ signal commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Va
 To use gizmos and `ProtoGizmoUtils` for getting handle offsets, you need to initialize an instance of it in your node, for example:
 
 ```gdscript
-# Import ProtoGizmoWrapper and ProtoGizmoUtils
+# Import ProtoGizmoWrapper. Load ProtoGizmoUtils only in the editor.
 const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
-const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
-var gizmo_utils := ProtoGizmoUtils.new()
+var gizmo_utils = null
 
 func _enter_tree() -> void:
-    if get_parent() is ProtoGizmoWrapper:
+    if Engine.is_editor_hint():
+        var ProtoGizmoUtils = load("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
+        gizmo_utils = ProtoGizmoUtils.new()
+
+    if Engine.is_editor_hint() and get_parent() is ProtoGizmoWrapper:
         # Connect to ProtoGizmoWrapper signals
         var parent: ProtoGizmoWrapper = get_parent()
         parent.redraw_gizmos_for_child_signal.connect(redraw_gizmos)
@@ -178,12 +181,13 @@ func _enter_tree() -> void:
         parent.commit_handle.connect(commit_handle)
 
 func _exit_tree() -> void:
-    if get_parent() is ProtoGizmoWrapper:
+    if Engine.is_editor_hint() and get_parent() is ProtoGizmoWrapper:
         # Disconnect from ProtoGizmoWrapper signals
         var parent: ProtoGizmoWrapper = get_parent()
         parent.redraw_gizmos_for_child_signal.disconnect(redraw_gizmos)
         parent.set_handle_for_child_signal.disconnect(set_handle)
         parent.commit_handle.disconnect(commit_handle)
+    gizmo_utils = null
 ```
 
 ### Setup node hierarchy

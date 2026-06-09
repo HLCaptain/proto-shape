@@ -1,9 +1,13 @@
 @tool
 extends Node3D
 
-var _width := 2.0
-var _height := 1.0
-var _depth := 2.0
+const _default_width := 2.0
+const _default_height := 1.0
+const _default_depth := 2.0
+
+var _width := _default_width
+var _height := _default_height
+var _depth := _default_depth
 
 @export var width: float: set = set_width, get = get_width
 @export var height: float: set = set_height, get = get_height
@@ -17,6 +21,19 @@ func get_proto_gizmo_provider() -> Variant:
 
 func get_proto_gizmo_selection_nodes() -> Array:
 	return [shape_box]
+
+func _property_can_revert(property: StringName) -> bool:
+	return property in [&"width", &"height", &"depth"]
+
+func _property_get_revert(property: StringName) -> Variant:
+	match property:
+		&"width":
+			return _default_width
+		&"height":
+			return _default_height
+		&"depth":
+			return _default_depth
+	return null
 
 func get_width() -> float:
 	return _width
@@ -69,6 +86,7 @@ func _exit_tree() -> void:
 	if Engine.is_editor_hint() and gizmos != null:
 		gizmos.remove_shape()
 	if shape_box != null:
-		remove_child(shape_box)
+		if shape_box.get_parent() == self:
+			remove_child(shape_box)
 		shape_box.queue_free()
 		shape_box = null
