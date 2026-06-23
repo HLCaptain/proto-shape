@@ -144,18 +144,22 @@ addons/proto_shape/proto_wall/examples/proto_wall_example.tscn
 
 ## ProtoWall Design Notes
 
-`ProtoWall` should not be a renamed `CSGBox3D`. Its value should be faster environment blocking for walls, fences, parapets, and room edges.
+`ProtoWall` is path-based and should cover both wall and rail workflows. Its value is faster environment blocking for walls, fences, guardrails, parapets, room edges, and curved boundaries.
 
-Compared with a regular `CSGBox3D`, `ProtoWall` should provide:
+Compared with a regular `CSGBox3D`, `ProtoWall` provides:
 
-- Wall-focused properties: `length`, `height`, `thickness`, anchor, collisions, and material.
+- Path-based generation by extending `Path3D`.
+- Solid wall and rail styles through one shape.
+- Wall-focused properties: `height`, `thickness`, side alignment, collisions, and material.
+- Rail-focused properties: rail count, rail thickness, lower rail height, post spacing, and post size.
+- Path orientation, interpolation, corner rounding, sample simplification, and point tilt for sloped or irregular paths, including ramp-side rails and variable-elevation rails that change across all 3 axes.
 - Drag handles for wall dimensions without switching to scale mode.
-- Optional start/end anchoring so designers can extend one side without moving the opposite side.
+- Native Godot path editing for straight and curved wall paths.
 - Grid-snapped handle editing for map blockouts.
 - Click-selection through generated geometry.
-- Future wall-specific extensions such as end-cap handles, openings, trim, or connection helpers.
+- Future wall-specific extensions such as openings, trim, fence modes, or connection helpers.
 
-The first implementation should stay simple: one generated `CSGBox3D` segment with length, height, and thickness handles. End-face extrusion and openings can follow after the basic workflow is proven.
+The first implementation uses generated closed `CSGMesh3D` sweep meshes for solid walls and rail bars, plus generated `CSGBox3D` posts sampled along the same path cache. The selected path orientation, interpolation, corner rounding, sample simplification, and point tilt must apply to both the sweep mesh and generated post basis so irregular 3D rails do not mix different pitch, roll, or offset calculations. Door/window openings, trims, and extra fence styles can follow after the path workflow is proven.
 
 ## Verification Checklist
 

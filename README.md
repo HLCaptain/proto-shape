@@ -8,7 +8,7 @@ ProtoShape is a Godot plugin that adds a library of dynamic shapes based on Godo
 
 ## Installation
 
-ProtoShape 1.2.0 targets Godot 4.6.
+ProtoShape 1.2.0 targets Godot 4.7.
 
 Install plugin from the AssetLib inside Godot or download the latest release from the [releases page](https://github.com/HLCaptain/proto-shape/releases/latest).
 
@@ -32,6 +32,13 @@ https://github.com/HLCaptain/proto-shape/assets/22623259/730a527c-d6ba-4eaa-93b6
 ProtoRamp features standard (1.0 unit) and fine (0.1 unit) grid snapping, besides making the ramp hollow to create an underpass.
 
 https://github.com/user-attachments/assets/abb87cb9-2757-455d-8a05-6a6886eaed40
+
+### [ProtoWall](addons/proto_shape/proto_wall/README.md)
+
+Path-based solid walls and rails for fast level blockouts. Use it for straight or curved walls, low cover, guardrails, fences, balcony rails, ramp-side rails, and variable-elevation paths with selectable orientation and interpolation.
+
+> [!TIP]
+> `ProtoWall` extends `Path3D`, so you can shape walls and rails with Godot's native curve tools and adjust wall dimensions with ProtoShape gizmos.
 
 ### [ProtoGizmoWrapper](addons/proto_shape/proto_gizmo_wrapper/README.md)
 

@@ -3,6 +3,7 @@
 ## Shapes
 
 - [ProtoRamp](proto_ramp/README.md)
+- [ProtoWall](proto_wall/README.md)
 
 ## Gizmos
 
@@ -14,6 +15,15 @@ The gizmo for `ProtoRamp` supports editing these properties in the 3D viewport:
 - Fill
 
 It utilizes `ProtoGizmoUtils` for advanced 3D math calculations and plane projections to get the desired handle drag offset and set the properties accordingly.
+
+The gizmo for `ProtoWall` supports editing these properties in the 3D viewport:
+
+- Height
+- Thickness
+- Lower rail height for rail-style walls
+- Post width and post count for rail-style walls with posts
+
+`ProtoWall` is a `Path3D`-based shape, so the wall or rail path is edited with Godot's native path tools while ProtoShape gizmos handle wall dimensions. Its `path_orientation` can tilt geometry with sloped paths or keep wall height upright, `path_interpolation` controls how the shared rail/post sample path is generated, and `Curve3D` point tilt is applied in path-perpendicular mode. Corner-based interpolation modes keep straight spans light while adaptively smoothing corners.
 
 `ProtoGizmo` is a reusable `EditorNode3DGizmoPlugin`. Custom `Node3D` shapes can expose a provider through `get_proto_gizmo_provider()` or use `ProtoGizmoWrapper` as a signal bridge for child nodes.
 

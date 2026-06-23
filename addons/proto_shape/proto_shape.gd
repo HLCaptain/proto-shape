@@ -10,6 +10,7 @@ func _enter_tree():
 	undo_redo = get_undo_redo()
 	gizmo_plugin.undo_redo = undo_redo
 	add_custom_type("ProtoRamp", "Node3D", preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd"), preload("res://addons/proto_shape/icon/proto-ramp-icon.png"))
+	add_custom_type("ProtoWall", "Path3D", preload("res://addons/proto_shape/proto_wall/proto_wall.gd"), preload("res://addons/proto_shape/icon/proto-wall-icon.png"))
 	add_custom_type("ProtoGizmoWrapper", "Node", preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd"), preload("res://addons/proto_shape/icon/proto-gizmo-wrapper-icon.png"))
 	add_node_3d_gizmo_plugin(gizmo_plugin)
 
@@ -24,6 +25,7 @@ func _enter_tree():
 
 func _exit_tree():
 	remove_custom_type("ProtoRamp")
+	remove_custom_type("ProtoWall")
 	remove_custom_type("ProtoGizmoWrapper")
 	remove_node_3d_gizmo_plugin(gizmo_plugin)
 	InputMap.erase_action("snap_to_grid")

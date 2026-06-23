@@ -1,0 +1,63 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://addons/proto_shape/proto_wall/examples/proto_wall_example_setup.gd" id="1"]
+[ext_resource type="Script" path="res://addons/proto_shape/proto_wall/proto_wall.gd" id="2"]
+
+[node name="ProtoWallRailExamples" type="Node3D"]
+script = ExtResource("1")
+example_type = 1
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+rotation = Vector3(-0.8, 0.7, 0.0)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(2.0, 8.0, 15.0)
+rotation = Vector3(-0.55, 0.0, 0.0)
+
+[node name="TwoRailGuardRail" type="Path3D" parent="."]
+position = Vector3(-7.0, 0.0, -2.0)
+script = ExtResource("2")
+
+[node name="TwoRailGuardRailLabel" type="Label3D" parent="."]
+position = Vector3(-7.0, 1.6, 0.5)
+text = "Two-rail guard rail\nBalconies, bridges, platform edges"
+
+[node name="SingleRailBarrier" type="Path3D" parent="."]
+position = Vector3(-2.0, 0.0, -2.0)
+script = ExtResource("2")
+
+[node name="SingleRailBarrierLabel" type="Label3D" parent="."]
+position = Vector3(-2.0, 1.4, 0.0)
+text = "Single-rail barrier\nLightweight boundary or pipe rail"
+
+[node name="ThreeRailFence" type="Path3D" parent="."]
+position = Vector3(3.0, 0.0, -2.0)
+script = ExtResource("2")
+
+[node name="ThreeRailFenceLabel" type="Label3D" parent="."]
+position = Vector3(3.0, 1.9, 0.5)
+text = "Three-rail fence\nReadable outdoor or arena boundary"
+
+[node name="CurvedGuardRail" type="Path3D" parent="."]
+position = Vector3(-4.0, 0.0, 4.5)
+script = ExtResource("2")
+
+[node name="CurvedGuardRailLabel" type="Label3D" parent="."]
+position = Vector3(-4.8, 1.7, 6.8)
+text = "Curved guard rail\nRound platforms and arena edges"
+
+[node name="PostlessHandRail" type="Path3D" parent="."]
+position = Vector3(3.0, 0.0, 5.0)
+script = ExtResource("2")
+
+[node name="PostlessHandRailLabel" type="Label3D" parent="."]
+position = Vector3(3.0, 1.5, 7.0)
+text = "Postless hand rail\nUse for pipes, trims, or temporary guides"
+
+[node name="MountainRail" type="Path3D" parent="."]
+position = Vector3(5.5, 0.0, 2.5)
+script = ExtResource("2")
+
+[node name="MountainRailLabel" type="Label3D" parent="."]
+position = Vector3(6.6, 2.6, 6.0)
+text = "Rounded mountain rail\nVariable X/Y/Z elevation and point tilt"
