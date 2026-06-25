@@ -130,9 +130,10 @@ func _add_selection_meshes(gizmo: EditorNode3DGizmo, node: Node3D, provider: Var
 		if triangle_mesh != null:
 			gizmo.add_collision_triangles(triangle_mesh)
 
-		var outline_mesh := transformed_mesh.create_outline(0.001)
-		if outline_mesh != null:
-			gizmo.add_mesh(outline_mesh, get_material("selected", gizmo))
+		if selection_node.is_visible_in_tree():
+			var outline_mesh := transformed_mesh.create_outline(0.001)
+			if outline_mesh != null:
+				gizmo.add_mesh(outline_mesh, get_material("selected", gizmo))
 
 func _get_selection_nodes(node: Node3D, provider: Variant) -> Array:
 	if provider != null and provider.has_method("get_proto_gizmo_selection_nodes"):

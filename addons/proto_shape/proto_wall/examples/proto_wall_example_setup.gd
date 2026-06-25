@@ -51,18 +51,18 @@ func _setup_solid_walls() -> void:
 	_configure_wall("LowCoverWall", Vector3(-3.5, 0.0, -2.0), _create_polyline_curve([Vector3.ZERO, Vector3(0, 0, 4)]), ProtoWall.Style.SOLID, 0.9, 0.45)
 	_configure_label("LowCoverWallLabel", Vector3(-3.5, 1.4, 0.0), "Low cover wall\nShooter cover or platform edge")
 
-	_configure_wall("CurvedArenaWall", Vector3(2.2, 0.0, -2.0), _create_arc_curve(3.0, 105.0, 12), ProtoWall.Style.SOLID, 1.5, 0.28, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.CORNER_ROUNDED)
+	_configure_wall("CurvedArenaWall", Vector3(2.2, 0.0, -2.0), _create_arc_curve(3.0, 105.0, 12), ProtoWall.Style.SOLID, 1.5, 0.28, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.CORNER_ROUNDED)
 	_configure_label("CurvedArenaWallLabel", Vector3(1.4, 2.1, 2.0), "Curved arena wall\nRounded corners for arena boundaries")
 
-	_configure_wall("CenterAlignedWall", Vector3(-8.0, 0.0, 5.0), _create_polyline_curve([Vector3.ZERO, Vector3(0, 0, 3)]), ProtoWall.Style.SOLID, 1.5, 0.25, ProtoWall.Side.CENTER)
-	_configure_wall("LeftAlignedWall", Vector3(-4.0, 0.0, 5.0), _create_polyline_curve([Vector3.ZERO, Vector3(0, 0, 3)]), ProtoWall.Style.SOLID, 1.5, 0.25, ProtoWall.Side.LEFT)
-	_configure_wall("RightAlignedWall", Vector3(0.0, 0.0, 5.0), _create_polyline_curve([Vector3.ZERO, Vector3(0, 0, 3)]), ProtoWall.Style.SOLID, 1.5, 0.25, ProtoWall.Side.RIGHT)
+	_configure_wall("CenterAlignedWall", Vector3(-8.0, 0.0, 5.0), _create_polyline_curve([Vector3.ZERO, Vector3(0, 0, 3)]), ProtoWall.Style.SOLID, 1.5, 0.25, ProtoWall.WallSide.CENTER)
+	_configure_wall("LeftAlignedWall", Vector3(-4.0, 0.0, 5.0), _create_polyline_curve([Vector3.ZERO, Vector3(0, 0, 3)]), ProtoWall.Style.SOLID, 1.5, 0.25, ProtoWall.WallSide.LEFT)
+	_configure_wall("RightAlignedWall", Vector3(0.0, 0.0, 5.0), _create_polyline_curve([Vector3.ZERO, Vector3(0, 0, 3)]), ProtoWall.Style.SOLID, 1.5, 0.25, ProtoWall.WallSide.RIGHT)
 	_configure_label("AlignmentLabel", Vector3(-4.0, 2.0, 6.6), "Path alignment: Center, Left, Right\nUse side when the path is an edge instead of a centerline")
 
-	_configure_wall("LinearMapBoundary", Vector3(5.0, 0.0, 5.0), _create_polyline_curve([Vector3(-2, 0, -1.4), Vector3(2, 0, -1.4), Vector3(2, 0, 1.4), Vector3(-1, 0, 1.4), Vector3(-1, 0, 0.2)]), ProtoWall.Style.SOLID, 1.35, 0.22, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.FIXED_UP, ProtoWall.PathInterpolation.LINEAR)
+	_configure_wall("LinearMapBoundary", Vector3(5.0, 0.0, 5.0), _create_polyline_curve([Vector3(-2, 0, -1.4), Vector3(2, 0, -1.4), Vector3(2, 0, 1.4), Vector3(-1, 0, 1.4), Vector3(-1, 0, 0.2)]), ProtoWall.Style.SOLID, 1.35, 0.22, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.FIXED_UP, ProtoWall.PathInterpolation.LINEAR)
 	_configure_label("LinearMapBoundaryLabel", Vector3(5.0, 2.0, 6.8), "Linear map boundary\nStraight control-point walls with mitered corners")
 
-	_configure_wall("UnevenRetainingWall", Vector3(8.5, 0.0, -2.5), _create_mountain_curve(), ProtoWall.Style.SOLID, 1.15, 0.22, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.FOLLOW_CURVED_PATH3D)
+	_configure_wall("UnevenRetainingWall", Vector3(8.5, 0.0, -2.5), _create_mountain_curve(), ProtoWall.Style.SOLID, 1.15, 0.22, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.FOLLOW_CURVED_PATH3D)
 	_configure_box("UnevenRetainingWallTerrainA", Vector3(7.1, -0.15, -1.2), Vector3(2.4, 0.3, 2.0))
 	_configure_box("UnevenRetainingWallTerrainB", Vector3(9.0, 0.35, 1.0), Vector3(2.5, 0.3, 2.2))
 	_configure_box("UnevenRetainingWallTerrainC", Vector3(10.6, 0.85, 2.8), Vector3(2.3, 0.3, 2.0))
@@ -81,7 +81,7 @@ func _setup_rail_types() -> void:
 	_configure_rail("ThreeRailFence", 3, 0.1, 0.35, true, ProtoWall.PostPlacement.COUNT, 1.0, 6, 0.22)
 	_configure_label("ThreeRailFenceLabel", Vector3(1.0, 1.9, 0.5), "Three-rail fence\nReadable outdoor or arena boundary")
 
-	_configure_wall("CurvedGuardRail", Vector3(-6.0, 0.0, 5.0), _create_arc_curve(3.0, 140.0, 16), ProtoWall.Style.RAIL, 1.1, 0.18, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.CORNER_ROUNDED)
+	_configure_wall("CurvedGuardRail", Vector3(-6.0, 0.0, 5.0), _create_arc_curve(3.0, 140.0, 16), ProtoWall.Style.RAIL, 1.1, 0.18, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.CORNER_ROUNDED)
 	_configure_rail("CurvedGuardRail", 2, 0.12, 0.45, true, ProtoWall.PostPlacement.SPACING, 0.9, 4, 0.18)
 	_configure_label("CurvedGuardRailLabel", Vector3(-6.8, 1.7, 7.3), "Curved guard rail\nRound platforms and arena edges")
 
@@ -89,39 +89,39 @@ func _setup_rail_types() -> void:
 	_configure_rail("PostlessHandRail", 2, 0.1, 0.5, false, ProtoWall.PostPlacement.SPACING, 1.5, 4, 0.14)
 	_configure_label("PostlessHandRailLabel", Vector3(1.5, 1.5, 7.0), "Postless hand rail\nPipes, trims, or temporary guides")
 
-	_configure_wall("MountainRail", Vector3(5.5, 0.0, 2.5), _create_mountain_curve(), ProtoWall.Style.RAIL, 1.1, 0.16, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.CORNER_ROUNDED)
+	_configure_wall("MountainRail", Vector3(5.5, 0.0, 2.5), _create_mountain_curve(), ProtoWall.Style.RAIL, 1.1, 0.16, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.CORNER_ROUNDED)
 	_configure_rail("MountainRail", 2, 0.1, 0.45, true, ProtoWall.PostPlacement.SPACING, 0.75, 4, 0.16)
 	_configure_box("MountainRailTerrainA", Vector3(4.2, -0.15, 3.6), Vector3(2.0, 0.3, 2.0))
 	_configure_box("MountainRailTerrainB", Vector3(6.0, 0.35, 5.6), Vector3(2.2, 0.3, 2.2))
 	_configure_box("MountainRailTerrainC", Vector3(7.8, 0.9, 7.3), Vector3(2.0, 0.3, 2.0))
 	_configure_label("MountainRailLabel", Vector3(6.6, 2.6, 6.0), "Rounded mountain rail\nVariable X/Y/Z elevation and point tilt")
 
-	_configure_wall("LinearFence", Vector3(7.5, 0.0, -2.0), _create_polyline_curve([Vector3(-1.8, 0, 0), Vector3(0.0, 0, 0.8), Vector3(1.8, 0, 0.0), Vector3(3.2, 0, 0.7)]), ProtoWall.Style.RAIL, 1.35, 0.18, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.FIXED_UP, ProtoWall.PathInterpolation.LINEAR)
+	_configure_wall("LinearFence", Vector3(7.5, 0.0, -2.0), _create_polyline_curve([Vector3(-1.8, 0, 0), Vector3(0.0, 0, 0.8), Vector3(1.8, 0, 0.0), Vector3(3.2, 0, 0.7)]), ProtoWall.Style.RAIL, 1.35, 0.18, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.FIXED_UP, ProtoWall.PathInterpolation.LINEAR)
 	_configure_rail("LinearFence", 3, 0.09, 0.35, true, ProtoWall.PostPlacement.COUNT, 1.0, 5, 0.2)
 	_configure_label("LinearFenceLabel", Vector3(8.5, 1.9, -0.4), "Linear zig-zag fence\nMitered corners keep rail thickness consistent")
 
 func _setup_mixed_blockout() -> void:
-	_configure_wall("RoomBoundary", Vector3(-5.0, 0.0, 0.0), _create_polyline_curve([Vector3(-3, 0, -2), Vector3(3, 0, -2), Vector3(3, 0, 2), Vector3(-3, 0, 2)]), ProtoWall.Style.SOLID, 1.8, 0.25, ProtoWall.Side.CENTER, true, ProtoWall.PathOrientation.FIXED_UP, ProtoWall.PathInterpolation.LINEAR)
+	_configure_wall("RoomBoundary", Vector3(-5.0, 0.0, 0.0), _create_polyline_curve([Vector3(-3, 0, -2), Vector3(3, 0, -2), Vector3(3, 0, 2), Vector3(-3, 0, 2)]), ProtoWall.Style.SOLID, 1.8, 0.25, ProtoWall.WallSide.CENTER, true, ProtoWall.PathOrientation.FIXED_UP, ProtoWall.PathInterpolation.LINEAR)
 	_configure_label("RoomBoundaryLabel", Vector3(-5.0, 2.3, 0.0), "Closed solid wall path\nFast room or arena boundary")
 
-	_configure_wall("BalconyRail", Vector3(3.0, 0.0, 0.0), _create_arc_curve(2.4, 180.0, 16), ProtoWall.Style.RAIL, 1.1, 0.18, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.CORNER_ROUNDED)
+	_configure_wall("BalconyRail", Vector3(3.0, 0.0, 0.0), _create_arc_curve(2.4, 180.0, 16), ProtoWall.Style.RAIL, 1.1, 0.18, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.CORNER_ROUNDED)
 	_configure_rail("BalconyRail", 2, 0.11, 0.45, true, ProtoWall.PostPlacement.COUNT, 0.8, 7, 0.2)
 	_configure_label("BalconyRailLabel", Vector3(1.8, 1.6, 1.8), "Curved balcony rail\nPosts follow the sampled curve")
 
 	_configure_ramp("Ramp", Vector3(1.0, 0.0, 5.0), 1.4, 1.0, 4.0)
-	_configure_wall("RampLeftRail", Vector3(1.0, 0.0, 5.0), _create_polyline_curve([Vector3(-0.7, 0, 0), Vector3(-0.7, 1.0, 4.0)]), ProtoWall.Style.RAIL, 1.1, 0.16, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR)
+	_configure_wall("RampLeftRail", Vector3(1.0, 0.0, 5.0), _create_polyline_curve([Vector3(-0.7, 0, 0), Vector3(-0.7, 1.0, 4.0)]), ProtoWall.Style.RAIL, 1.1, 0.16, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR)
 	_configure_rail("RampLeftRail", 2, 0.1, 0.45, true, ProtoWall.PostPlacement.SPACING, 1.0, 4, 0.16)
-	_configure_wall("RampRightRail", Vector3(1.0, 0.0, 5.0), _create_polyline_curve([Vector3(0.7, 0, 0), Vector3(0.7, 1.0, 4.0)]), ProtoWall.Style.RAIL, 1.1, 0.16, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR)
+	_configure_wall("RampRightRail", Vector3(1.0, 0.0, 5.0), _create_polyline_curve([Vector3(0.7, 0, 0), Vector3(0.7, 1.0, 4.0)]), ProtoWall.Style.RAIL, 1.1, 0.16, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR)
 	_configure_rail("RampRightRail", 2, 0.1, 0.45, true, ProtoWall.PostPlacement.SPACING, 1.0, 4, 0.16)
 	_configure_label("RampRailsLabel", Vector3(1.0, 2.3, 7.0), "Sloped ProtoWall rails beside ProtoRamp\nPath rises from Y=0 to Y=1")
 
-	_configure_wall("MapPerimeterFence", Vector3(8.0, 0.0, -1.0), _create_polyline_curve([Vector3(-2.5, 0, -1.5), Vector3(2.5, 0, -1.5), Vector3(2.5, 0, 1.5), Vector3(-2.5, 0, 1.5)]), ProtoWall.Style.RAIL, 1.25, 0.18, ProtoWall.Side.CENTER, true, ProtoWall.PathOrientation.FIXED_UP, ProtoWall.PathInterpolation.LINEAR)
+	_configure_wall("MapPerimeterFence", Vector3(8.0, 0.0, -1.0), _create_polyline_curve([Vector3(-2.5, 0, -1.5), Vector3(2.5, 0, -1.5), Vector3(2.5, 0, 1.5), Vector3(-2.5, 0, 1.5)]), ProtoWall.Style.RAIL, 1.25, 0.18, ProtoWall.WallSide.CENTER, true, ProtoWall.PathOrientation.FIXED_UP, ProtoWall.PathInterpolation.LINEAR)
 	_configure_rail("MapPerimeterFence", 3, 0.08, 0.35, true, ProtoWall.PostPlacement.COUNT, 1.0, 10, 0.18)
 	_configure_label("MapPerimeterFenceLabel", Vector3(8.0, 1.8, -1.0), "Closed perimeter fence\nLinear mode for map boundaries and compounds")
 
-	_configure_wall("MountainRoadRail", Vector3(6.0, 0.0, 5.0), _create_mountain_curve(), ProtoWall.Style.RAIL, 1.1, 0.16, ProtoWall.Side.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.FOLLOW_CURVED_PATH3D)
+	_configure_wall("MountainRoadRail", Vector3(6.0, 0.0, 5.0), _create_mountain_curve(), ProtoWall.Style.RAIL, 1.1, 0.16, ProtoWall.WallSide.CENTER, false, ProtoWall.PathOrientation.PATH_PERPENDICULAR, ProtoWall.PathInterpolation.FOLLOW_CURVED_PATH3D)
 	_configure_rail("MountainRoadRail", 2, 0.09, 0.45, true, ProtoWall.PostPlacement.SPACING, 0.8, 5, 0.16)
-	_configure_follow("MountainRoadRail", false, ProtoWall.FollowDirectionSource.GENERATED_SEGMENT)
+	_configure_follow("MountainRoadRail", false, ProtoWall.DirectionSource.GENERATED_SEGMENT)
 	_configure_box("MountainRoadTerrainA", Vector3(4.6, -0.15, 6.2), Vector3(2.2, 0.3, 2.2))
 	_configure_box("MountainRoadTerrainB", Vector3(6.5, 0.35, 8.2), Vector3(2.4, 0.3, 2.4))
 	_configure_box("MountainRoadTerrainC", Vector3(8.1, 0.9, 9.9), Vector3(2.2, 0.3, 2.2))
@@ -167,8 +167,8 @@ func _setup_interpolation_showcase() -> void:
 func _configure_showcase_pair(prefix: String, solid_position: Vector3, rail_position: Vector3, curve_resource: Curve3D, mode: int, path_orientation: int) -> void:
 	var solid_name := "%sSolid" % prefix
 	var rail_name := "%sRail" % prefix
-	_configure_wall(solid_name, solid_position, curve_resource.duplicate(true), ProtoWall.Style.SOLID, 1.15, 0.18, ProtoWall.Side.CENTER, false, path_orientation, mode)
-	_configure_wall(rail_name, rail_position, curve_resource.duplicate(true), ProtoWall.Style.RAIL, 1.1, 0.14, ProtoWall.Side.CENTER, false, path_orientation, mode)
+	_configure_wall(solid_name, solid_position, curve_resource.duplicate(true), ProtoWall.Style.SOLID, 1.15, 0.18, ProtoWall.WallSide.CENTER, false, path_orientation, mode)
+	_configure_wall(rail_name, rail_position, curve_resource.duplicate(true), ProtoWall.Style.RAIL, 1.1, 0.14, ProtoWall.WallSide.CENTER, false, path_orientation, mode)
 	_configure_rail(rail_name, 2 if mode != ProtoWall.PathInterpolation.LINEAR else 3, 0.07, 0.42, true, ProtoWall.PostPlacement.SPACING, 0.85, 5, 0.14)
 	_configure_showcase_quality(solid_name, mode)
 	_configure_showcase_quality(rail_name, mode)
@@ -187,7 +187,7 @@ func _configure_showcase_quality(node_name: String, mode: int) -> void:
 	wall.preserve_vertical_spikes = false
 	if mode == ProtoWall.PathInterpolation.FOLLOW_CURVED_PATH3D:
 		wall.follow_use_bake_interval = false
-	wall.direction_source = ProtoWall.FollowDirectionSource.CURVE_TANGENT
+	wall.direction_source = ProtoWall.DirectionSource.INTERPOLATION_TANGENT
 
 func _configure_wall(
 	node_name: String,
@@ -196,7 +196,7 @@ func _configure_wall(
 	wall_style: int,
 	wall_height: float,
 	wall_thickness: float,
-	wall_side: int = ProtoWall.Side.CENTER,
+	wall_side: ProtoWall.WallSide = ProtoWall.WallSide.CENTER,
 	curve_closed: bool = false,
 	path_orientation: int = ProtoWall.PathOrientation.PATH_PERPENDICULAR,
 	path_interpolation: int = ProtoWall.PathInterpolation.CORNER_ROUNDED) -> void:

@@ -31,7 +31,7 @@ enum Style {
 }
 
 ## Selects how generated geometry is offset relative to the path centerline.
-enum Side {
+enum WallSide {
 	## Centers the generated width on the path.
 	CENTER,
 	## Places generated geometry to the path's left side.
@@ -73,11 +73,11 @@ enum PathInterpolation {
 }
 
 ## Selects how ProtoWall computes orientation along generated samples.
-enum FollowDirectionSource {
+enum DirectionSource {
 	## Aligns direction to the final generated segment after simplification.
 	GENERATED_SEGMENT,
 	## Uses tangents from the selected interpolation mode.
-	CURVE_TANGENT,
+	INTERPOLATION_TANGENT,
 }
 
 ## Selects how rail posts are distributed along the generated path.
@@ -89,6 +89,7 @@ enum PostPlacement {
 }
 
 const GENERATED_PREFIX := "GeneratedProtoWall"
+const SELECTION_PROXY_SUFFIX := "SelectionProxy"
 const MIN_DIMENSION := 0.001
 const MAX_HEIGHT := 5.0
 const MAX_THICKNESS := 1.0
@@ -106,7 +107,7 @@ const MAX_VERTICAL_SPIKE_AGGRESSIVENESS := 4.0
 const _default_style := Style.SOLID
 const _default_height := 2.0
 const _default_thickness := 0.25
-const _default_side := Side.CENTER
+const _default_side := WallSide.CENTER
 const _default_path_orientation := PathOrientation.PATH_PERPENDICULAR
 const _default_path_interpolation := PathInterpolation.CORNER_ROUNDED
 const _default_corner_rounding := 0.05
@@ -115,7 +116,7 @@ const _default_sample_simplify_angle := 1.0
 const _default_preserve_vertical_spikes := false
 const _default_vertical_spike_aggressiveness := 1.0
 const _default_follow_use_bake_interval := false
-const _default_direction_source := FollowDirectionSource.CURVE_TANGENT
+const _default_direction_source := DirectionSource.INTERPOLATION_TANGENT
 const _default_collisions_enabled := true
 const _default_path_sample_spacing := 0.25
 const _default_rail_count := 2
@@ -129,26 +130,26 @@ const _default_post_width := 0.18
 const _default_post_at_start := true
 const _default_post_at_end := true
 
-var _style: int = _default_style
+var _style: Style = _default_style
 var _height := _default_height
 var _thickness := _default_thickness
-var _side: int = _default_side
-var _path_orientation: int = _default_path_orientation
-var _path_interpolation: int = _default_path_interpolation
+var _side: WallSide = _default_side
+var _path_orientation: PathOrientation = _default_path_orientation
+var _path_interpolation: PathInterpolation = _default_path_interpolation
 var _corner_rounding := _default_corner_rounding
 var _corner_angle_step := _default_corner_angle_step
 var _sample_simplify_angle := _default_sample_simplify_angle
 var _preserve_vertical_spikes := _default_preserve_vertical_spikes
 var _vertical_spike_aggressiveness := _default_vertical_spike_aggressiveness
 var _follow_use_bake_interval := _default_follow_use_bake_interval
-var _direction_source: int = _default_direction_source
+var _direction_source: DirectionSource = _default_direction_source
 var _collisions_enabled := _default_collisions_enabled
 var _path_sample_spacing := _default_path_sample_spacing
 var _rail_count := _default_rail_count
 var _rail_thickness := _default_rail_thickness
 var _lower_rail_height := _default_lower_rail_height
 var _post_enabled := _default_post_enabled
-var _post_placement: int = _default_post_placement
+var _post_placement: PostPlacement = _default_post_placement
 var _post_spacing := _default_post_spacing
 var _post_count := _default_post_count
 var _post_width := _default_post_width
@@ -156,77 +157,81 @@ var _post_at_start := _default_post_at_start
 var _post_at_end := _default_post_at_end
 var _material: Material = null
 
+@export_category("Proto Wall")
 ## Selects the generated shape type. [enum Style.SOLID] creates one swept wall
 ## body; [enum Style.RAIL] creates rail bars and optional posts.
-var style: int: set = set_style, get = get_style
-## Total generated wall or rail height in local units. Rail bars and posts are
-## clamped to fit inside this height.
-var height: float: set = set_height, get = get_height
-## Width of the generated wall footprint, rail bars, and rail posts. This is
-## measured perpendicular to the sampled path.
-var thickness: float: set = set_thickness, get = get_thickness
+@export var style: Style: set = set_style, get = get_style
+## Enables collision on generated CSG wall, rail, and post nodes.
+@export var collisions_enabled: bool: set = set_collisions_enabled, get = get_collisions_enabled
+## Material assigned to generated wall meshes, rail meshes, and posts.
+@export var material: Material: set = set_material, get = get_material
+@export_group("Path")
 ## Controls whether generated geometry is centered on the path, offset left, or
 ## offset right according to the sampled wall side axis.
-var side: int: set = set_side, get = get_side
+@export var side: WallSide: set = set_side, get = get_side
 ## Controls whether generated sections pitch with the sampled 3D path tangent or
 ## keep their height upright against [constant Vector3.UP].
-var path_orientation: int: set = set_path_orientation, get = get_path_orientation
+@export var path_orientation: PathOrientation: set = set_path_orientation, get = get_path_orientation
 ## Controls how [member Path3D.curve] is sampled before walls, rails, posts, and
 ## gizmos are generated.
-var path_interpolation: int: set = set_path_interpolation, get = get_path_interpolation
-## Corner smoothing amount for corner-based modes. Higher values use more of each
-## adjacent segment for the corner blend or arc.
-var corner_rounding: float: set = set_corner_rounding, get = get_corner_rounding
-## Maximum angular step for generated corner arcs and adaptive Bezier sampling.
-## Higher values generate fewer curved sections.
-var corner_angle_step: float: set = set_corner_angle_step, get = get_corner_angle_step
-## Bounded-error simplification tolerance in degrees. Set to [code]0[/code] to
-## keep all generated samples from the selected interpolation mode.
-var sample_simplify_angle: float: set = set_sample_simplify_angle, get = get_sample_simplify_angle
-## When enabled, abrupt vertical hills or dips on otherwise straight XZ spans are
-## kept as sharp control points instead of being smoothed by interpolation.
-var preserve_vertical_spikes: bool: set = set_preserve_vertical_spikes, get = get_preserve_vertical_spikes
-## Controls how easily [member preserve_vertical_spikes] treats vertical changes
-## as protected sharp points. Higher values preserve more hills and dips.
-var vertical_spike_aggressiveness: float: set = set_vertical_spike_aggressiveness, get = get_vertical_spike_aggressiveness
+@export var path_interpolation: PathInterpolation: set = set_path_interpolation, get = get_path_interpolation
 ## Follow Curved Path3D only. When enabled, [member Curve3D.bake_interval] drives
 ## generated sample density and [member path_sample_spacing] is ignored.
-var follow_use_bake_interval: bool: set = set_follow_use_bake_interval, get = get_follow_use_bake_interval
-## Chooses whether orientation follows final generated segments or the selected
-## interpolation mode's sampled tangents.
-var direction_source: int: set = set_direction_source, get = get_direction_source
-var follow_direction_source: int: set = set_follow_direction_source, get = get_follow_direction_source
-## Enables collision on generated CSG wall, rail, and post nodes.
-var collisions_enabled: bool: set = set_collisions_enabled, get = get_collisions_enabled
+@export var follow_use_bake_interval: bool: set = set_follow_use_bake_interval, get = get_follow_use_bake_interval
 ## Distance between generated samples for modes that sample by path length. Lower
 ## values create more sections; higher values create simpler geometry.
-var path_sample_spacing: float: set = set_path_sample_spacing, get = get_path_sample_spacing
+@export_range(0.01, 2.0, 0.01) var path_sample_spacing: float: set = set_path_sample_spacing, get = get_path_sample_spacing
+## Chooses whether orientation follows final generated segments or the selected
+## interpolation mode's sampled tangents.
+@export var direction_source: DirectionSource: set = set_direction_source, get = get_direction_source
+## Corner smoothing amount for corner-based modes. Higher values use more of each
+## adjacent segment for the corner blend or arc.
+@export_range(0.0, 1.0, 0.01) var corner_rounding: float: set = set_corner_rounding, get = get_corner_rounding
+## Maximum angular step for generated corner arcs and adaptive Bezier sampling.
+## Higher values generate fewer curved sections.
+@export_range(1.0, 45.0, 1.0) var corner_angle_step: float: set = set_corner_angle_step, get = get_corner_angle_step
+## Bounded-error simplification tolerance in degrees. Set to [code]0[/code] to
+## keep all generated samples from the selected interpolation mode.
+@export_range(0.0, 15.0, 0.1) var sample_simplify_angle: float: set = set_sample_simplify_angle, get = get_sample_simplify_angle
+## When enabled, abrupt vertical hills or dips on otherwise straight XZ spans are
+## kept as sharp control points instead of being smoothed by interpolation.
+@export var preserve_vertical_spikes: bool: set = set_preserve_vertical_spikes, get = get_preserve_vertical_spikes
+## Controls how easily [member preserve_vertical_spikes] treats vertical changes
+## as protected sharp points. Higher values preserve more hills and dips.
+@export_range(0.1, 4.0, 0.05) var vertical_spike_aggressiveness: float: set = set_vertical_spike_aggressiveness, get = get_vertical_spike_aggressiveness
+@export_group("Dimensions")
+## Total generated wall or rail height in local units. Rail bars and posts are
+## clamped to fit inside this height.
+@export_range(0.001, 5.0, 0.01) var height: float: set = set_height, get = get_height
+## Width of the generated wall footprint, rail bars, and rail posts. This is
+## measured perpendicular to the sampled path.
+@export_range(0.001, 1.0, 0.01) var thickness: float: set = set_thickness, get = get_thickness
+@export_group("Rail")
 ## Rail style only. Number of horizontal rail bars to generate.
-var rail_count: int: set = set_rail_count, get = get_rail_count
+@export_range(1, 8, 1, "or_greater") var rail_count: int: set = set_rail_count, get = get_rail_count
 ## Rail style only. Vertical thickness of each rail bar, clamped so bars can fit
 ## within the total rail height.
-var rail_thickness: float: set = set_rail_thickness, get = get_rail_thickness
+@export_range(0.001, 1.0, 0.01) var rail_thickness: float: set = set_rail_thickness, get = get_rail_thickness
 ## Rail style only. Center height of the lowest rail bar. The inspector range and
 ## setter are clamped between half rail thickness and the top valid center height.
-var lower_rail_height: float: set = set_lower_rail_height, get = get_lower_rail_height
+@export_range(0.0, 5.0, 0.01) var lower_rail_height: float: set = set_lower_rail_height, get = get_lower_rail_height
 ## Rail style only. Enables generated post boxes along the sampled rail path.
-var post_enabled: bool: set = set_post_enabled, get = get_post_enabled
+@export var post_enabled: bool: set = set_post_enabled, get = get_post_enabled
+@export_group("Posts")
 ## Rail posts only. Chooses fixed spacing or explicit count distribution.
-var post_placement: int: set = set_post_placement, get = get_post_placement
+@export var post_placement: PostPlacement: set = set_post_placement, get = get_post_placement
 ## Rail posts only. Distance between posts when [member post_placement] is
 ## [enum PostPlacement.SPACING].
-var post_spacing: float: set = set_post_spacing, get = get_post_spacing
+@export_range(0.1, 100.0, 0.1, "or_greater") var post_spacing: float: set = set_post_spacing, get = get_post_spacing
 ## Rail posts only. Number of posts when [member post_placement] is
 ## [enum PostPlacement.COUNT].
-var post_count: int: set = set_post_count, get = get_post_count
+@export_range(1, 128, 1, "or_greater") var post_count: int: set = set_post_count, get = get_post_count
 ## Rail posts only. Post depth measured along the sampled path direction.
-var post_width: float: set = set_post_width, get = get_post_width
+@export_range(0.001, 1.0, 0.01) var post_width: float: set = set_post_width, get = get_post_width
 ## Rail posts only. Adds a post at the start of the path when using spacing mode.
-var post_at_start: bool: set = set_post_at_start, get = get_post_at_start
+@export var post_at_start: bool: set = set_post_at_start, get = get_post_at_start
 ## Rail posts only. Adds a post at the end of an open path when using spacing mode.
-var post_at_end: bool: set = set_post_at_end, get = get_post_at_end
-## Material assigned to generated wall meshes, rail meshes, and posts.
-var material: Variant: set = set_material, get = get_material
+@export var post_at_end: bool: set = set_post_at_end, get = get_post_at_end
 
 var generated_shapes: Array[Node3D] = []
 var gizmos = null
@@ -242,74 +247,36 @@ var sampled_path_length := 0.0
 var sampled_path_dirty := true
 var sampled_basis_dirty := true
 var tracked_curve_bake_interval := -1.0
+var deferred_gizmo_update_pending := false
 
-func _get_property_list() -> Array[Dictionary]:
-	var list: Array[Dictionary] = [
-		{"name": "Proto Wall", "type": TYPE_NIL, "usage": PROPERTY_USAGE_CATEGORY},
-		{"name": "style", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Solid,Rail"},
-		{"name": "collisions_enabled", "type": TYPE_BOOL},
-		{"name": "material", "type": TYPE_OBJECT, "hint": PROPERTY_HINT_RESOURCE_TYPE, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": PROPERTY_USAGE_DEFAULT},
-		{"name": "Path", "type": TYPE_NIL, "usage": PROPERTY_USAGE_GROUP},
-		{"name": "side", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Center,Left,Right"},
-		{"name": "path_orientation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Path Perpendicular,Fixed Up"},
-		{"name": "path_interpolation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Baked Linear,Baked Cubic,Bezier,Corner Rounded,Fillet Path,Centripetal Catmull-Rom,Arc Line,Parallel Transport Bezier,Follow Curved Path3D,Linear"},
-	]
-	if path_interpolation == PathInterpolation.FOLLOW_CURVED_PATH3D:
-		list.append({"name": "follow_use_bake_interval", "type": TYPE_BOOL})
-		if _uses_path_sample_spacing():
-			list.append({"name": "path_sample_spacing", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.01,2,0.01"})
-	elif _uses_path_sample_spacing():
-		list.append({"name": "path_sample_spacing", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.01,2,0.01"})
+func _validate_property(property: Dictionary) -> void:
+	match property["name"]:
+		&"follow_use_bake_interval":
+			_hide_property_if(property, path_interpolation != PathInterpolation.FOLLOW_CURVED_PATH3D)
+		&"path_sample_spacing":
+			_hide_property_if(property, not _uses_path_sample_spacing())
+		&"corner_rounding":
+			_hide_property_if(property, not _uses_corner_settings())
+		&"corner_angle_step":
+			_hide_property_if(property, not _uses_angle_step_setting())
+		&"sample_simplify_angle":
+			_hide_property_if(property, not _uses_sample_simplify())
+		&"preserve_vertical_spikes":
+			_hide_property_if(property, not _uses_vertical_spike_protection())
+		&"vertical_spike_aggressiveness":
+			_hide_property_if(property, not _uses_vertical_spike_protection() or not preserve_vertical_spikes)
+		&"rail_count", &"rail_thickness", &"lower_rail_height", &"post_enabled":
+			_hide_property_if(property, style != Style.RAIL)
+		&"post_placement", &"post_width":
+			_hide_property_if(property, style != Style.RAIL or not post_enabled)
+		&"post_spacing", &"post_at_start", &"post_at_end":
+			_hide_property_if(property, style != Style.RAIL or not post_enabled or post_placement != PostPlacement.SPACING)
+		&"post_count":
+			_hide_property_if(property, style != Style.RAIL or not post_enabled or post_placement != PostPlacement.COUNT)
 
-	list.append({"name": "direction_source", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Generated Segment,Interpolation Tangent"})
-
-	if _uses_corner_settings():
-		list.append({"name": "corner_rounding", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0,1.00,0.01"})
-
-	if _uses_angle_step_setting():
-		list.append({"name": "corner_angle_step", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,45,1"})
-
-	if _uses_sample_simplify():
-		list.append({"name": "sample_simplify_angle", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0,15,0.1"})
-
-	if _uses_vertical_spike_protection():
-		list.append({"name": "preserve_vertical_spikes", "type": TYPE_BOOL})
-		if preserve_vertical_spikes:
-			list.append({"name": "vertical_spike_aggressiveness", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.1,4,0.05"})
-
-	list += [
-		{"name": "Dimensions", "type": TYPE_NIL, "usage": PROPERTY_USAGE_GROUP},
-		{"name": "height", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,5,0.01"},
-		{"name": "thickness", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,1,0.01"},
-	]
-
-	if style == Style.RAIL:
-		list += [
-			{"name": "Rail", "type": TYPE_NIL, "usage": PROPERTY_USAGE_GROUP},
-			{"name": "rail_count", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,8,1,or_greater"},
-			{"name": "rail_thickness", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,1,0.01"},
-			{"name": "lower_rail_height", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0,5,0.01"},
-			{"name": "post_enabled", "type": TYPE_BOOL},
-		]
-
-		if post_enabled:
-			list += [
-				{"name": "Posts", "type": TYPE_NIL, "usage": PROPERTY_USAGE_GROUP},
-				{"name": "post_placement", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Spacing,Count"},
-			]
-			if post_placement == PostPlacement.SPACING:
-				list += [
-					{"name": "post_spacing", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.1,100,0.1,or_greater"},
-					{"name": "post_at_start", "type": TYPE_BOOL},
-					{"name": "post_at_end", "type": TYPE_BOOL},
-				]
-			else:
-				list.append({"name": "post_count", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,128,1,or_greater"})
-			list += [
-				{"name": "post_width", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,1,0.01"},
-			]
-
-	return list
+func _hide_property_if(property: Dictionary, hidden: bool) -> void:
+	if hidden:
+		property["usage"] = PROPERTY_USAGE_NO_EDITOR
 
 func _set(property: StringName, value: Variant) -> bool:
 	match property:
@@ -351,9 +318,6 @@ func _set(property: StringName, value: Variant) -> bool:
 			return true
 		&"direction_source":
 			set_direction_source(value)
-			return true
-		&"follow_direction_source":
-			set_follow_direction_source(value)
 			return true
 		&"collisions_enabled":
 			set_collisions_enabled(value)
@@ -411,7 +375,6 @@ func _property_can_revert(property: StringName) -> bool:
 		&"vertical_spike_aggressiveness",
 		&"follow_use_bake_interval",
 		&"direction_source",
-		&"follow_direction_source",
 		&"collisions_enabled",
 		&"path_sample_spacing",
 		&"rail_count",
@@ -455,8 +418,6 @@ func _property_get_revert(property: StringName) -> Variant:
 			return _default_follow_use_bake_interval
 		&"direction_source":
 			return _default_direction_source
-		&"follow_direction_source":
-			return _default_direction_source
 		&"collisions_enabled":
 			return _default_collisions_enabled
 		&"path_sample_spacing":
@@ -486,12 +447,13 @@ func _property_get_revert(property: StringName) -> Variant:
 	return null
 
 func get_proto_gizmo_provider() -> Variant:
+	_ensure_gizmos()
 	return gizmos
 
 func get_proto_gizmo_selection_nodes() -> Array:
 	return generated_shapes
 
-func get_style() -> int:
+func get_style() -> Style:
 	return _style
 
 func get_height() -> float:
@@ -500,13 +462,13 @@ func get_height() -> float:
 func get_thickness() -> float:
 	return _thickness
 
-func get_side() -> int:
+func get_side() -> WallSide:
 	return _side
 
-func get_path_orientation() -> int:
+func get_path_orientation() -> PathOrientation:
 	return _path_orientation
 
-func get_path_interpolation() -> int:
+func get_path_interpolation() -> PathInterpolation:
 	return _path_interpolation
 
 func get_corner_rounding() -> float:
@@ -527,11 +489,8 @@ func get_vertical_spike_aggressiveness() -> float:
 func get_follow_use_bake_interval() -> bool:
 	return _follow_use_bake_interval
 
-func get_direction_source() -> int:
+func get_direction_source() -> DirectionSource:
 	return _direction_source
-
-func get_follow_direction_source() -> int:
-	return get_direction_source()
 
 func get_collisions_enabled() -> bool:
 	return _collisions_enabled
@@ -551,7 +510,7 @@ func get_lower_rail_height() -> float:
 func get_post_enabled() -> bool:
 	return _post_enabled
 
-func get_post_placement() -> int:
+func get_post_placement() -> PostPlacement:
 	return _post_placement
 
 func get_post_spacing() -> float:
@@ -569,11 +528,11 @@ func get_post_at_start() -> bool:
 func get_post_at_end() -> bool:
 	return _post_at_end
 
-func get_material() -> Variant:
+func get_material() -> Material:
 	return _material
 
-func set_style(value: int) -> void:
-	_style = value
+func set_style(value: Style) -> void:
+	_style = clampi(value, Style.SOLID, Style.RAIL)
 	notify_property_list_changed()
 	refresh_shape()
 	style_changed.emit()
@@ -591,20 +550,20 @@ func set_thickness(value: float) -> void:
 	thickness_changed.emit()
 	update_gizmos()
 
-func set_side(value: int) -> void:
-	_side = value
+func set_side(value: WallSide) -> void:
+	_side = clampi(value, WallSide.CENTER, WallSide.RIGHT)
 	refresh_shape()
 	side_changed.emit()
 	update_gizmos()
 
-func set_path_orientation(value: int) -> void:
+func set_path_orientation(value: PathOrientation) -> void:
 	_path_orientation = clampi(value, PathOrientation.PATH_PERPENDICULAR, PathOrientation.FIXED_UP)
 	_mark_sampled_basis_dirty()
 	refresh_shape()
 	path_settings_changed.emit()
 	update_gizmos()
 
-func set_path_interpolation(value: int) -> void:
+func set_path_interpolation(value: PathInterpolation) -> void:
 	_path_interpolation = clampi(value, PathInterpolation.BAKED_LINEAR, PathInterpolation.LINEAR)
 	_mark_sampled_path_dirty()
 	notify_property_list_changed()
@@ -689,15 +648,12 @@ func set_follow_use_bake_interval(value: bool) -> void:
 	path_settings_changed.emit()
 	update_gizmos()
 
-func set_direction_source(value: int) -> void:
-	_direction_source = clampi(value, FollowDirectionSource.GENERATED_SEGMENT, FollowDirectionSource.CURVE_TANGENT)
+func set_direction_source(value: DirectionSource) -> void:
+	_direction_source = clampi(value, DirectionSource.GENERATED_SEGMENT, DirectionSource.INTERPOLATION_TANGENT)
 	_mark_sampled_path_dirty()
 	refresh_shape()
 	path_settings_changed.emit()
 	update_gizmos()
-
-func set_follow_direction_source(value: int) -> void:
-	set_direction_source(value)
 
 func set_collisions_enabled(value: bool) -> void:
 	_collisions_enabled = value
@@ -737,8 +693,8 @@ func set_post_enabled(value: bool) -> void:
 	rail_settings_changed.emit()
 	update_gizmos()
 
-func set_post_placement(value: int) -> void:
-	_post_placement = value
+func set_post_placement(value: PostPlacement) -> void:
+	_post_placement = clampi(value, PostPlacement.SPACING, PostPlacement.COUNT)
 	notify_property_list_changed()
 	refresh_shape()
 	rail_settings_changed.emit()
@@ -799,6 +755,7 @@ func refresh_shape() -> void:
 			_create_rails()
 			_create_posts()
 	is_refreshing = false
+	_queue_gizmo_update()
 
 func get_path_length() -> float:
 	_ensure_sampled_path()
@@ -833,17 +790,17 @@ func get_wall_side_axis(offset: float) -> Vector3:
 
 func get_side_center_offset(width: float) -> float:
 	match side:
-		Side.LEFT:
+		WallSide.LEFT:
 			return -width / 2.0
-		Side.RIGHT:
+		WallSide.RIGHT:
 			return width / 2.0
 	return 0.0
 
 func get_side_outer_offset(width: float) -> float:
 	match side:
-		Side.LEFT:
+		WallSide.LEFT:
 			return -width
-		Side.RIGHT:
+		WallSide.RIGHT:
 			return width
 	return width / 2.0
 
@@ -858,13 +815,10 @@ func get_rail_center_height(index: int) -> float:
 
 func _enter_tree() -> void:
 	set_process(Engine.is_editor_hint())
+	_ensure_gizmos()
 	_ensure_default_curve()
 	refresh_shape()
 	_connect_curve_changed()
-	if Engine.is_editor_hint():
-		var ProtoWallGizmos = load("res://addons/proto_shape/proto_wall/proto_wall_gizmos.gd")
-		gizmos = ProtoWallGizmos.new()
-		gizmos.attach_shape(self)
 
 func _exit_tree() -> void:
 	set_process(false)
@@ -873,6 +827,25 @@ func _exit_tree() -> void:
 	if Engine.is_editor_hint() and gizmos != null:
 		gizmos.remove_shape()
 		gizmos = null
+	deferred_gizmo_update_pending = false
+
+func _ensure_gizmos() -> void:
+	if not Engine.is_editor_hint() or gizmos != null:
+		return
+	var ProtoWallGizmos = load("res://addons/proto_shape/proto_wall/proto_wall_gizmos.gd")
+	gizmos = ProtoWallGizmos.new()
+	gizmos.attach_shape(self)
+
+func _queue_gizmo_update() -> void:
+	if not Engine.is_editor_hint() or deferred_gizmo_update_pending:
+		return
+	deferred_gizmo_update_pending = true
+	call_deferred("_flush_gizmo_update")
+
+func _flush_gizmo_update() -> void:
+	deferred_gizmo_update_pending = false
+	if is_inside_tree():
+		update_gizmos()
 
 func _process(_delta: float) -> void:
 	if _should_rebuild_for_curve_bake_interval_change():
@@ -950,7 +923,7 @@ func _rebuild_sampled_path() -> void:
 
 	_remove_closed_duplicate_sample()
 	_simplify_sampled_path()
-	if direction_source == FollowDirectionSource.GENERATED_SEGMENT:
+	if direction_source == DirectionSource.GENERATED_SEGMENT:
 		_rebuild_sampled_forwards_from_segments()
 	_rebuild_sample_offsets()
 	_track_curve_bake_interval()
@@ -1959,7 +1932,7 @@ func _sample_path_basis(offset: float) -> Basis:
 		return sampled_path_bases[0]
 
 	var sample_offset := _get_normalized_path_offset(offset)
-	if direction_source == FollowDirectionSource.GENERATED_SEGMENT:
+	if direction_source == DirectionSource.GENERATED_SEGMENT:
 		return _sample_segment_aligned_basis(sample_offset)
 
 	var index := _find_sample_segment_index(sample_offset)
@@ -2211,6 +2184,7 @@ func _create_rails() -> void:
 		var top := min(height, rail_center_height + rail_thickness / 2.0)
 		profiles.append(_create_wall_profile(thickness, bottom, top))
 	_create_path_meshes("%sRails" % GENERATED_PREFIX, profiles)
+	_create_selection_proxy()
 
 func _create_posts() -> void:
 	if not post_enabled or curve == null:
@@ -2236,10 +2210,10 @@ func _create_wall_profile(width: float, bottom: float, top: float) -> PackedVect
 	var min_x := -width / 2.0
 	var max_x := width / 2.0
 	match side:
-		Side.LEFT:
+		WallSide.LEFT:
 			min_x = -width
 			max_x = 0.0
-		Side.RIGHT:
+		WallSide.RIGHT:
 			min_x = 0.0
 			max_x = width
 
@@ -2268,6 +2242,21 @@ func _create_path_meshes(node_name: String, profiles: Array) -> CSGMesh3D:
 	add_child(csg_mesh)
 	generated_shapes.append(csg_mesh)
 	return csg_mesh
+
+func _create_selection_proxy() -> void:
+	if sampled_path_points.size() < 2:
+		return
+
+	var mesh := _create_swept_meshes([_create_wall_profile(thickness, 0.0, height)])
+	if mesh == null:
+		return
+
+	var proxy := MeshInstance3D.new()
+	proxy.name = "%s%s" % [GENERATED_PREFIX, SELECTION_PROXY_SUFFIX]
+	proxy.mesh = mesh
+	proxy.visible = false
+	add_child(proxy)
+	generated_shapes.append(proxy)
 
 func _create_swept_meshes(profiles: Array) -> ArrayMesh:
 	if profiles.is_empty():

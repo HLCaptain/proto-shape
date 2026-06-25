@@ -148,9 +148,9 @@ func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -
 			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_thickness_handle_position(), side_axis, shape)
 			var side_distance := (offset - shape.get_path_point(path_offset)).dot(side_axis)
 			match shape.side:
-				ProtoWall.Side.LEFT:
+				ProtoWall.WallSide.LEFT:
 					return max(ProtoWall.MIN_DIMENSION, -side_distance)
-				ProtoWall.Side.RIGHT:
+				ProtoWall.WallSide.RIGHT:
 					return max(ProtoWall.MIN_DIMENSION, side_distance)
 			return max(ProtoWall.MIN_DIMENSION, abs(side_distance) * 2.0)
 		HANDLE_LOWER_RAIL_HEIGHT:
