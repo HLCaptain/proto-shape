@@ -2197,7 +2197,7 @@ func _create_posts() -> void:
 		post.use_collision = collisions_enabled
 		post.material = material
 
-		var basis := get_wall_basis(post_offset)
+		var basis := _get_post_basis(post_offset)
 		var position := get_path_point(post_offset)
 		position += basis.x * get_side_center_offset(thickness)
 		position += basis.y * height / 2.0
@@ -2205,6 +2205,12 @@ func _create_posts() -> void:
 
 		add_child(post)
 		generated_shapes.append(post)
+
+func _get_post_basis(offset: float) -> Basis:
+	_ensure_sampled_bases()
+	if sampled_path_bases.is_empty():
+		return Basis()
+	return _sample_segment_aligned_basis(_get_normalized_path_offset(offset))
 
 func _create_wall_profile(width: float, bottom: float, top: float) -> PackedVector2Array:
 	var min_x := -width / 2.0

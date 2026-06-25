@@ -51,7 +51,7 @@ Common properties:
 - `vertical_spike_aggressiveness` - Controls how easily `preserve_vertical_spikes` treats vertical hills/dips as protected sharp points. Lower values preserve only more extreme spikes; higher values preserve more vertical height changes. This is shown only when `preserve_vertical_spikes` is enabled.
 - `path_sample_spacing` - ProtoWall's generated path sample spacing for wall/rail sections and posts. It is hidden for `Linear`, and hidden in `Follow Curved Path3D` when `follow_use_bake_interval` is enabled.
 - `follow_use_bake_interval` - `Follow Curved Path3D` only. Uses `Curve3D.bake_interval` as the generated sample-density control and ignores `path_sample_spacing`.
-- `direction_source` - Chooses whether posts/gizmos and sampled orientation follow final generated segments or the selected interpolation mode's sampled tangents.
+- `direction_source` - Chooses whether sampled orientation and gizmos follow final generated segments or the selected interpolation mode's sampled tangents. Posts always align their depth to the generated rail segment they are placed on.
 - `Curve3D` point tilt - When `path_orientation` is `Path Perpendicular`, point tilt is interpolated and applied as roll around the sampled path direction.
 - `curve.closed` - Close the referenced `Path3D` curve itself to make looped walls and rails.
 - `collisions_enabled` - Enables collision on generated CSG parts.
@@ -97,7 +97,7 @@ Each scene includes `Label3D` notes describing the setup. The example setup scri
 
 The runtime shape script owns generated CSG nodes and remains export-safe. Editor-only gizmo code is loaded only behind `Engine.is_editor_hint()`.
 
-Generated solid walls and rail bars are closed `CSGMesh3D` sweep meshes built from sampled `Path3D` points. Rail posts are generated `CSGBox3D` nodes placed from the same sampled path cache, so rails and posts share the same interpolation, pitch, and side offset.
+Generated solid walls and rail bars are closed `CSGMesh3D` sweep meshes built from sampled `Path3D` points. Rail posts are generated `CSGBox3D` nodes placed from the same sampled path cache, and their depth axis is aligned to the generated rail segment at the post offset so posts stay parallel to the rail span.
 
 `path_orientation` controls both mesh sweep sections and post transforms. `Path Perpendicular` follows each interpolation mode's sampled 3D tangent and applies interpolated `Curve3D` point tilt as explicit roll, which is useful for rails on top of `ProtoRamp` where the curve rises from `Y=0` to `Y=1`. `Fixed Up` follows the path horizontally while keeping wall height upright.
 
@@ -118,7 +118,7 @@ Godot's `Curve3D.bake_interval` controls the distance between cached baked curve
 
 Corner-based modes are optimized for long rail paths: straight spans generate only endpoints and rounded corners use adaptive subdivisions. All non-Linear interpolation modes use `sample_simplify_angle` to reduce redundant sections after their initial sampling pass. The simplifier is Ramer-Douglas-Peucker-like: it removes points only when the resulting segment stays within a small chord-distance tolerance derived from the angle threshold and does not exceed tangent or tilt error limits. Structural anchors such as endpoints, control points, and corner entry/exit points are preserved, while generated interior subdivision points can be removed safely.
 
-`direction_source` controls how orientation is computed. `Generated Segment` rebuilds sample directions from the final simplified polyline and uses the containing generated segment's direction directly, keeping posts and gizmos parallel to the optimized wall/rail segment. `Interpolation Tangent` uses tangents from the selected interpolation mode and interpolates those basis vectors for smoother orientation.
+`direction_source` controls how sampled orientation is computed. `Generated Segment` rebuilds sample directions from the final simplified polyline and uses the containing generated segment's direction directly, keeping gizmos parallel to the optimized wall/rail segment. `Interpolation Tangent` uses tangents from the selected interpolation mode and interpolates those basis vectors for smoother orientation. Rail posts are always segment-aligned so their rectangular depth stays parallel to the visible rail span.
 
 By default, interpolation treats vertical and horizontal control-point changes the same way, so modes such as `Centripetal Catmull-Rom`, `Corner Rounded`, `Fillet Path`, and `Bezier` can smooth hills and dips even when the path is mostly straight in the XZ plane. Enable `preserve_vertical_spikes` when you need a short, mostly vertical hill or dip to stay sharp instead of being smoothed through. Use `vertical_spike_aggressiveness` to tune how easily those vertical points are protected.
 
