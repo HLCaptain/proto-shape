@@ -21,6 +21,17 @@ func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Vari
 
 `commit_handle` is optional for draw-only gizmos, but editable handles should implement it and use `EditorUndoRedoManager` through the `plugin.undo_redo` reference.
 
+Providers can also make solid arrow guides selectable by implementing Godot subgizmo callbacks. `ProtoGizmo` forwards these optional methods when present:
+
+```gdscript
+func subgizmos_intersect_ray(gizmo, plugin, camera: Camera3D, screen_pos: Vector2) -> int
+func get_subgizmo_transform(gizmo, plugin, subgizmo_id: int) -> Transform3D
+func set_subgizmo_transform(gizmo, plugin, subgizmo_id: int, transform: Transform3D) -> void
+func commit_subgizmos(gizmo, plugin, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void
+```
+
+Use the same id for a point handle and its arrow subgizmo when both edit the same property. `ProtoGizmoUtils.get_closest_screen_segment_id()` can ray-pick arrow bodies in screen space, and `EditorNode3DGizmo.is_subgizmo_selected()` can be used from `is_handle_highlighted()` to highlight selected arrows.
+
 Nodes or providers can optionally expose generated visual nodes for click-selection:
 
 ```gdscript
@@ -34,13 +45,17 @@ Keep editor-only provider scripts loaded behind `Engine.is_editor_hint()` when t
 
 Handle direction vectors do not need to be static. A provider can calculate the handle position and local direction axis on every `redraw_gizmos` and `set_handle` call, then pass that dynamic axis into `ProtoGizmoUtils`.
 
+Use `ProtoGizmoUtils.add_arrow_mesh(gizmo, material, from_position, to_position)` to draw a solid 3D arrow along a handle's drag direction. Place the `gizmo.add_handles()` point at `from_position` so the handle icon sits at the arrow base, then point the arrow toward the direction that increases or adjusts the value.
+
+`add_arrow_mesh()` also adds a collision segment for picking. Use `plugin.get_handle_arrow_material(gizmo, handle_id)` for arrows that should use the highlighted material when a provider reports a highlighted handle. Providers can implement `is_handle_highlighted(gizmo, plugin, handle_id, secondary)` to share their current highlight, selection, or editing state.
+
 See [examples](examples/README.md) for provider-based custom shapes, dynamic handle axes, and `ProtoGizmoWrapper` signal usage.
 
 ## Default materials
 
 - `proto_handler` - Same as internal "handlers" material for gizmo handles, but blue instead of redish color.
 - `selected` - Material for selected nodes (bluish transparent color).
-- `main` - Base redish color material for general or debuging use. (Used for drawing camera projected debug planes).
+- `main` - Base reddish color material for solid arrows, general guides, and debugging use. It is also used for drawing camera-projected debug planes.
 
 ## ProtoGizmoUtils
 

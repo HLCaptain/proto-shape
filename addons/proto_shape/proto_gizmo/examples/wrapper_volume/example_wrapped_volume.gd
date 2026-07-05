@@ -5,6 +5,8 @@ const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/
 
 const HANDLE_RADIUS := 1
 const HANDLE_HEIGHT := 2
+const MIN_ARROW_VISUAL_LENGTH := 0.25
+const MAX_ARROW_VISUAL_LENGTH := 0.75
 
 const _default_radius := 1.0
 const _default_height := 1.5
@@ -104,21 +106,16 @@ func redraw_gizmos(gizmo, plugin) -> void:
 		return
 
 	gizmo.clear()
-	var center := Vector3(0, height / 2.0, 0)
 	var radius_handle := _get_radius_handle_position()
 	var height_handle := _get_height_handle_position()
 
-	var lines := PackedVector3Array()
-	lines.push_back(center)
-	lines.push_back(radius_handle)
-	lines.push_back(center)
-	lines.push_back(height_handle)
+	_add_handle_arrow(gizmo, plugin, HANDLE_RADIUS, radius_handle, Vector3.RIGHT)
+	_add_handle_arrow(gizmo, plugin, HANDLE_HEIGHT, height_handle, Vector3.UP)
 
 	var handles := PackedVector3Array()
 	handles.push_back(radius_handle)
 	handles.push_back(height_handle)
 
-	gizmo.add_lines(lines, plugin.get_material("main", gizmo))
 	gizmo.add_handles(handles, plugin.get_material("proto_handler", gizmo), [HANDLE_RADIUS, HANDLE_HEIGHT])
 
 func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2) -> void:
@@ -139,6 +136,41 @@ func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Vari
 	if gizmo.get_node_3d() != self or editing_handle == 0:
 		return
 
+	_commit_current_edit(plugin, cancel)
+
+func subgizmos_intersect_ray(gizmo, _plugin, camera: Camera3D, screen_pos: Vector2) -> int:
+	if gizmo.get_node_3d() != self:
+		return -1
+
+	return gizmo_utils.get_closest_screen_segment_id(camera, screen_pos, self, _get_arrow_segments())
+
+func get_subgizmo_transform(gizmo, _plugin, subgizmo_id: int) -> Transform3D:
+	if gizmo.get_node_3d() != self:
+		return Transform3D.IDENTITY
+
+	return Transform3D(Basis.IDENTITY, _get_handle_position(subgizmo_id))
+
+func set_subgizmo_transform(gizmo, plugin, subgizmo_id: int, transform: Transform3D) -> void:
+	if gizmo.get_node_3d() != self:
+		return
+
+	if editing_handle == 0:
+		editing_handle = subgizmo_id
+		start_value = _get_handle_value(subgizmo_id)
+
+	var value := _get_value_from_subgizmo_position(subgizmo_id, transform.origin)
+	value = _apply_snapping(value, plugin)
+	_set_handle_value(subgizmo_id, value)
+	end_value = value
+	update_gizmos()
+
+func commit_subgizmos(gizmo, plugin, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void:
+	if gizmo.get_node_3d() != self or editing_handle == 0:
+		return
+
+	_commit_current_edit(plugin, cancel)
+
+func _commit_current_edit(plugin, cancel: bool) -> void:
 	if cancel:
 		_set_handle_value(editing_handle, start_value)
 		update_gizmos()
@@ -153,11 +185,54 @@ func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Vari
 	undo_redo.commit_action()
 	editing_handle = 0
 
+func _get_handle_position(handle_id: int) -> Vector3:
+	match handle_id:
+		HANDLE_RADIUS:
+			return _get_radius_handle_position()
+		HANDLE_HEIGHT:
+			return _get_height_handle_position()
+	return Vector3.ZERO
+
 func _get_radius_handle_position() -> Vector3:
 	return Vector3(radius, height / 2.0, 0)
 
 func _get_height_handle_position() -> Vector3:
 	return Vector3(0, height, 0)
+
+func _get_arrow_segments() -> Array:
+	var segments := []
+	for handle_id in [HANDLE_RADIUS, HANDLE_HEIGHT]:
+		var direction := _get_drag_axis(handle_id)
+		var from_position := _get_handle_position(handle_id)
+		segments.append({
+			"id": handle_id,
+			"from": from_position,
+			"to": from_position + direction.normalized() * _get_arrow_visual_length(),
+		})
+	return segments
+
+func _get_drag_axis(handle_id: int) -> Vector3:
+	match handle_id:
+		HANDLE_RADIUS:
+			return Vector3.RIGHT
+		HANDLE_HEIGHT:
+			return Vector3.UP
+	return Vector3.ZERO
+
+func _add_handle_arrow(gizmo, plugin, handle_id: int, base_position: Vector3, direction: Vector3) -> void:
+	if plugin.has_method("should_draw_mesh_guides") and not plugin.should_draw_mesh_guides(gizmo):
+		return
+
+	var material: Material = plugin.get_material("main", gizmo)
+	if plugin.has_method("get_handle_arrow_material"):
+		material = plugin.get_handle_arrow_material(gizmo, handle_id)
+	gizmo_utils.add_arrow_mesh(gizmo, material, base_position, base_position + direction.normalized() * _get_arrow_visual_length())
+
+func _get_arrow_visual_length() -> float:
+	return clamp(max(radius * 2.0, height) * 0.2, MIN_ARROW_VISUAL_LENGTH, MAX_ARROW_VISUAL_LENGTH)
+
+func is_handle_highlighted(gizmo, _plugin, handle_id: int, _secondary: bool) -> bool:
+	return editing_handle == handle_id or gizmo.is_subgizmo_selected(handle_id)
 
 func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> float:
 	match handle_id:
@@ -167,6 +242,14 @@ func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -
 		HANDLE_HEIGHT:
 			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_height_handle_position(), Vector3.UP, self)
 			return max(0.001, offset.y)
+	return 0.001
+
+func _get_value_from_subgizmo_position(handle_id: int, position: Vector3) -> float:
+	match handle_id:
+		HANDLE_RADIUS:
+			return max(0.001, position.x)
+		HANDLE_HEIGHT:
+			return max(0.001, position.y)
 	return 0.001
 
 func _apply_snapping(value: float, plugin) -> float:

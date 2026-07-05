@@ -72,7 +72,7 @@ Rail-only properties:
 
 ## Gizmos
 
-`ProtoWall` uses the shared `ProtoGizmo` provider workflow. Select a `ProtoWall` node to edit:
+`ProtoWall` uses the shared `ProtoGizmo` provider workflow. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. The arrows are also selectable subgizmos, so you can click an arrow body and move the selected arrow with Godot's 3D transform interaction instead of only grabbing the small handle icon. Select a `ProtoWall` node to edit:
 
 - Height handle - adjusts `height`.
 - Thickness handle - adjusts `thickness` according to the current `side` alignment.

@@ -85,7 +85,7 @@ func remove_shape() -> void:
 
 func redraw_gizmos(gizmo, plugin) -> void:
 	gizmo.clear()
-	# Add handles and optional guide lines here.
+	# Add handles and optional solid arrow guides here.
 
 func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2) -> void:
 	# Use ProtoGizmoUtils to project cursor motion onto a dynamic local axis or plane.
@@ -94,9 +94,28 @@ func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Vari
 	# Use plugin.undo_redo for committed property changes.
 ```
 
+When a handle has a solid arrow guide, the provider can make the arrow itself selectable by adding optional subgizmo callbacks:
+
+```gdscript
+func subgizmos_intersect_ray(gizmo, plugin, camera: Camera3D, screen_pos: Vector2) -> int:
+	return gizmo_utils.get_closest_screen_segment_id(camera, screen_pos, shape, _get_arrow_segments())
+
+func get_subgizmo_transform(gizmo, plugin, subgizmo_id: int) -> Transform3D:
+	return Transform3D(Basis.IDENTITY, _get_handle_position(subgizmo_id))
+
+func set_subgizmo_transform(gizmo, plugin, subgizmo_id: int, transform: Transform3D) -> void:
+	# Map transform.origin back to the edited property.
+
+func commit_subgizmos(gizmo, plugin, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void:
+	# Use the same undo/redo path as commit_handle().
+```
+
 Gizmo providers should:
 
 - Draw handles with `plugin.get_material("proto_handler", gizmo)`.
+- Draw directional guides with `ProtoGizmoUtils.add_arrow_mesh()` when a handle has a clear drag axis. Keep the handle icon at the arrow base and point the arrow along the drag direction.
+- Reuse the handle id as the subgizmo id when an arrow edits the same property as its point handle.
+- Use `plugin.get_handle_arrow_material(gizmo, handle_id)` for arrows that should react to highlighted/editing handle state.
 - Use dynamic handle axes when shape state changes the direction of a drag.
 - Support normal snapping through `plugin.snapping` and fine snapping through `plugin.fine_snapping`.
 - Use `EditorUndoRedoManager` through `plugin.undo_redo` in `commit_handle()`.

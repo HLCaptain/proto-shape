@@ -2,6 +2,8 @@ extends EditorNode3DGizmoPlugin
 
 const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
 
+const NO_SUBGIZMO := -1
+
 # Must be initialized externally by ProtoShape plugin
 var undo_redo: EditorUndoRedoManager
 
@@ -30,6 +32,7 @@ func get_fine_snapping() -> bool:
 
 func _init() -> void:
 	create_material("main", Color(1, 0.3725, 0.3725, 0.5))
+	create_material("main_highlight", Color(1, 0.82, 0.18, 0.85))
 	create_material("selected", Color(0, 0, 1, 0.1))
 	create_handle_material("proto_handler", false, load("res://addons/proto_shape/icon/proto-gizmo-handler.png"))
 
@@ -87,6 +90,87 @@ func _commit_handle(
 	if wrapper != null:
 		wrapper.commit_handle_for_child(gizmo, self, handle_id, secondary, restore, cancel)
 		return
+
+func _subgizmos_intersect_ray(gizmo: EditorNode3DGizmo, camera: Camera3D, screen_pos: Vector2) -> int:
+	var node := gizmo.get_node_3d()
+	var provider = _get_gizmo_provider(node)
+	if provider != null and provider.has_method("subgizmos_intersect_ray"):
+		return provider.subgizmos_intersect_ray(gizmo, self, camera, screen_pos)
+
+	var wrapper := _get_gizmo_wrapper(node)
+	if wrapper != null:
+		return wrapper.subgizmos_intersect_ray_for_child(gizmo, self, camera, screen_pos)
+	return NO_SUBGIZMO
+
+func _get_subgizmo_transform(gizmo: EditorNode3DGizmo, subgizmo_id: int) -> Transform3D:
+	var node := gizmo.get_node_3d()
+	var provider = _get_gizmo_provider(node)
+	if provider != null and provider.has_method("get_subgizmo_transform"):
+		return provider.get_subgizmo_transform(gizmo, self, subgizmo_id)
+
+	var wrapper := _get_gizmo_wrapper(node)
+	if wrapper != null:
+		return wrapper.get_subgizmo_transform_for_child(gizmo, self, subgizmo_id)
+	return Transform3D.IDENTITY
+
+func _set_subgizmo_transform(gizmo: EditorNode3DGizmo, subgizmo_id: int, transform: Transform3D) -> void:
+	var node := gizmo.get_node_3d()
+	var provider = _get_gizmo_provider(node)
+	if provider != null and provider.has_method("set_subgizmo_transform"):
+		provider.set_subgizmo_transform(gizmo, self, subgizmo_id, transform)
+		return
+
+	var wrapper := _get_gizmo_wrapper(node)
+	if wrapper != null:
+		wrapper.set_subgizmo_transform_for_child(gizmo, self, subgizmo_id, transform)
+		return
+
+func _commit_subgizmos(gizmo: EditorNode3DGizmo, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void:
+	var node := gizmo.get_node_3d()
+	var provider = _get_gizmo_provider(node)
+	if provider != null and provider.has_method("commit_subgizmos"):
+		provider.commit_subgizmos(gizmo, self, ids, restores, cancel)
+		return
+
+	var wrapper := _get_gizmo_wrapper(node)
+	if wrapper != null:
+		wrapper.commit_subgizmos_for_child(gizmo, self, ids, restores, cancel)
+		return
+
+func _is_handle_highlighted(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool) -> bool:
+	return is_proto_handle_highlighted(gizmo, handle_id, secondary)
+
+func get_handle_arrow_material(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool = false) -> Material:
+	if is_proto_handle_highlighted(gizmo, handle_id, secondary):
+		return get_material("main_highlight", gizmo)
+	return get_material("main", gizmo)
+
+func is_proto_handle_highlighted(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool = false) -> bool:
+	var node := gizmo.get_node_3d()
+	var provider = _get_gizmo_provider(node)
+	if provider != null and provider.has_method("is_handle_highlighted"):
+		return provider.is_handle_highlighted(gizmo, self, handle_id, secondary)
+
+	var wrapper := _get_gizmo_wrapper(node)
+	if wrapper != null:
+		return wrapper.is_handle_highlighted_for_child(gizmo, self, handle_id, secondary)
+	return false
+
+func should_draw_mesh_guides(gizmo: EditorNode3DGizmo) -> bool:
+	var node := gizmo.get_node_3d()
+	if node == null:
+		return false
+	if not Engine.has_singleton("EditorInterface"):
+		return true
+
+	var editor_interface: Variant = Engine.get_singleton("EditorInterface")
+	if editor_interface == null:
+		return true
+
+	var selection: Variant = editor_interface.get_selection()
+	if selection == null:
+		return true
+	return selection.get_selected_nodes().has(node)
 
 func _get_gizmo_provider(node: Node3D) -> Variant:
 	if node == null or not node.has_method("get_proto_gizmo_provider"):
