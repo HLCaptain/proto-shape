@@ -27,6 +27,7 @@
 - [ ] Update `addons/proto_shape/proto_ramp/README.md` if ramp media or behavior changed.
 - [ ] Fill `release/docs/RELEASE_NOTES_DRAFT.md`.
 - [ ] Fill `release/docs/ASSETLIB_COPY_DRAFT.md`.
+- [ ] Confirm shared icons use `addons/proto_shape/icons/` and shape icons use each shape's `icons/` folder.
 
 ## Media
 

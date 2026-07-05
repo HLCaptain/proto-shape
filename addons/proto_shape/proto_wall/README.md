@@ -2,13 +2,23 @@
 
 ProtoWall is a path-based wall and rail shape for blocking out game environments. It extends `Path3D`, so the same node can create straight walls, curved walls, low cover, guardrails, fences, balcony rails, and ramp-side rails by changing the path and style.
 
-<img src="../icon/proto-wall-icon.svg" style="height: 30%; width: 30%; margin: 0 auto; display: block">
+<img src="icons/proto-wall-icon.svg" style="height: 30%; width: 30%; margin: 0 auto; display: block">
 
 ## Usage
 
 Add `ProtoWall` from the Add Child Node menu. The default node creates a straight solid wall along a two-point `Path3D` curve.
 
 Edit the path with Godot's normal `Path3D` curve tools. `ProtoWall` regenerates the generated CSG geometry whenever the curve changes.
+
+## Use Cases
+
+Use `ProtoWall` when a blockout needs path-driven geometry that is faster to reshape than individual CSG boxes:
+
+- Solid room, corridor, arena, and perimeter walls.
+- Low cover, parapets, platform lips, and collision blockers.
+- Guardrails, bridge rails, balcony rails, fences, and temporary guide rails.
+- Ramp-side rails and variable-elevation paths that need to follow a 3D curve.
+- Curved or rounded wall sections where the path should remain editable with Godot's native `Curve3D` tools.
 
 ## Styles
 
@@ -91,6 +101,17 @@ Open these scenes to test common game-development setups:
 - `examples/proto_wall_interpolation_showcase.tscn` - every interpolation mode compared against the same flat XZ and elevated curves, with both `Path Perpendicular` and `Fixed Up` orientation variants shown as solid wall and rail pairs.
 
 Each scene includes `Label3D` notes describing the setup. The example setup script generates any missing showcase nodes when the scene is opened, so the scenes stay compact while still covering many use cases.
+
+## Release Media Placeholders
+
+Capture or link these before publishing 1.2.0:
+
+- Overview video: `../../../release/media/videos/proto-wall-overview.mp4` or a hosted video link.
+- Overview screenshot: `../../../release/media/screenshots/proto-wall-overview.png`.
+- Solid and rail use-case screenshot: `../../../release/media/screenshots/proto-wall-solid-rail-use-cases.png`.
+- Interpolation/thickness screenshot: `../../../release/media/screenshots/proto-wall-interpolation-thickness.png`.
+- Post-width gizmo screenshot: `../../../release/media/screenshots/proto-wall-post-width.png`.
+- Short interaction loop: `../../../release/media/gifs/proto-wall-thickness-interpolation.gif`.
 
 ## Implementation Notes
 

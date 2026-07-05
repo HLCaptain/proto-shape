@@ -2,8 +2,8 @@
 
 ProtoRamp is a dynamic ramp/staircase shape based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics.
 
-<!-- Icon (addons/proto_shape/icon/proto-ramp-icon.png) -->
-<img src="../icon/proto-ramp-icon.png" style="height: 40%; width: 40%; margin: 0 auto; display: block">
+<!-- Icon (addons/proto_shape/proto_ramp/icons/proto-ramp-icon.png) -->
+<img src="icons/proto-ramp-icon.png" style="height: 40%; width: 40%; margin: 0 auto; display: block">
 
 ## Usage
 

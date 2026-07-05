@@ -24,12 +24,14 @@ addons/proto_shape/proto_wall/
     proto_wall_screenshot.png
 ```
 
-The custom type icon should live in the shared icon folder:
+The custom type icon should live in the shape-local icon folder:
 
 ```text
-addons/proto_shape/icon/proto-wall-icon.png
-addons/proto_shape/icon/proto-wall-icon.svg
+addons/proto_shape/proto_wall/icons/proto-wall-icon.png
+addons/proto_shape/proto_wall/icons/proto-wall-icon.svg
 ```
+
+Shared addon and tool icons live in `addons/proto_shape/icons/`.
 
 ## Runtime Shape Script
 
@@ -139,7 +141,7 @@ Every new user-facing shape must include:
 
 - A shape README explaining the use case, properties, gizmo handles, snapping, collision behavior, and limitations.
 - At least one example scene that can be opened directly in Godot.
-- A custom Add Node icon in `addons/proto_shape/icon/`.
+- A custom Add Node icon in the shape-local `icons/` folder.
 - A screenshot, GIF, video, or linked external video showing the shape in use.
 - Links from the root `README.md` and `addons/proto_shape/README.md`.
 

@@ -32,6 +32,8 @@ func commit_arrow_drag(plugin, handle_id: int, cancel: bool) -> void
 
 Use the same id for a point handle and its arrow segment when both edit the same property. `get_arrow_drag_segments()` should return local-space dictionaries in the form `{"id": handle_id, "from": from_position, "to": to_position}`.
 
+Arrow selection does not use Godot's native transform gizmo arrows. `ProtoGizmo` projects each provider arrow into screen space, tests the shaft and head footprint against the cursor, highlights the closest selected arrow, and forwards drag events to the provider. This lets custom nodes expose native-feeling hover and drag behavior while keeping their own property math, snapping, and undo/redo flow.
+
 Nodes or providers can optionally expose generated visual nodes for click-selection:
 
 ```gdscript

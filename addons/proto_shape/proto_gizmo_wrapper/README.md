@@ -2,7 +2,7 @@
 
 ProtoGizmoWrapper is a wrapper to create 3D gizmos for custom nodes in Godot. With the use of [ProtoGizmoUtils](../proto_gizmo/README.md#protogizmoutils), you can implement custom gizmos for child nodes by reacting to wrapper signals.
 
-<img src="../icon/proto-gizmo-wrapper-icon.svg" style="height: 40%; width: 40%; margin: 0 auto; display: block">
+<img src="../icons/proto-gizmo-wrapper-icon.svg" style="height: 40%; width: 40%; margin: 0 auto; display: block">
 
 ## Usage
 

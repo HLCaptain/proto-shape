@@ -39,7 +39,7 @@ func _init() -> void:
 	create_material("main", Color(1, 0.3725, 0.3725, 0.5))
 	create_material("main_highlight", Color(1, 0.82, 0.18, 0.85))
 	create_material("selected", Color(0, 0, 1, 0.1))
-	create_handle_material("proto_handler", false, load("res://addons/proto_shape/icon/proto-gizmo-handler.png"))
+	create_handle_material("proto_handler", false, load("res://addons/proto_shape/icons/proto-gizmo-handler.png"))
 
 func _has_gizmo(node: Node3D) -> bool:
 	return _get_gizmo_provider(node) != null or _get_gizmo_wrapper(node) != null
