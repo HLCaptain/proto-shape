@@ -1,5 +1,6 @@
 const ARROW_RADIAL_SEGMENTS := 12
 const ARROW_PICK_DISTANCE_PIXELS := 14.0
+const ARROW_PICK_EDGE_TOLERANCE_PIXELS := 1.5
 const MIN_ARROW_LENGTH := 0.001
 
 func add_arrow_mesh(
@@ -20,11 +21,11 @@ func add_arrow_mesh(
 	gizmo.add_collision_segments(collision_segment)
 
 	var forward := direction / length
-	var shaft_radius: float = clamp(length * 0.025, 0.015, 0.04) * radius_scale
-	var head_radius := shaft_radius * 2.75
-	var head_length: float = clamp(length * 0.22, head_radius * 1.4, 0.35 * radius_scale)
-	head_length = min(head_length, length * 0.65)
-	var shaft_length := max(0.0, length - head_length)
+	var dimensions := get_arrow_dimensions(length, radius_scale)
+	var shaft_radius: float = dimensions["shaft_radius"]
+	var head_radius: float = dimensions["head_radius"]
+	var head_length: float = dimensions["head_length"]
+	var shaft_length: float = dimensions["shaft_length"]
 
 	if shaft_length > MIN_ARROW_LENGTH:
 		var shaft_mesh := CylinderMesh.new()
@@ -44,6 +45,18 @@ func add_arrow_mesh(
 	head_mesh.rings = 1
 	var head_transform := _create_y_axis_transform(from_position + forward * (shaft_length + head_length * 0.5), forward)
 	gizmo.add_mesh(head_mesh, material, head_transform)
+
+func get_arrow_dimensions(length: float, radius_scale: float = 1.0) -> Dictionary:
+	var shaft_radius: float = clamp(length * 0.025, 0.015, 0.04) * radius_scale
+	var head_radius := shaft_radius * 2.75
+	var head_length: float = clamp(length * 0.22, head_radius * 1.4, 0.35 * radius_scale)
+	head_length = min(head_length, length * 0.65)
+	return {
+		"shaft_radius": shaft_radius,
+		"head_radius": head_radius,
+		"head_length": head_length,
+		"shaft_length": max(0.0, length - head_length),
+	}
 
 func get_closest_screen_segment_id(
 	camera: Camera3D,
@@ -86,6 +99,76 @@ func get_screen_segment_distance(
 	var to_screen := camera.unproject_position(to_global)
 	return get_screen_segment_distance_2d(screen_pos, from_screen, to_screen)
 
+func get_screen_arrow_signed_distance(
+	camera: Camera3D,
+	screen_pos: Vector2,
+	node: Node3D,
+	from_position: Vector3,
+	to_position: Vector3,
+	radius_scale: float = 1.0) -> float:
+
+	if camera == null or node == null:
+		return INF
+
+	var direction := to_position - from_position
+	var length := direction.length()
+	if length <= MIN_ARROW_LENGTH:
+		return INF
+
+	var from_global: Vector3 = node.global_transform * from_position
+	var to_global: Vector3 = node.global_transform * to_position
+	if camera.is_position_behind(from_global) or camera.is_position_behind(to_global):
+		return INF
+
+	var forward := direction / length
+	var dimensions := get_arrow_dimensions(length, radius_scale)
+	var shaft_radius: float = dimensions["shaft_radius"]
+	var head_radius: float = dimensions["head_radius"]
+	var shaft_length: float = dimensions["shaft_length"]
+	var head_base_position := from_position + forward * shaft_length
+	var head_base_global: Vector3 = node.global_transform * head_base_position
+	if camera.is_position_behind(head_base_global):
+		return INF
+
+	var from_screen := camera.unproject_position(from_global)
+	var to_screen := camera.unproject_position(to_global)
+	var head_base_screen := camera.unproject_position(head_base_global)
+	var arrow_basis := _create_y_axis_transform(Vector3.ZERO, forward).basis
+	var closest_distance := INF
+
+	if shaft_length > MIN_ARROW_LENGTH:
+		var shaft_center_global: Vector3 = node.global_transform * from_position.lerp(head_base_position, 0.5)
+		var shaft_screen_radius := _get_projected_radius_pixels(camera, shaft_center_global, node, arrow_basis, shaft_radius)
+		closest_distance = min(
+			closest_distance,
+			get_screen_tapered_segment_signed_distance(screen_pos, from_screen, head_base_screen, shaft_screen_radius, shaft_screen_radius)
+		)
+
+	var head_center_global: Vector3 = node.global_transform * head_base_position.lerp(to_position, 0.5)
+	var head_screen_radius := _get_projected_radius_pixels(camera, head_center_global, node, arrow_basis, head_radius)
+	closest_distance = min(
+		closest_distance,
+		get_screen_tapered_segment_signed_distance(screen_pos, head_base_screen, to_screen, head_screen_radius, 0.0)
+	)
+
+	return closest_distance
+
+func get_screen_tapered_segment_signed_distance(
+	point: Vector2,
+	from_point: Vector2,
+	to_point: Vector2,
+	from_radius: float,
+	to_radius: float) -> float:
+
+	var segment := to_point - from_point
+	var length_squared := segment.length_squared()
+	if length_squared <= 0.000001:
+		return point.distance_to(from_point) - max(from_radius, to_radius)
+
+	var t: float = clamp((point - from_point).dot(segment) / length_squared, 0.0, 1.0)
+	var radius := lerp(from_radius, to_radius, t)
+	return point.distance_to(from_point + segment * t) - radius
+
 func get_screen_segment_distance_2d(point: Vector2, from_point: Vector2, to_point: Vector2) -> float:
 	var segment := to_point - from_point
 	var length_squared := segment.length_squared()
@@ -94,6 +177,29 @@ func get_screen_segment_distance_2d(point: Vector2, from_point: Vector2, to_poin
 
 	var t: float = clamp((point - from_point).dot(segment) / length_squared, 0.0, 1.0)
 	return point.distance_to(from_point + segment * t)
+
+func _get_projected_radius_pixels(
+	camera: Camera3D,
+	center_global: Vector3,
+	node: Node3D,
+	arrow_basis: Basis,
+	radius: float) -> float:
+
+	if camera.is_position_behind(center_global):
+		return 0.0
+
+	var center_screen := camera.unproject_position(center_global)
+	var radius_axis_x: Vector3 = node.global_transform.basis * (arrow_basis.x * radius)
+	var radius_axis_z: Vector3 = node.global_transform.basis * (arrow_basis.z * radius)
+	var radius_pixels := 0.0
+	var x_global := center_global + radius_axis_x
+	if not camera.is_position_behind(x_global):
+		radius_pixels = max(radius_pixels, center_screen.distance_to(camera.unproject_position(x_global)))
+
+	var z_global := center_global + radius_axis_z
+	if not camera.is_position_behind(z_global):
+		radius_pixels = max(radius_pixels, center_screen.distance_to(camera.unproject_position(z_global)))
+	return radius_pixels
 
 func _create_y_axis_transform(origin: Vector3, direction: Vector3) -> Transform3D:
 	var y_axis := direction.normalized()

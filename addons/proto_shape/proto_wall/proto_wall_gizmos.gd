@@ -5,8 +5,6 @@ const HANDLE_HEIGHT := 1
 const HANDLE_THICKNESS := 2
 const HANDLE_LOWER_RAIL_HEIGHT := 3
 const HANDLE_POST_WIDTH := 4
-const HANDLE_POST_COUNT := 6
-const POST_COUNT_HANDLE_UNIT := 0.25
 const MIN_ARROW_VISUAL_LENGTH := 0.25
 const MAX_ARROW_VISUAL_LENGTH := 0.75
 
@@ -15,6 +13,7 @@ var gizmo_utils := ProtoGizmoUtils.new()
 var editing_handle := 0
 var start_value: Variant = 0.0
 var end_value: Variant = 0.0
+var drag_start_pointer_value: Variant = 0.0
 
 func attach_shape(node: ProtoWall) -> void:
 	shape = node
@@ -29,9 +28,8 @@ func redraw_gizmos(gizmo, plugin) -> void:
 	gizmo.clear()
 	var height_handle := _get_height_handle_position()
 	var thickness_handle := _get_thickness_handle_position()
-	var path_offset := shape.get_middle_path_offset()
 
-	_add_handle_arrow(gizmo, plugin, HANDLE_HEIGHT, height_handle, shape.get_wall_up_axis(path_offset))
+	_add_handle_arrow(gizmo, plugin, HANDLE_HEIGHT, height_handle, _get_wall_up_axis())
 	_add_handle_arrow(gizmo, plugin, HANDLE_THICKNESS, thickness_handle, _get_thickness_drag_axis())
 
 	var handles := PackedVector3Array()
@@ -43,21 +41,15 @@ func redraw_gizmos(gizmo, plugin) -> void:
 
 	if shape.style == ProtoWall.Style.RAIL:
 		var lower_rail_handle := _get_lower_rail_height_handle_position()
-		_add_handle_arrow(gizmo, plugin, HANDLE_LOWER_RAIL_HEIGHT, lower_rail_handle, shape.get_wall_up_axis(path_offset))
+		_add_handle_arrow(gizmo, plugin, HANDLE_LOWER_RAIL_HEIGHT, lower_rail_handle, _get_wall_up_axis())
 		handles.push_back(lower_rail_handle)
 		ids.push_back(HANDLE_LOWER_RAIL_HEIGHT)
 
 		if shape.post_enabled:
 			var post_width_handle := _get_post_width_handle_position()
-			_add_handle_arrow(gizmo, plugin, HANDLE_POST_WIDTH, post_width_handle, shape.get_path_forward(path_offset))
+			_add_handle_arrow(gizmo, plugin, HANDLE_POST_WIDTH, post_width_handle, _get_post_forward_axis())
 			handles.push_back(post_width_handle)
 			ids.push_back(HANDLE_POST_WIDTH)
-
-			if shape.post_placement == ProtoWall.PostPlacement.COUNT:
-				var post_count_handle := _get_post_count_handle_position()
-				_add_handle_arrow(gizmo, plugin, HANDLE_POST_COUNT, post_count_handle, shape.get_wall_up_axis(path_offset))
-				handles.push_back(post_count_handle)
-				ids.push_back(HANDLE_POST_COUNT)
 
 	gizmo.add_handles(handles, plugin.get_material("proto_handler", gizmo), ids)
 
@@ -66,50 +58,33 @@ func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D
 		return
 
 	if editing_handle == 0:
+		begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+		drag_start_pointer_value = start_value
+	set_arrow_drag(plugin, handle_id, camera, screen_pos)
+
+func get_arrow_drag_segments(_plugin) -> Array:
+	return _get_arrow_segments()
+
+func begin_arrow_drag(_plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	if editing_handle == 0:
 		editing_handle = handle_id
 		start_value = _get_handle_value(handle_id)
+		drag_start_pointer_value = _get_dragged_value(handle_id, camera, screen_pos)
+		end_value = start_value
 
-	var value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
-	if handle_id != HANDLE_POST_COUNT:
-		value = _apply_snapping(value, plugin)
+func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	var value: Variant = _get_relative_dragged_value(handle_id, camera, screen_pos)
+	value = _apply_snapping(value, plugin)
 	_set_handle_value(handle_id, value)
 	end_value = _get_handle_value(handle_id)
 	shape.update_gizmos()
 
-func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool) -> void:
-	if shape == null or gizmo.get_node_3d() != shape or editing_handle == 0:
+func commit_arrow_drag(plugin, _handle_id: int, cancel: bool) -> void:
+	if editing_handle == 0:
 		return
-
 	_commit_current_edit(plugin, cancel)
 
-func subgizmos_intersect_ray(gizmo, _plugin, camera: Camera3D, screen_pos: Vector2) -> int:
-	if shape == null or gizmo.get_node_3d() != shape:
-		return -1
-
-	return gizmo_utils.get_closest_screen_segment_id(camera, screen_pos, shape, _get_arrow_segments())
-
-func get_subgizmo_transform(gizmo, _plugin, subgizmo_id: int) -> Transform3D:
-	if shape == null or gizmo.get_node_3d() != shape:
-		return Transform3D.IDENTITY
-
-	return Transform3D(Basis.IDENTITY, _get_handle_position(subgizmo_id))
-
-func set_subgizmo_transform(gizmo, plugin, subgizmo_id: int, transform: Transform3D) -> void:
-	if shape == null or gizmo.get_node_3d() != shape:
-		return
-
-	if editing_handle == 0:
-		editing_handle = subgizmo_id
-		start_value = _get_handle_value(subgizmo_id)
-
-	var value: Variant = _get_value_from_subgizmo_position(subgizmo_id, transform.origin)
-	if subgizmo_id != HANDLE_POST_COUNT:
-		value = _apply_snapping(value, plugin)
-	_set_handle_value(subgizmo_id, value)
-	end_value = _get_handle_value(subgizmo_id)
-	shape.update_gizmos()
-
-func commit_subgizmos(gizmo, plugin, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void:
+func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool) -> void:
 	if shape == null or gizmo.get_node_3d() != shape or editing_handle == 0:
 		return
 
@@ -140,45 +115,58 @@ func _get_handle_position(handle_id: int) -> Vector3:
 			return _get_lower_rail_height_handle_position()
 		HANDLE_POST_WIDTH:
 			return _get_post_width_handle_position()
-		HANDLE_POST_COUNT:
-			return _get_post_count_handle_position()
 	return Vector3.ZERO
 
+func _get_handle_path_offset() -> float:
+	return shape.get_middle_path_offset()
+
+func _get_wall_basis() -> Basis:
+	return shape.get_wall_basis(_get_handle_path_offset())
+
+func _get_post_basis() -> Basis:
+	return shape.get_post_basis(_get_handle_path_offset())
+
+func _get_thickness_basis() -> Basis:
+	return shape.get_segment_aligned_basis(_get_handle_path_offset())
+
+func _get_wall_up_axis() -> Vector3:
+	return _get_wall_basis().y
+
+func _get_thickness_side_axis() -> Vector3:
+	return _get_thickness_basis().x
+
+func _get_post_forward_axis() -> Vector3:
+	return _get_post_basis().z
+
 func _get_center_position() -> Vector3:
-	var offset := shape.get_middle_path_offset()
+	var offset := _get_handle_path_offset()
+	var basis := _get_wall_basis()
 	var center := shape.get_path_point(offset)
-	center += shape.get_wall_side_axis(offset) * shape.get_side_center_offset(shape.thickness)
+	center += basis.x * shape.get_side_center_offset(shape.thickness)
 	return center
 
 func _get_height_handle_position() -> Vector3:
-	var offset := shape.get_middle_path_offset()
-	return _get_center_position() + shape.get_wall_up_axis(offset) * shape.height
+	return _get_center_position() + _get_wall_up_axis() * shape.height
 
 func _get_thickness_handle_position() -> Vector3:
-	var offset := shape.get_middle_path_offset()
+	var offset := _get_handle_path_offset()
+	var basis := _get_thickness_basis()
 	var point := shape.get_path_point(offset)
-	var side_axis := shape.get_wall_side_axis(offset)
-	return point + side_axis * shape.get_side_outer_offset(shape.thickness) + shape.get_wall_up_axis(offset) * shape.height / 2.0
+	return point + basis.x * shape.get_side_outer_offset(shape.thickness) + basis.y * shape.height / 2.0
 
 func _get_lower_rail_height_handle_position() -> Vector3:
-	var offset := shape.get_middle_path_offset()
-	return _get_center_position() + shape.get_wall_up_axis(offset) * shape.lower_rail_height
+	return _get_center_position() + _get_wall_up_axis() * shape.lower_rail_height
 
 func _get_post_center_position() -> Vector3:
-	var offset := shape.get_middle_path_offset()
-	return _get_center_position() + shape.get_wall_up_axis(offset) * shape.height / 2.0
+	var offset := _get_handle_path_offset()
+	var basis := _get_post_basis()
+	var center := shape.get_path_point(offset)
+	center += basis.x * shape.get_side_center_offset(shape.thickness)
+	center += basis.y * shape.height / 2.0
+	return center
 
 func _get_post_width_handle_position() -> Vector3:
-	var offset := shape.get_middle_path_offset()
-	return _get_post_center_position() + shape.get_path_forward(offset) * shape.post_width / 2.0
-
-func _get_post_count_base_position() -> Vector3:
-	var offset := shape.get_middle_path_offset()
-	return _get_center_position() + shape.get_wall_up_axis(offset) * shape.height
-
-func _get_post_count_handle_position() -> Vector3:
-	var offset := shape.get_middle_path_offset()
-	return _get_post_count_base_position() + shape.get_wall_up_axis(offset) * shape.post_count * POST_COUNT_HANDLE_UNIT
+	return _get_post_center_position() + _get_post_forward_axis() * shape.post_width / 2.0
 
 func _get_arrow_segments() -> Array:
 	var segments := []
@@ -201,19 +189,16 @@ func _get_visible_handle_ids() -> Array:
 		ids.push_back(HANDLE_LOWER_RAIL_HEIGHT)
 		if shape.post_enabled:
 			ids.push_back(HANDLE_POST_WIDTH)
-			if shape.post_placement == ProtoWall.PostPlacement.COUNT:
-				ids.push_back(HANDLE_POST_COUNT)
 	return ids
 
 func _get_drag_axis(handle_id: int) -> Vector3:
-	var path_offset := shape.get_middle_path_offset()
 	match handle_id:
-		HANDLE_HEIGHT, HANDLE_LOWER_RAIL_HEIGHT, HANDLE_POST_COUNT:
-			return shape.get_wall_up_axis(path_offset)
+		HANDLE_HEIGHT, HANDLE_LOWER_RAIL_HEIGHT:
+			return _get_wall_up_axis()
 		HANDLE_THICKNESS:
 			return _get_thickness_drag_axis()
 		HANDLE_POST_WIDTH:
-			return shape.get_path_forward(path_offset)
+			return _get_post_forward_axis()
 	return Vector3.ZERO
 
 func _add_handle_arrow(gizmo, plugin, handle_id: int, base_position: Vector3, direction: Vector3) -> void:
@@ -231,25 +216,24 @@ func _get_arrow_visual_length() -> float:
 	return clamp(max(shape.height, max(shape.thickness, shape.post_width)) * 0.25, MIN_ARROW_VISUAL_LENGTH, MAX_ARROW_VISUAL_LENGTH)
 
 func _get_thickness_drag_axis() -> Vector3:
-	var side_axis := shape.get_wall_side_axis(shape.get_middle_path_offset())
+	var side_axis := _get_thickness_side_axis()
 	if shape.side == ProtoWall.WallSide.LEFT:
 		return -side_axis
 	return side_axis
 
-func is_handle_highlighted(gizmo, _plugin, handle_id: int, _secondary: bool) -> bool:
-	return editing_handle == handle_id or gizmo.is_subgizmo_selected(handle_id)
+func is_handle_highlighted(_gizmo, _plugin, handle_id: int, _secondary: bool) -> bool:
+	return editing_handle == handle_id
 
 func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
 	match handle_id:
 		HANDLE_HEIGHT:
-			var axis := shape.get_wall_up_axis(shape.get_middle_path_offset())
+			var axis := _get_wall_up_axis()
 			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_height_handle_position(), axis, shape)
 			return max(ProtoWall.MIN_DIMENSION, (offset - _get_center_position()).dot(axis))
 		HANDLE_THICKNESS:
-			var path_offset := shape.get_middle_path_offset()
-			var side_axis := shape.get_wall_side_axis(path_offset)
+			var side_axis := _get_thickness_side_axis()
 			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_thickness_handle_position(), side_axis, shape)
-			var side_distance := (offset - shape.get_path_point(path_offset)).dot(side_axis)
+			var side_distance := (offset - shape.get_path_point(_get_handle_path_offset())).dot(side_axis)
 			match shape.side:
 				ProtoWall.WallSide.LEFT:
 					return max(ProtoWall.MIN_DIMENSION, -side_distance)
@@ -257,50 +241,19 @@ func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -
 					return max(ProtoWall.MIN_DIMENSION, side_distance)
 			return max(ProtoWall.MIN_DIMENSION, abs(side_distance) * 2.0)
 		HANDLE_LOWER_RAIL_HEIGHT:
-			var axis := shape.get_wall_up_axis(shape.get_middle_path_offset())
+			var axis := _get_wall_up_axis()
 			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_lower_rail_height_handle_position(), axis, shape)
 			return max(ProtoWall.MIN_DIMENSION, (offset - _get_center_position()).dot(axis))
 		HANDLE_POST_WIDTH:
-			var path_offset := shape.get_middle_path_offset()
-			var forward := shape.get_path_forward(path_offset)
+			var forward := _get_post_forward_axis()
 			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_post_width_handle_position(), forward, shape)
 			var forward_distance := (offset - _get_post_center_position()).dot(forward)
 			return max(ProtoWall.MIN_DIMENSION, forward_distance * 2.0)
-		HANDLE_POST_COUNT:
-			var axis := shape.get_wall_up_axis(shape.get_middle_path_offset())
-			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_post_count_handle_position(), axis, shape)
-			var count_value := roundi((offset - _get_post_count_base_position()).dot(axis) / POST_COUNT_HANDLE_UNIT)
-			return max(1, count_value)
 	return ProtoWall.MIN_DIMENSION
 
-func _get_value_from_subgizmo_position(handle_id: int, position: Vector3) -> Variant:
-	match handle_id:
-		HANDLE_HEIGHT:
-			var axis := shape.get_wall_up_axis(shape.get_middle_path_offset())
-			return max(ProtoWall.MIN_DIMENSION, (position - _get_center_position()).dot(axis))
-		HANDLE_THICKNESS:
-			var path_offset := shape.get_middle_path_offset()
-			var side_axis := shape.get_wall_side_axis(path_offset)
-			var side_distance := (position - shape.get_path_point(path_offset)).dot(side_axis)
-			match shape.side:
-				ProtoWall.WallSide.LEFT:
-					return max(ProtoWall.MIN_DIMENSION, -side_distance)
-				ProtoWall.WallSide.RIGHT:
-					return max(ProtoWall.MIN_DIMENSION, side_distance)
-			return max(ProtoWall.MIN_DIMENSION, abs(side_distance) * 2.0)
-		HANDLE_LOWER_RAIL_HEIGHT:
-			var axis := shape.get_wall_up_axis(shape.get_middle_path_offset())
-			return max(ProtoWall.MIN_DIMENSION, (position - _get_center_position()).dot(axis))
-		HANDLE_POST_WIDTH:
-			var path_offset := shape.get_middle_path_offset()
-			var forward := shape.get_path_forward(path_offset)
-			var forward_distance := (position - _get_post_center_position()).dot(forward)
-			return max(ProtoWall.MIN_DIMENSION, forward_distance * 2.0)
-		HANDLE_POST_COUNT:
-			var axis := shape.get_wall_up_axis(shape.get_middle_path_offset())
-			var count_value := roundi((position - _get_post_count_base_position()).dot(axis) / POST_COUNT_HANDLE_UNIT)
-			return max(1, count_value)
-	return ProtoWall.MIN_DIMENSION
+func _get_relative_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
+	var pointer_value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
+	return max(ProtoWall.MIN_DIMENSION, float(start_value) + float(pointer_value) - float(drag_start_pointer_value))
 
 func _apply_snapping(value: float, plugin) -> float:
 	if plugin.fine_snapping:
@@ -319,8 +272,6 @@ func _get_handle_value(handle_id: int) -> Variant:
 			return shape.lower_rail_height
 		HANDLE_POST_WIDTH:
 			return shape.post_width
-		HANDLE_POST_COUNT:
-			return shape.post_count
 	return 0.0
 
 func _set_handle_value(handle_id: int, value: Variant) -> void:
@@ -333,8 +284,6 @@ func _set_handle_value(handle_id: int, value: Variant) -> void:
 			shape.lower_rail_height = value
 		HANDLE_POST_WIDTH:
 			shape.post_width = value
-		HANDLE_POST_COUNT:
-			shape.post_count = value
 
 func _get_property_name(handle_id: int) -> StringName:
 	match handle_id:
@@ -346,6 +295,4 @@ func _get_property_name(handle_id: int) -> StringName:
 			return &"lower_rail_height"
 		HANDLE_POST_WIDTH:
 			return &"post_width"
-		HANDLE_POST_COUNT:
-			return &"post_count"
 	return &"height"

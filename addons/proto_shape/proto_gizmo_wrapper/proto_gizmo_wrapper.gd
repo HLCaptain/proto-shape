@@ -43,30 +43,33 @@ func is_handle_highlighted_for_child(gizmo, plugin, handle_id: int, secondary: b
 		return child.is_handle_highlighted(gizmo, plugin, handle_id, secondary)
 	return false
 
-func subgizmos_intersect_ray_for_child(gizmo, plugin, camera: Camera3D, screen_pos: Vector2) -> int:
-	var child: Variant = gizmo.get_node_3d()
-	if child != null and child.has_method("subgizmos_intersect_ray"):
-		return child.subgizmos_intersect_ray(gizmo, plugin, camera, screen_pos)
-	return -1
+func get_arrow_drag_segments_for_child(child, plugin) -> Array:
+	if child != null and child.has_method("get_arrow_drag_segments"):
+		var segments: Variant = child.get_arrow_drag_segments(plugin)
+		if segments is Array:
+			return segments
+	return []
 
-func get_subgizmo_transform_for_child(gizmo, plugin, subgizmo_id: int) -> Transform3D:
-	var child: Variant = gizmo.get_node_3d()
-	if child != null and child.has_method("get_subgizmo_transform"):
-		return child.get_subgizmo_transform(gizmo, plugin, subgizmo_id)
-	return Transform3D.IDENTITY
-
-func set_subgizmo_transform_for_child(gizmo, plugin, subgizmo_id: int, transform: Transform3D) -> void:
-	var child: Variant = gizmo.get_node_3d()
-	if child != null and child.has_method("set_subgizmo_transform"):
-		child.set_subgizmo_transform(gizmo, plugin, subgizmo_id, transform)
-
-func commit_subgizmos_for_child(
-	gizmo,
+func begin_arrow_drag_for_child(
+	child,
 	plugin,
-	ids: PackedInt32Array,
-	restores: Array[Transform3D],
-	cancel: bool) -> void:
+	handle_id: int,
+	camera: Camera3D,
+	screen_pos: Vector2) -> void:
 
-	var child: Variant = gizmo.get_node_3d()
-	if child != null and child.has_method("commit_subgizmos"):
-		child.commit_subgizmos(gizmo, plugin, ids, restores, cancel)
+	if child != null and child.has_method("begin_arrow_drag"):
+		child.begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+
+func set_arrow_drag_for_child(
+	child,
+	plugin,
+	handle_id: int,
+	camera: Camera3D,
+	screen_pos: Vector2) -> void:
+
+	if child != null and child.has_method("set_arrow_drag"):
+		child.set_arrow_drag(plugin, handle_id, camera, screen_pos)
+
+func commit_arrow_drag_for_child(child, plugin, handle_id: int, cancel: bool) -> void:
+	if child != null and child.has_method("commit_arrow_drag"):
+		child.commit_arrow_drag(plugin, handle_id, cancel)

@@ -34,7 +34,7 @@ signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNo
 
 Just like in [ProtoRampGizmos](../proto_ramp/README.md#protorampgizmos), keep editor-only `gizmo` and `plugin` arguments dynamically typed. Use static typing for runtime-safe values such as `Camera3D`, `Vector2`, handles, and your generated nodes.
 
-Subgizmo callbacks need return values, so `ProtoGizmoWrapper` forwards those directly to optional child methods instead of exposing them as signals. A wrapped child can implement `subgizmos_intersect_ray()`, `get_subgizmo_transform()`, `set_subgizmo_transform()`, and `commit_subgizmos()` to make solid arrow bodies selectable and transformable.
+Arrow-hover and arrow-drag callbacks need return values, so `ProtoGizmoWrapper` forwards those directly to optional child methods instead of exposing them as signals. A wrapped child can implement `get_arrow_drag_segments()`, `begin_arrow_drag()`, `set_arrow_drag()`, and `commit_arrow_drag()` to make solid arrow bodies hoverable and directly draggable.
 
 ***To see a runtime-safe wrapper example, check out [ExampleWrappedVolume](../proto_gizmo/examples/wrapper_volume/example_wrapped_volume.gd) source code.***
 

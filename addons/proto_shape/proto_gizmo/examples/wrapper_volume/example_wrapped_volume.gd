@@ -22,6 +22,7 @@ var gizmo_utils = null
 var editing_handle := 0
 var start_value := 0.0
 var end_value := 0.0
+var drag_start_pointer_value := 0.0
 
 func get_proto_gizmo_selection_nodes() -> Array:
 	return [cylinder]
@@ -123,48 +124,33 @@ func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D
 		return
 
 	if editing_handle == 0:
+		begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+		drag_start_pointer_value = start_value
+	set_arrow_drag(plugin, handle_id, camera, screen_pos)
+
+func get_arrow_drag_segments(_plugin) -> Array:
+	return _get_arrow_segments()
+
+func begin_arrow_drag(_plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	if editing_handle == 0:
 		editing_handle = handle_id
 		start_value = _get_handle_value(handle_id)
+		drag_start_pointer_value = _get_dragged_value(handle_id, camera, screen_pos)
+		end_value = start_value
 
-	var value := _get_dragged_value(handle_id, camera, screen_pos)
+func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	var value := _get_relative_dragged_value(handle_id, camera, screen_pos)
 	value = _apply_snapping(value, plugin)
 	_set_handle_value(handle_id, value)
 	end_value = value
 	update_gizmos()
 
-func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool) -> void:
-	if gizmo.get_node_3d() != self or editing_handle == 0:
+func commit_arrow_drag(plugin, _handle_id: int, cancel: bool) -> void:
+	if editing_handle == 0:
 		return
-
 	_commit_current_edit(plugin, cancel)
 
-func subgizmos_intersect_ray(gizmo, _plugin, camera: Camera3D, screen_pos: Vector2) -> int:
-	if gizmo.get_node_3d() != self:
-		return -1
-
-	return gizmo_utils.get_closest_screen_segment_id(camera, screen_pos, self, _get_arrow_segments())
-
-func get_subgizmo_transform(gizmo, _plugin, subgizmo_id: int) -> Transform3D:
-	if gizmo.get_node_3d() != self:
-		return Transform3D.IDENTITY
-
-	return Transform3D(Basis.IDENTITY, _get_handle_position(subgizmo_id))
-
-func set_subgizmo_transform(gizmo, plugin, subgizmo_id: int, transform: Transform3D) -> void:
-	if gizmo.get_node_3d() != self:
-		return
-
-	if editing_handle == 0:
-		editing_handle = subgizmo_id
-		start_value = _get_handle_value(subgizmo_id)
-
-	var value := _get_value_from_subgizmo_position(subgizmo_id, transform.origin)
-	value = _apply_snapping(value, plugin)
-	_set_handle_value(subgizmo_id, value)
-	end_value = value
-	update_gizmos()
-
-func commit_subgizmos(gizmo, plugin, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void:
+func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool) -> void:
 	if gizmo.get_node_3d() != self or editing_handle == 0:
 		return
 
@@ -231,8 +217,8 @@ func _add_handle_arrow(gizmo, plugin, handle_id: int, base_position: Vector3, di
 func _get_arrow_visual_length() -> float:
 	return clamp(max(radius * 2.0, height) * 0.2, MIN_ARROW_VISUAL_LENGTH, MAX_ARROW_VISUAL_LENGTH)
 
-func is_handle_highlighted(gizmo, _plugin, handle_id: int, _secondary: bool) -> bool:
-	return editing_handle == handle_id or gizmo.is_subgizmo_selected(handle_id)
+func is_handle_highlighted(_gizmo, _plugin, handle_id: int, _secondary: bool) -> bool:
+	return editing_handle == handle_id
 
 func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> float:
 	match handle_id:
@@ -244,13 +230,8 @@ func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -
 			return max(0.001, offset.y)
 	return 0.001
 
-func _get_value_from_subgizmo_position(handle_id: int, position: Vector3) -> float:
-	match handle_id:
-		HANDLE_RADIUS:
-			return max(0.001, position.x)
-		HANDLE_HEIGHT:
-			return max(0.001, position.y)
-	return 0.001
+func _get_relative_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> float:
+	return max(0.001, start_value + _get_dragged_value(handle_id, camera, screen_pos) - drag_start_pointer_value)
 
 func _apply_snapping(value: float, plugin) -> float:
 	if plugin.fine_snapping:

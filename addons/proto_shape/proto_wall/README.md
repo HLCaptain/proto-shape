@@ -72,13 +72,12 @@ Rail-only properties:
 
 ## Gizmos
 
-`ProtoWall` uses the shared `ProtoGizmo` provider workflow. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. The arrows are also selectable subgizmos, so you can click an arrow body and move the selected arrow with Godot's 3D transform interaction instead of only grabbing the small handle icon. Select a `ProtoWall` node to edit:
+`ProtoWall` uses the shared `ProtoGizmo` provider workflow. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. Hovering an arrow highlights it, and dragging the arrow body edits the same property as the small handle icon. Select a `ProtoWall` node to edit:
 
 - Height handle - adjusts `height`.
 - Thickness handle - adjusts `thickness` according to the current `side` alignment.
 - Lower rail handle - adjusts `lower_rail_height` when `style` is `Rail`.
 - Post width handle - adjusts the along-path `post_width` when posts are enabled.
-- Post count handle - adjusts `post_count` when `post_placement` is `Count`.
 
 Hold <kbd>Ctrl</kbd> for 1.0 unit snapping and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> for 0.1 unit fine snapping.
 
@@ -118,7 +117,7 @@ Godot's `Curve3D.bake_interval` controls the distance between cached baked curve
 
 Corner-based modes are optimized for long rail paths: straight spans generate only endpoints and rounded corners use adaptive subdivisions. All non-Linear interpolation modes use `sample_simplify_angle` to reduce redundant sections after their initial sampling pass. The simplifier is Ramer-Douglas-Peucker-like: it removes points only when the resulting segment stays within a small chord-distance tolerance derived from the angle threshold and does not exceed tangent or tilt error limits. Structural anchors such as endpoints, control points, and corner entry/exit points are preserved, while generated interior subdivision points can be removed safely.
 
-`direction_source` controls how sampled orientation is computed. `Generated Segment` rebuilds sample directions from the final simplified polyline and uses the containing generated segment's direction directly, keeping gizmos parallel to the optimized wall/rail segment. `Interpolation Tangent` uses tangents from the selected interpolation mode and interpolates those basis vectors for smoother orientation. Rail posts are always segment-aligned so their rectangular depth stays parallel to the visible rail span.
+`direction_source` controls how sampled orientation is computed. `Generated Segment` rebuilds sample directions from the final simplified polyline and uses the containing generated segment's direction directly, keeping sampled wall sections parallel to the optimized wall/rail segment. `Interpolation Tangent` uses tangents from the selected interpolation mode and interpolates those basis vectors for smoother orientation. The thickness and post-width gizmos use segment-aligned axes so their drag arrows stay parallel or perpendicular to the visible generated span. Rail posts are always segment-aligned so their rectangular depth stays parallel to the visible rail span.
 
 By default, interpolation treats vertical and horizontal control-point changes the same way, so modes such as `Centripetal Catmull-Rom`, `Corner Rounded`, `Fillet Path`, and `Bezier` can smooth hills and dips even when the path is mostly straight in the XZ plane. Enable `preserve_vertical_spikes` when you need a short, mostly vertical hill or dip to stay sharp instead of being smoothed through. Use `vertical_spike_aggressiveness` to tune how easily those vertical points are protected.
 

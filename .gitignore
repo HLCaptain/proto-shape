@@ -4,6 +4,8 @@
 !addons/
 !addons/proto_shape/
 !addons/proto_shape/**
+!release/
+!release/**
 
 # Allow only specific scenes
 addons/proto_shape/scenes/*.tscn

@@ -31,6 +31,16 @@ func _exit_tree():
 	InputMap.erase_action("snap_to_grid")
 	InputMap.erase_action("fine_snap_to_grid")
 
+func _handles(object: Object) -> bool:
+	if object is Node3D:
+		return gizmo_plugin.handles_node(object)
+	return false
+
+func _forward_3d_gui_input(camera: Camera3D, event: InputEvent) -> int:
+	if gizmo_plugin.handle_3d_gui_input(camera, event):
+		return EditorPlugin.AFTER_GUI_INPUT_STOP
+	return EditorPlugin.AFTER_GUI_INPUT_PASS
+
 func _shortcut_input(event: InputEvent) -> void:
 	if event.is_action_pressed("snap_to_grid"):
 		if event is InputEventKey:

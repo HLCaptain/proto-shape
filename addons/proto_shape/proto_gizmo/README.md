@@ -21,16 +21,16 @@ func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Vari
 
 `commit_handle` is optional for draw-only gizmos, but editable handles should implement it and use `EditorUndoRedoManager` through the `plugin.undo_redo` reference.
 
-Providers can also make solid arrow guides selectable by implementing Godot subgizmo callbacks. `ProtoGizmo` forwards these optional methods when present:
+Providers can also make solid arrow guides hoverable and directly draggable by implementing these optional methods. `ProtoGizmo` handles `EditorPlugin._forward_3d_gui_input()`, picks the closest selected arrow in screen space, and forwards drag updates to the provider:
 
 ```gdscript
-func subgizmos_intersect_ray(gizmo, plugin, camera: Camera3D, screen_pos: Vector2) -> int
-func get_subgizmo_transform(gizmo, plugin, subgizmo_id: int) -> Transform3D
-func set_subgizmo_transform(gizmo, plugin, subgizmo_id: int, transform: Transform3D) -> void
-func commit_subgizmos(gizmo, plugin, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void
+func get_arrow_drag_segments(plugin) -> Array
+func begin_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void
+func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void
+func commit_arrow_drag(plugin, handle_id: int, cancel: bool) -> void
 ```
 
-Use the same id for a point handle and its arrow subgizmo when both edit the same property. `ProtoGizmoUtils.get_closest_screen_segment_id()` can ray-pick arrow bodies in screen space, and `EditorNode3DGizmo.is_subgizmo_selected()` can be used from `is_handle_highlighted()` to highlight selected arrows.
+Use the same id for a point handle and its arrow segment when both edit the same property. `get_arrow_drag_segments()` should return local-space dictionaries in the form `{"id": handle_id, "from": from_position, "to": to_position}`.
 
 Nodes or providers can optionally expose generated visual nodes for click-selection:
 
@@ -47,7 +47,7 @@ Handle direction vectors do not need to be static. A provider can calculate the 
 
 Use `ProtoGizmoUtils.add_arrow_mesh(gizmo, material, from_position, to_position)` to draw a solid 3D arrow along a handle's drag direction. Place the `gizmo.add_handles()` point at `from_position` so the handle icon sits at the arrow base, then point the arrow toward the direction that increases or adjusts the value.
 
-`add_arrow_mesh()` also adds a collision segment for picking. Use `plugin.get_handle_arrow_material(gizmo, handle_id)` for arrows that should use the highlighted material when a provider reports a highlighted handle. Providers can implement `is_handle_highlighted(gizmo, plugin, handle_id, secondary)` to share their current highlight, selection, or editing state.
+`add_arrow_mesh()` also adds a collision segment for normal gizmo hit testing, while direct arrow-body hover and drag uses the provider's `get_arrow_drag_segments()` data and the projected shaft/head footprint. Use `plugin.get_handle_arrow_material(gizmo, handle_id)` for arrows that should use the highlighted material during hover or drag. Providers can implement `is_handle_highlighted(gizmo, plugin, handle_id, secondary)` to share their current editing state.
 
 See [examples](examples/README.md) for provider-based custom shapes, dynamic handle axes, and `ProtoGizmoWrapper` signal usage.
 

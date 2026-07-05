@@ -17,7 +17,7 @@ Since `1.1.4`, ProtoRamp node is now independent from `CSGShape3D` base class fo
 
 ### Use Gizmos
 
-ProtoRamp supports custom gizmos to adjust the shape. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. The arrows are also selectable subgizmos, so you can click an arrow body and move the selected arrow with Godot's 3D transform interaction instead of only grabbing the small handle icon.
+ProtoRamp supports custom gizmos to adjust the shape. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. Hovering an arrow highlights it, and dragging the arrow body edits the same property as the small handle icon.
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33-7b03d44f62c7
 

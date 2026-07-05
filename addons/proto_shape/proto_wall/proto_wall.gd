@@ -782,6 +782,15 @@ func get_wall_up_axis(offset: float) -> Vector3:
 func get_wall_basis(offset: float) -> Basis:
 	return _sample_path_basis(offset)
 
+func get_segment_aligned_basis(offset: float) -> Basis:
+	_ensure_sampled_bases()
+	if sampled_path_bases.is_empty():
+		return Basis()
+	return _sample_segment_aligned_basis(_get_normalized_path_offset(offset))
+
+func get_post_basis(offset: float) -> Basis:
+	return get_segment_aligned_basis(offset)
+
 func get_path_side_axis(offset: float) -> Vector3:
 	return -_sample_path_basis(offset).x
 

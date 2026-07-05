@@ -139,6 +139,7 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin) -> void:
 
 var start_offset := 0.0
 var end_offset := 0.0
+var drag_start_pointer_offset := 0.0
 
 func set_handle(
 	gizmo: EditorNode3DGizmo,
@@ -152,111 +153,87 @@ func set_handle(
 	if child != ramp:
 		return
 
+	if !is_editing:
+		begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+		drag_start_pointer_offset = start_offset
+	set_arrow_drag(plugin, handle_id, camera, screen_pos)
+
+func get_arrow_drag_segments(gizmo_plugin: ProtoGizmoPlugin) -> Array:
+	if width_gizmo_id == 0 or depth_gizmo_id == 0 or height_gizmo_id == 0 or fill_gizmo_id1 == 0 or fill_gizmo_id2 == 0:
+		init_gizmo(gizmo_plugin)
+	return _get_handle_arrow_segments()
+
+func begin_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	self.screen_pos = screen_pos
+	self.camera_position = camera.position
+	debug_gizmo_handler_id = handle_id
+	start_offset = _get_current_handle_offset(handle_id)
+	drag_start_pointer_offset = _get_screen_handle_offset(handle_id, camera, screen_pos)
+	end_offset = start_offset
+	is_editing = true
+
+func set_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
 	self.screen_pos = screen_pos
 	self.camera_position = camera.position
 
+	_set_dragged_handle_from_screen(handle_id, camera, screen_pos)
+	ramp.update_gizmos()
+
+func commit_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool) -> void:
+	if not is_editing:
+		return
+	_commit_current_edit(handle_id, cancel)
+
+func _set_dragged_handle_from_screen(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	var pointer_offset := _get_screen_handle_offset(handle_id, camera, screen_pos)
+	end_offset = start_offset + pointer_offset - drag_start_pointer_offset
 	match handle_id:
 		depth_gizmo_id:
-			end_offset = _get_depth_handle_offset(camera, screen_pos)
 			if snapping_enabled and not fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			elif fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.depth = _get_ramp_depth(end_offset)
 		width_gizmo_id:
-			end_offset = _get_width_handle_offset(camera, screen_pos)
 			if snapping_enabled and not fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			elif fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.width = _get_ramp_width(end_offset)
 		height_gizmo_id:
-			end_offset = _get_height_handle_offset(camera, screen_pos)
 			if snapping_enabled and not fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			elif fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.height = _get_ramp_height(end_offset)
 		fill_gizmo_id1:
-			end_offset = _get_fill_handle_offset(camera, screen_pos, Vector3(-ramp.width / 2, 0, 0))
+			end_offset = clamp(end_offset, 0.0, 1.0)
 			if snapping_enabled and not fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			elif fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.fill = end_offset
 		fill_gizmo_id2:
-			end_offset = _get_fill_handle_offset(camera, screen_pos, Vector3(ramp.width / 2, 0, 0))
+			end_offset = clamp(end_offset, 0.0, 1.0)
 			if snapping_enabled and not fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 			elif fine_snapping_enabled:
 				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.fill = end_offset
 
-	if !is_editing:
-		match handle_id:
-			depth_gizmo_id:
-				debug_gizmo_handler_id = depth_gizmo_id
-				start_offset = _get_depth_handle_offset(camera, screen_pos)
-			width_gizmo_id:
-				debug_gizmo_handler_id = width_gizmo_id
-				start_offset = _get_width_handle_offset(camera, screen_pos)
-			height_gizmo_id:
-				debug_gizmo_handler_id = height_gizmo_id
-				start_offset = _get_height_handle_offset(camera, screen_pos)
-			fill_gizmo_id1:
-				debug_gizmo_handler_id = fill_gizmo_id1
-				start_offset = _get_fill_handle_offset(camera, screen_pos, Vector3(-ramp.width / 2, 0, 0))
-			fill_gizmo_id2:
-				debug_gizmo_handler_id = fill_gizmo_id2
-				start_offset = _get_fill_handle_offset(camera, screen_pos, Vector3(ramp.width / 2, 0, 0))
-		is_editing = true
-
-	ramp.update_gizmos()
-
-func subgizmos_intersect_ray(gizmo: EditorNode3DGizmo, _plugin: ProtoGizmoPlugin, camera: Camera3D, screen_pos: Vector2) -> int:
-	if gizmo.get_node_3d() != ramp:
-		return -1
-
-	return gizmo_utils.get_closest_screen_segment_id(camera, screen_pos, ramp, _get_handle_arrow_segments())
-
-func get_subgizmo_transform(gizmo: EditorNode3DGizmo, _plugin: ProtoGizmoPlugin, subgizmo_id: int) -> Transform3D:
-	if gizmo.get_node_3d() != ramp:
-		return Transform3D.IDENTITY
-
-	var handle_positions := _get_handle_positions()
-	if not handle_positions.has(subgizmo_id):
-		return Transform3D.IDENTITY
-
-	return Transform3D(Basis.IDENTITY, handle_positions[subgizmo_id])
-
-func set_subgizmo_transform(
-	gizmo: EditorNode3DGizmo,
-	_plugin: ProtoGizmoPlugin,
-	subgizmo_id: int,
-	transform: Transform3D) -> void:
-
-	if gizmo.get_node_3d() != ramp:
-		return
-
-	if !is_editing:
-		debug_gizmo_handler_id = subgizmo_id
-		start_offset = _get_current_handle_offset(subgizmo_id)
-		is_editing = true
-
-	_set_handle_from_local_position(subgizmo_id, transform.origin)
-	ramp.update_gizmos()
-
-func commit_subgizmos(
-	gizmo: EditorNode3DGizmo,
-	_plugin: ProtoGizmoPlugin,
-	_ids: PackedInt32Array,
-	_restores: Array[Transform3D],
-	cancel: bool) -> void:
-
-	if gizmo.get_node_3d() != ramp or not is_editing:
-		return
-
-	_commit_current_edit(debug_gizmo_handler_id, cancel)
+func _get_screen_handle_offset(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> float:
+	match handle_id:
+		depth_gizmo_id:
+			return _get_depth_handle_offset(camera, screen_pos)
+		width_gizmo_id:
+			return _get_width_handle_offset(camera, screen_pos)
+		height_gizmo_id:
+			return _get_height_handle_offset(camera, screen_pos)
+		fill_gizmo_id1:
+			return _get_fill_handle_offset(camera, screen_pos, Vector3(-ramp.width / 2, 0, 0))
+		fill_gizmo_id2:
+			return _get_fill_handle_offset(camera, screen_pos, Vector3(ramp.width / 2, 0, 0))
+	return start_offset
 
 func _get_depth_handle_offset(
 	camera: Camera3D,
@@ -488,52 +465,6 @@ func _get_current_handle_offset(handle_id: int) -> float:
 			return ramp.fill
 	return 0.0
 
-func _set_handle_from_local_position(handle_id: int, position: Vector3) -> void:
-	match handle_id:
-		depth_gizmo_id:
-			end_offset = position.z
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
-			ramp.depth = _get_ramp_depth(end_offset)
-		width_gizmo_id:
-			end_offset = position.x
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
-			ramp.width = _get_ramp_width(end_offset)
-		height_gizmo_id:
-			end_offset = position.y
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
-			ramp.height = _get_ramp_height(end_offset)
-		fill_gizmo_id1, fill_gizmo_id2:
-			end_offset = _get_fill_from_local_position(position)
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
-			ramp.fill = end_offset
-
-func _get_fill_from_local_position(position: Vector3) -> float:
-	var fill_gizmo_axis := _get_fill_max_offset()
-	fill_gizmo_axis.z = ramp.get_true_depth() - fill_gizmo_axis.z
-	var gizmo_base_position := Vector3(0, 0, ramp.get_true_depth())
-	var gizmo_max_position := fill_gizmo_axis - gizmo_base_position
-	gizmo_max_position.x = 0
-
-	var handle_offset := position
-	handle_offset -= gizmo_base_position
-	handle_offset -= ramp.get_anchor_offset(ramp.anchor)
-	handle_offset.x = 0
-	if handle_offset.dot(gizmo_max_position) < 0:
-		return 1.0
-	return min(1.0, max(0.0, 1.0 - handle_offset.project(gizmo_max_position).length() / gizmo_max_position.length()))
-
 func _restore_handle_offset(handle_id: int, restore_offset: float) -> void:
 	match handle_id:
 		depth_gizmo_id:
@@ -545,8 +476,8 @@ func _restore_handle_offset(handle_id: int, restore_offset: float) -> void:
 		fill_gizmo_id1, fill_gizmo_id2:
 			ramp.fill = restore_offset
 
-func is_handle_highlighted(gizmo: EditorNode3DGizmo, _plugin: ProtoGizmoPlugin, handle_id: int, _secondary: bool) -> bool:
-	return (is_editing and debug_gizmo_handler_id == handle_id) or gizmo.is_subgizmo_selected(handle_id)
+func is_handle_highlighted(_gizmo: EditorNode3DGizmo, _plugin: ProtoGizmoPlugin, handle_id: int, _secondary: bool) -> bool:
+	return is_editing and debug_gizmo_handler_id == handle_id
 
 func _commit_current_edit(handle_id: int, cancel: bool) -> void:
 	if cancel:

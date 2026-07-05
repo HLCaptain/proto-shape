@@ -1,11 +1,16 @@
 extends EditorNode3DGizmoPlugin
 
 const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
-
-const NO_SUBGIZMO := -1
+const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
 
 # Must be initialized externally by ProtoShape plugin
 var undo_redo: EditorUndoRedoManager
+var gizmo_utils := ProtoGizmoUtils.new()
+
+var hovered_node: Node3D = null
+var hovered_arrow_id := -1
+var drag_node: Node3D = null
+var drag_arrow_id := -1
 
 signal snapping_changed(snapping: bool)
 signal fine_snapping_changed(fine_snapping: bool)
@@ -38,6 +43,9 @@ func _init() -> void:
 
 func _has_gizmo(node: Node3D) -> bool:
 	return _get_gizmo_provider(node) != null or _get_gizmo_wrapper(node) != null
+
+func handles_node(node: Node3D) -> bool:
+	return _has_gizmo(node)
 
 func _get_gizmo_name() -> String:
 	return "ProtoGizmo"
@@ -91,51 +99,171 @@ func _commit_handle(
 		wrapper.commit_handle_for_child(gizmo, self, handle_id, secondary, restore, cancel)
 		return
 
-func _subgizmos_intersect_ray(gizmo: EditorNode3DGizmo, camera: Camera3D, screen_pos: Vector2) -> int:
-	var node := gizmo.get_node_3d()
+func handle_3d_gui_input(camera: Camera3D, event: InputEvent) -> bool:
+	if drag_node != null:
+		return _handle_active_arrow_drag(camera, event)
+
+	if event is InputEventMouseMotion:
+		_update_arrow_hover(camera, event.position)
+		return false
+
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_update_arrow_hover(camera, event.position)
+			if hovered_node == null:
+				return false
+			_begin_arrow_drag(hovered_node, hovered_arrow_id, camera, event.position)
+			return true
+
+	return false
+
+func is_arrow_handle_active(node: Node3D, arrow_id: int) -> bool:
+	if node == null:
+		return false
+	return (node == hovered_node and arrow_id == hovered_arrow_id) or (node == drag_node and arrow_id == drag_arrow_id)
+
+func _handle_active_arrow_drag(camera: Camera3D, event: InputEvent) -> bool:
+	if event is InputEventMouseMotion:
+		_set_arrow_drag(camera, event.position)
+		return true
+
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+			_commit_arrow_drag(false)
+			_update_arrow_hover(camera, event.position)
+			return true
+		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			_commit_arrow_drag(true)
+			_update_arrow_hover(camera, event.position)
+			return true
+
+	if event is InputEventKey:
+		if event.pressed and event.keycode == KEY_ESCAPE:
+			_commit_arrow_drag(true)
+			return true
+		return false
+
+	return true
+
+func _update_arrow_hover(camera: Camera3D, screen_pos: Vector2) -> void:
+	var hit := _get_hovered_arrow(camera, screen_pos)
+	var next_node: Node3D = hit["node"]
+	var next_arrow_id: int = hit["id"]
+	if next_node == hovered_node and next_arrow_id == hovered_arrow_id:
+		return
+
+	var old_hovered_node := hovered_node
+	hovered_node = next_node
+	hovered_arrow_id = next_arrow_id
+	_update_node_gizmos(old_hovered_node)
+	_update_node_gizmos(hovered_node)
+
+func _get_hovered_arrow(camera: Camera3D, screen_pos: Vector2) -> Dictionary:
+	var closest_node: Node3D = null
+	var closest_id := -1
+	var closest_distance := INF
+	for node in _get_selected_gizmo_nodes():
+		var segments := _get_arrow_drag_segments(node)
+		for segment in segments:
+			if not (segment is Dictionary):
+				continue
+			if not segment.has("id") or not segment.has("from") or not segment.has("to"):
+				continue
+
+			var radius_scale := 1.0
+			if segment.has("radius_scale"):
+				radius_scale = float(segment["radius_scale"])
+
+			var distance := gizmo_utils.get_screen_arrow_signed_distance(camera, screen_pos, node, segment["from"], segment["to"], radius_scale)
+			if distance <= ProtoGizmoUtils.ARROW_PICK_EDGE_TOLERANCE_PIXELS and distance < closest_distance:
+				closest_node = node
+				closest_id = segment["id"]
+				closest_distance = distance
+
+	return {"node": closest_node, "id": closest_id}
+
+func _get_selected_gizmo_nodes() -> Array[Node3D]:
+	var nodes: Array[Node3D] = []
+	if not Engine.has_singleton("EditorInterface"):
+		return nodes
+
+	var editor_interface: Variant = Engine.get_singleton("EditorInterface")
+	if editor_interface == null:
+		return nodes
+
+	var selection: Variant = editor_interface.get_selection()
+	if selection == null:
+		return nodes
+
+	for node in selection.get_selected_nodes():
+		if node is Node3D and handles_node(node):
+			nodes.push_back(node)
+	return nodes
+
+func _begin_arrow_drag(node: Node3D, arrow_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	drag_node = node
+	drag_arrow_id = arrow_id
+	_call_begin_arrow_drag(node, arrow_id, camera, screen_pos)
+	_update_node_gizmos(node)
+
+func _set_arrow_drag(camera: Camera3D, screen_pos: Vector2) -> void:
+	_call_set_arrow_drag(drag_node, drag_arrow_id, camera, screen_pos)
+
+func _commit_arrow_drag(cancel: bool) -> void:
+	var node := drag_node
+	var arrow_id := drag_arrow_id
+	drag_node = null
+	drag_arrow_id = -1
+	_call_commit_arrow_drag(node, arrow_id, cancel)
+	_update_node_gizmos(node)
+
+func _get_arrow_drag_segments(node: Node3D) -> Array:
 	var provider = _get_gizmo_provider(node)
-	if provider != null and provider.has_method("subgizmos_intersect_ray"):
-		return provider.subgizmos_intersect_ray(gizmo, self, camera, screen_pos)
+	if provider != null and provider.has_method("get_arrow_drag_segments"):
+		var provider_segments: Variant = provider.get_arrow_drag_segments(self)
+		if provider_segments is Array:
+			return provider_segments
 
 	var wrapper := _get_gizmo_wrapper(node)
 	if wrapper != null:
-		return wrapper.subgizmos_intersect_ray_for_child(gizmo, self, camera, screen_pos)
-	return NO_SUBGIZMO
+		var wrapper_segments: Variant = wrapper.get_arrow_drag_segments_for_child(node, self)
+		if wrapper_segments is Array:
+			return wrapper_segments
+	return []
 
-func _get_subgizmo_transform(gizmo: EditorNode3DGizmo, subgizmo_id: int) -> Transform3D:
-	var node := gizmo.get_node_3d()
+func _call_begin_arrow_drag(node: Node3D, arrow_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
 	var provider = _get_gizmo_provider(node)
-	if provider != null and provider.has_method("get_subgizmo_transform"):
-		return provider.get_subgizmo_transform(gizmo, self, subgizmo_id)
-
-	var wrapper := _get_gizmo_wrapper(node)
-	if wrapper != null:
-		return wrapper.get_subgizmo_transform_for_child(gizmo, self, subgizmo_id)
-	return Transform3D.IDENTITY
-
-func _set_subgizmo_transform(gizmo: EditorNode3DGizmo, subgizmo_id: int, transform: Transform3D) -> void:
-	var node := gizmo.get_node_3d()
-	var provider = _get_gizmo_provider(node)
-	if provider != null and provider.has_method("set_subgizmo_transform"):
-		provider.set_subgizmo_transform(gizmo, self, subgizmo_id, transform)
+	if provider != null and provider.has_method("begin_arrow_drag"):
+		provider.begin_arrow_drag(self, arrow_id, camera, screen_pos)
 		return
 
 	var wrapper := _get_gizmo_wrapper(node)
 	if wrapper != null:
-		wrapper.set_subgizmo_transform_for_child(gizmo, self, subgizmo_id, transform)
-		return
+		wrapper.begin_arrow_drag_for_child(node, self, arrow_id, camera, screen_pos)
 
-func _commit_subgizmos(gizmo: EditorNode3DGizmo, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void:
-	var node := gizmo.get_node_3d()
+func _call_set_arrow_drag(node: Node3D, arrow_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
 	var provider = _get_gizmo_provider(node)
-	if provider != null and provider.has_method("commit_subgizmos"):
-		provider.commit_subgizmos(gizmo, self, ids, restores, cancel)
+	if provider != null and provider.has_method("set_arrow_drag"):
+		provider.set_arrow_drag(self, arrow_id, camera, screen_pos)
 		return
 
 	var wrapper := _get_gizmo_wrapper(node)
 	if wrapper != null:
-		wrapper.commit_subgizmos_for_child(gizmo, self, ids, restores, cancel)
+		wrapper.set_arrow_drag_for_child(node, self, arrow_id, camera, screen_pos)
+
+func _call_commit_arrow_drag(node: Node3D, arrow_id: int, cancel: bool) -> void:
+	var provider = _get_gizmo_provider(node)
+	if provider != null and provider.has_method("commit_arrow_drag"):
+		provider.commit_arrow_drag(self, arrow_id, cancel)
 		return
+
+	var wrapper := _get_gizmo_wrapper(node)
+	if wrapper != null:
+		wrapper.commit_arrow_drag_for_child(node, self, arrow_id, cancel)
+
+func _update_node_gizmos(node: Node3D) -> void:
+	if node != null and is_instance_valid(node):
+		node.update_gizmos()
 
 func _is_handle_highlighted(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool) -> bool:
 	return is_proto_handle_highlighted(gizmo, handle_id, secondary)
@@ -147,6 +275,9 @@ func get_handle_arrow_material(gizmo: EditorNode3DGizmo, handle_id: int, seconda
 
 func is_proto_handle_highlighted(gizmo: EditorNode3DGizmo, handle_id: int, secondary: bool = false) -> bool:
 	var node := gizmo.get_node_3d()
+	if is_arrow_handle_active(node, handle_id):
+		return true
+
 	var provider = _get_gizmo_provider(node)
 	if provider != null and provider.has_method("is_handle_highlighted"):
 		return provider.is_handle_highlighted(gizmo, self, handle_id, secondary)

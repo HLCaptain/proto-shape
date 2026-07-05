@@ -94,19 +94,19 @@ func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Vari
 	# Use plugin.undo_redo for committed property changes.
 ```
 
-When a handle has a solid arrow guide, the provider can make the arrow itself selectable by adding optional subgizmo callbacks:
+When a handle has a solid arrow guide, the provider can make the arrow itself hoverable and directly draggable by adding optional arrow-drag callbacks:
 
 ```gdscript
-func subgizmos_intersect_ray(gizmo, plugin, camera: Camera3D, screen_pos: Vector2) -> int:
-	return gizmo_utils.get_closest_screen_segment_id(camera, screen_pos, shape, _get_arrow_segments())
+func get_arrow_drag_segments(plugin) -> Array:
+	return _get_arrow_segments()
 
-func get_subgizmo_transform(gizmo, plugin, subgizmo_id: int) -> Transform3D:
-	return Transform3D(Basis.IDENTITY, _get_handle_position(subgizmo_id))
+func begin_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	# Store the starting property value and pointer projection for relative dragging.
 
-func set_subgizmo_transform(gizmo, plugin, subgizmo_id: int, transform: Transform3D) -> void:
-	# Map transform.origin back to the edited property.
+func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	# Use the same projection math as set_handle(), applied as a pointer delta.
 
-func commit_subgizmos(gizmo, plugin, ids: PackedInt32Array, restores: Array[Transform3D], cancel: bool) -> void:
+func commit_arrow_drag(plugin, handle_id: int, cancel: bool) -> void:
 	# Use the same undo/redo path as commit_handle().
 ```
 
@@ -114,7 +114,7 @@ Gizmo providers should:
 
 - Draw handles with `plugin.get_material("proto_handler", gizmo)`.
 - Draw directional guides with `ProtoGizmoUtils.add_arrow_mesh()` when a handle has a clear drag axis. Keep the handle icon at the arrow base and point the arrow along the drag direction.
-- Reuse the handle id as the subgizmo id when an arrow edits the same property as its point handle.
+- Reuse the handle id as the arrow segment id when an arrow edits the same property as its point handle.
 - Use `plugin.get_handle_arrow_material(gizmo, handle_id)` for arrows that should react to highlighted/editing handle state.
 - Use dynamic handle axes when shape state changes the direction of a drag.
 - Support normal snapping through `plugin.snapping` and fine snapping through `plugin.fine_snapping`.
