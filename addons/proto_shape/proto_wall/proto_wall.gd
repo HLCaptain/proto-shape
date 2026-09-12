@@ -176,8 +176,8 @@ var _material: Material = null
 ## gizmos are generated.
 @export var path_interpolation: PathInterpolation: set = set_path_interpolation, get = get_path_interpolation
 ## Follow Curved Path3D only. When enabled, [member Curve3D.bake_interval] is
-## used directly as generated sample spacing and [member path_sample_spacing]
-## is ignored.
+## used as generated sample spacing within ProtoWall's supported spacing range,
+## and [member path_sample_spacing] is ignored.
 @export var follow_use_bake_interval: bool: set = set_follow_use_bake_interval, get = get_follow_use_bake_interval
 ## Distance between generated samples for modes that sample by path length. Lower
 ## values create more sections; higher values create simpler geometry.
@@ -839,6 +839,7 @@ func _enter_tree() -> void:
 	_ensure_default_curve()
 	if not curve_changed.is_connected(_on_curve_changed):
 		curve_changed.connect(_on_curve_changed)
+	_mark_sampled_path_dirty()
 	refresh_shape()
 
 func _exit_tree() -> void:
@@ -871,9 +872,10 @@ func _flush_gizmo_update() -> void:
 func _ensure_default_curve() -> void:
 	if curve != null:
 		return
-	curve = Curve3D.new()
-	curve.add_point(Vector3.ZERO)
-	curve.add_point(Vector3(0, 0, 4))
+	var default_curve := Curve3D.new()
+	default_curve.add_point(Vector3.ZERO)
+	default_curve.add_point(Vector3(0, 0, 4))
+	curve = default_curve
 	_mark_sampled_path_dirty()
 
 func _ensure_sampled_path() -> void:
@@ -902,6 +904,8 @@ func _rebuild_sampled_path() -> void:
 	sampled_path_length = 0.0
 
 	if curve == null or curve.get_point_count() < 2:
+		sampled_path_dirty = false
+		sampled_basis_dirty = true
 		return
 
 	match path_interpolation:
@@ -995,7 +999,7 @@ func _build_follow_bake_interval_sampled_path(length: float) -> void:
 		)
 
 func _get_follow_bake_interval_sample_spacing() -> float:
-	return max(MIN_PATH_SAMPLE_SPACING, curve.bake_interval)
+	return clamp(curve.bake_interval, MIN_PATH_SAMPLE_SPACING, MAX_PATH_SAMPLE_SPACING)
 
 func _build_bezier_sampled_path() -> void:
 	var point_count := curve.get_point_count()
@@ -2141,7 +2145,6 @@ func _estimate_bezier_length(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3)
 func _on_curve_changed() -> void:
 	_mark_sampled_path_dirty()
 	refresh_shape()
-	update_gizmos()
 
 func _clear_generated_shapes() -> void:
 	var nodes: Array = generated_shapes.duplicate()

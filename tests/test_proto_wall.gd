@@ -68,6 +68,7 @@ func _test_curve_lifecycle() -> void:
 	_check(wall.curve == short_curve, "ProtoWall preserves an assigned short curve")
 	_check(wall.curve.get_point_count() == 1, "ProtoWall does not replace a short curve with defaults")
 	_check(wall.generated_shapes.is_empty(), "A short curve produces no generated geometry")
+	_check(not wall.sampled_path_dirty and not wall.sampled_basis_dirty, "Short-curve refresh settles empty cache state")
 
 	var curve := Curve3D.new()
 	curve.add_point(Vector3.ZERO)
@@ -75,12 +76,28 @@ func _test_curve_lifecycle() -> void:
 	wall.curve = curve
 	_check(is_equal_approx(wall.get_path_length(), 4.0), "Replacing the Path3D curve refreshes the sampled path")
 
-	curve.set_point_position(1, Vector3(0.0, 0.0, 7.0))
+	var replacement := Curve3D.new()
+	replacement.add_point(Vector3.ZERO)
+	replacement.add_point(Vector3(0.0, 0.0, 5.0))
+	wall.curve = replacement
+	var generated_id := wall.generated_shapes[0].get_instance_id()
+	curve.set_point_position(1, Vector3(0.0, 0.0, 9.0))
+	_check(is_equal_approx(wall.get_path_length(), 5.0), "Editing a detached old curve has no effect")
+	_check(wall.generated_shapes[0].get_instance_id() == generated_id, "Editing a detached old curve does not regenerate geometry")
+
+	replacement.set_point_position(1, Vector3(0.0, 0.0, 7.0))
 	_check(is_equal_approx(wall.get_path_length(), 7.0), "Path3D curve_changed refreshes edits without polling")
 
-	curve.clear_points()
-	curve.add_point(Vector3.ZERO)
-	_check(curve.get_point_count() == 1, "Editing an active curve down to one point remains authored")
+	root.remove_child(wall)
+	replacement.set_point_position(1, Vector3(0.0, 0.0, 8.0))
+	root.add_child(wall)
+	_check(is_equal_approx(wall.get_path_length(), 8.0), "Re-entering the tree rebuilds edits made while detached")
+
+	replacement.clear_points()
+	_check(is_equal_approx(wall.get_path_length(), 0.0), "An empty curve has zero path length")
+	_check(not wall.sampled_path_dirty and not wall.sampled_basis_dirty, "Empty-curve getters settle cache state")
+	replacement.add_point(Vector3.ZERO)
+	_check(replacement.get_point_count() == 1, "Editing an active curve down to one point remains authored")
 	_check(wall.generated_shapes.is_empty(), "Editing an active curve down to one point clears geometry")
 
 	wall.queue_free()
@@ -258,8 +275,11 @@ func _test_bake_interval_spacing() -> void:
 	_check(wall.sampled_path_points.size() == 5, "Increasing bake interval reduces generated sample density")
 
 	curve.bake_interval = 3.0
-	_check(wall.sampled_path_points.size() == 3, "Native bake intervals above ProtoWall's manual spacing range are preserved")
-	_check(is_equal_approx(wall._get_follow_bake_interval_sample_spacing(), 3.0), "Bake interval is used directly as generated sample spacing")
+	_check(wall.sampled_path_points.size() == 3, "Large native bake intervals use the maximum supported spacing")
+	_check(is_equal_approx(wall._get_follow_bake_interval_sample_spacing(), ProtoWall.MAX_PATH_SAMPLE_SPACING), "Bake interval spacing respects the maximum bound")
+
+	curve.bake_interval = 0.001
+	_check(is_equal_approx(wall._get_follow_bake_interval_sample_spacing(), ProtoWall.MIN_PATH_SAMPLE_SPACING), "Bake interval spacing respects the minimum bound")
 
 	wall.queue_free()
 	await process_frame
