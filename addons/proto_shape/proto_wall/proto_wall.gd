@@ -175,8 +175,9 @@ var _material: Material = null
 ## Controls how [member Path3D.curve] is sampled before walls, rails, posts, and
 ## gizmos are generated.
 @export var path_interpolation: PathInterpolation: set = set_path_interpolation, get = get_path_interpolation
-## Follow Curved Path3D only. When enabled, [member Curve3D.bake_interval] drives
-## generated sample density and [member path_sample_spacing] is ignored.
+## Follow Curved Path3D only. When enabled, [member Curve3D.bake_interval] is
+## used directly as generated sample spacing and [member path_sample_spacing]
+## is ignored.
 @export var follow_use_bake_interval: bool: set = set_follow_use_bake_interval, get = get_follow_use_bake_interval
 ## Distance between generated samples for modes that sample by path length. Lower
 ## values create more sections; higher values create simpler geometry.
@@ -981,8 +982,7 @@ func _build_follow_bake_interval_sampled_path(length: float) -> void:
 		)
 
 func _get_follow_bake_interval_sample_spacing() -> float:
-	var detail := max(0.01, curve.bake_interval if curve != null else 1.0)
-	return clamp(_default_path_sample_spacing / detail, MIN_PATH_SAMPLE_SPACING, MAX_PATH_SAMPLE_SPACING)
+	return max(MIN_PATH_SAMPLE_SPACING, curve.bake_interval)
 
 func _build_bezier_sampled_path() -> void:
 	var point_count := curve.get_point_count()

@@ -10,6 +10,7 @@ func _init() -> void:
 func _run() -> void:
 	await _test_curve_lifecycle()
 	await _test_thickness_cache_invalidation()
+	await _test_bake_interval_spacing()
 
 	if failures == 0:
 		print("ProtoWall tests passed")
@@ -58,6 +59,30 @@ func _test_thickness_cache_invalidation() -> void:
 
 	edited_wall.queue_free()
 	fresh_wall.queue_free()
+	await process_frame
+
+func _test_bake_interval_spacing() -> void:
+	var curve := Curve3D.new()
+	curve.add_point(Vector3.ZERO)
+	curve.add_point(Vector3(0.0, 0.0, 4.0))
+	curve.bake_interval = 0.25
+
+	var wall := ProtoWall.new()
+	wall.curve = curve
+	wall.path_interpolation = ProtoWall.PathInterpolation.FOLLOW_CURVED_PATH3D
+	wall.follow_use_bake_interval = true
+	wall.sample_simplify_angle = 0.0
+	root.add_child(wall)
+	_check(wall.sampled_path_points.size() == 17, "A 0.25 bake interval samples a four-unit path seventeen times")
+
+	curve.bake_interval = 1.0
+	_check(wall.sampled_path_points.size() == 5, "Increasing bake interval reduces generated sample density")
+
+	curve.bake_interval = 3.0
+	_check(wall.sampled_path_points.size() == 3, "Native bake intervals above ProtoWall's manual spacing range are preserved")
+	_check(is_equal_approx(wall._get_follow_bake_interval_sample_spacing(), 3.0), "Bake interval is used directly as generated sample spacing")
+
+	wall.queue_free()
 	await process_frame
 
 func _make_corner_wall(wall_thickness: float) -> Variant:
