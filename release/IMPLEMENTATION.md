@@ -23,7 +23,7 @@ validation environment: Godot 4.7.2.
 ## Steps
 
 - [x] 0. Record baseline and preserve existing changes.
-- [ ] 1. Commit existing fill correction with both-handle regression checks.
+- [x] 1. Commit existing fill correction with both-handle regression checks.
 - [ ] 2. Commit existing ramp example migration and stable UIDs.
 - [ ] 3. Isolate editor snapping from host InputMap.
 - [ ] 4. Release ramp provider references and use current callback plugin.
@@ -63,3 +63,6 @@ validation environment: Godot 4.7.2.
 
 Implementation checks and remaining operational gates are recorded here as work
 lands. An unchecked manual or external gate is not a passing result.
+
+- Step 1: `godot --headless --path . --script tests/test_proto_ramp_gizmos.gd`
+  passed with `PASS: ramp fill gizmos`; both fill handles, limits, and cancel.

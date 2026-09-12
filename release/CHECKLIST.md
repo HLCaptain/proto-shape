@@ -8,6 +8,7 @@
 
 ## Validation
 
+- [ ] Run `godot --headless --path . --script tests/test_proto_ramp_gizmos.gd` and check for its PASS marker and clean error log.
 - [ ] Run `godot --headless --path . --import`.
 - [ ] Run `godot --headless --path . --editor --quit`.
 - [ ] Open the project in the Godot editor.

@@ -275,9 +275,7 @@ func _get_fill_handle_offset(
 	gizmo_max_position.x = 0
 	handle_offset -= ramp.get_anchor_offset(ramp.anchor)
 	handle_offset.x = 0
-	if (handle_offset.dot(gizmo_max_position) < 0):
-		return 1
-	return min(1.0, max(0.0, 1 - handle_offset.project(gizmo_max_position).length() / gizmo_max_position.length()))
+	return 1.0 - handle_offset.dot(gizmo_max_position) / gizmo_max_position.length_squared()
 
 func _get_ramp_width(offset: float) -> float:
 	# If anchor is on the left, offset is negative
@@ -438,7 +436,7 @@ func _get_height_drag_axis() -> Vector3:
 func _get_fill_drag_axis() -> Vector3:
 	var axis := _get_fill_max_offset().normalized()
 	axis.z = -axis.z
-	return axis
+	return -axis
 
 func _get_handle_drag_axis(handle_id: int) -> Vector3:
 	match handle_id:
