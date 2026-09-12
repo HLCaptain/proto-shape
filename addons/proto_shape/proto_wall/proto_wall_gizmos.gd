@@ -12,8 +12,10 @@ var shape: ProtoWall = null
 var gizmo_utils := ProtoGizmoUtils.new()
 var editing_handle := 0
 var start_value: Variant = 0.0
+var drag_start_value: Variant = 0.0
 var end_value: Variant = 0.0
 var drag_start_pointer_value: Variant = 0.0
+var drag_changed := false
 
 func attach_shape(node: ProtoWall) -> void:
 	shape = node
@@ -40,10 +42,11 @@ func redraw_gizmos(gizmo, plugin) -> void:
 	ids.push_back(HANDLE_THICKNESS)
 
 	if shape.style == ProtoWall.Style.RAIL:
-		var lower_rail_handle := _get_lower_rail_height_handle_position()
-		_add_handle_arrow(gizmo, plugin, HANDLE_LOWER_RAIL_HEIGHT, lower_rail_handle, _get_wall_up_axis())
-		handles.push_back(lower_rail_handle)
-		ids.push_back(HANDLE_LOWER_RAIL_HEIGHT)
+		if shape.rail_count > 1:
+			var lower_rail_handle := _get_lower_rail_height_handle_position()
+			_add_handle_arrow(gizmo, plugin, HANDLE_LOWER_RAIL_HEIGHT, lower_rail_handle, _get_wall_up_axis())
+			handles.push_back(lower_rail_handle)
+			ids.push_back(HANDLE_LOWER_RAIL_HEIGHT)
 
 		if shape.post_enabled:
 			var post_width_handle := _get_post_width_handle_position()
@@ -57,11 +60,13 @@ func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D
 	if shape == null or gizmo.get_node_3d() != shape:
 		return
 
+	var pointer_value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
+	if pointer_value == null:
+		return
 	if editing_handle == 0:
-		if not begin_arrow_drag(plugin, handle_id, camera, screen_pos):
-			return
-		drag_start_pointer_value = start_value
-	set_arrow_drag(plugin, handle_id, camera, screen_pos)
+		_begin_drag(handle_id, pointer_value)
+		drag_start_pointer_value = drag_start_value
+	_apply_dragged_pointer_value(plugin, handle_id, pointer_value)
 
 func get_arrow_drag_segments(_plugin) -> Array:
 	return _get_arrow_segments()
@@ -72,19 +77,39 @@ func begin_arrow_drag(_plugin, handle_id: int, camera: Camera3D, screen_pos: Vec
 	var pointer_value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
 	if pointer_value == null:
 		return false
-	editing_handle = handle_id
-	start_value = _get_handle_value(handle_id)
-	drag_start_pointer_value = pointer_value
-	end_value = start_value
+	_begin_drag(handle_id, pointer_value)
 	return true
 
 func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
-	var value: Variant = _get_relative_dragged_value(handle_id, camera, screen_pos)
-	if value == null:
+	if editing_handle == 0 or not is_instance_valid(shape):
 		return
-	value = _apply_snapping(value, plugin)
+	_apply_dragged_pointer_value(plugin, handle_id, _get_dragged_value(handle_id, camera, screen_pos))
+
+func _begin_drag(handle_id: int, pointer_value: Variant) -> void:
+	editing_handle = handle_id
+	start_value = _get_handle_value(handle_id)
+	drag_start_value = _get_rendered_handle_value(handle_id)
+	drag_start_pointer_value = pointer_value
+	end_value = start_value
+	drag_changed = false
+
+func _apply_dragged_pointer_value(plugin, handle_id: int, pointer_value: Variant) -> void:
+	if editing_handle != handle_id or pointer_value == null:
+		return
+	var value := float(drag_start_value) + float(pointer_value) - float(drag_start_pointer_value)
+	if not is_equal_approx(value, float(drag_start_value)):
+		value = _apply_snapping(value, plugin)
+	if is_equal_approx(value, float(drag_start_value)):
+		if not is_equal_approx(float(_get_handle_value(handle_id)), float(start_value)):
+			_set_handle_value(handle_id, start_value)
+			shape.update_gizmos()
+		end_value = start_value
+		drag_changed = false
+		return
+
 	_set_handle_value(handle_id, value)
 	end_value = _get_handle_value(handle_id)
+	drag_changed = not is_equal_approx(float(end_value), float(start_value))
 	shape.update_gizmos()
 
 func commit_arrow_drag(plugin, _handle_id: int, cancel: bool) -> void:
@@ -103,6 +128,11 @@ func _commit_current_edit(plugin, cancel: bool) -> void:
 		_set_handle_value(editing_handle, start_value)
 		shape.update_gizmos()
 		editing_handle = 0
+		drag_changed = false
+		return
+
+	if not drag_changed:
+		editing_handle = 0
 		return
 
 	var property_name := _get_property_name(editing_handle)
@@ -112,6 +142,7 @@ func _commit_current_edit(plugin, cancel: bool) -> void:
 	undo_redo.add_undo_property(shape, property_name, start_value)
 	undo_redo.commit_action()
 	editing_handle = 0
+	drag_changed = false
 
 func _get_handle_position(handle_id: int) -> Vector3:
 	match handle_id:
@@ -163,7 +194,7 @@ func _get_thickness_handle_position() -> Vector3:
 	return point + basis.x * shape.get_side_outer_offset(shape.thickness) + basis.y * shape.height / 2.0
 
 func _get_lower_rail_height_handle_position() -> Vector3:
-	return _get_center_position() + _get_wall_up_axis() * shape.lower_rail_height
+	return _get_center_position() + _get_wall_up_axis() * shape.get_effective_lower_rail_height()
 
 func _get_post_center_position() -> Vector3:
 	var offset := _get_handle_path_offset()
@@ -194,7 +225,8 @@ func _get_arrow_segments() -> Array:
 func _get_visible_handle_ids() -> Array:
 	var ids := [HANDLE_HEIGHT, HANDLE_THICKNESS]
 	if shape.style == ProtoWall.Style.RAIL:
-		ids.push_back(HANDLE_LOWER_RAIL_HEIGHT)
+		if shape.rail_count > 1:
+			ids.push_back(HANDLE_LOWER_RAIL_HEIGHT)
 		if shape.post_enabled:
 			ids.push_back(HANDLE_POST_WIDTH)
 	return ids
@@ -265,12 +297,6 @@ func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -
 			return forward_distance * 2.0
 	return null
 
-func _get_relative_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
-	var pointer_value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
-	if pointer_value == null:
-		return null
-	return max(ProtoWall.MIN_DIMENSION, float(start_value) + float(pointer_value) - float(drag_start_pointer_value))
-
 func _apply_snapping(value: float, plugin) -> float:
 	if plugin.fine_snapping:
 		return gizmo_utils.snap_to_grid(value, 0.1)
@@ -289,6 +315,11 @@ func _get_handle_value(handle_id: int) -> Variant:
 		HANDLE_POST_WIDTH:
 			return shape.post_width
 	return 0.0
+
+func _get_rendered_handle_value(handle_id: int) -> Variant:
+	if handle_id == HANDLE_LOWER_RAIL_HEIGHT:
+		return shape.get_effective_lower_rail_height()
+	return _get_handle_value(handle_id)
 
 func _set_handle_value(handle_id: int, value: Variant) -> void:
 	match handle_id:

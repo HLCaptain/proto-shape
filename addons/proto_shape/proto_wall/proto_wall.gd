@@ -210,11 +210,11 @@ var _material: Material = null
 @export_group("Rail")
 ## Rail style only. Number of horizontal rail bars to generate.
 @export_range(1, 8, 1, "or_greater") var rail_count: int: set = set_rail_count, get = get_rail_count
-## Rail style only. Vertical thickness of each rail bar, clamped so bars can fit
-## within the total rail height.
+## Rail style only. Authored vertical thickness of each rail bar. Generated
+## geometry derives a smaller effective value when needed to fit height/count.
 @export_range(0.001, 1.0, 0.01) var rail_thickness: float: set = set_rail_thickness, get = get_rail_thickness
-## Rail style only. Center height of the lowest rail bar. The inspector range and
-## setter are clamped between half rail thickness and the top valid center height.
+## Rail style only. Authored center height of the lowest rail bar. Generated
+## geometry clamps an effective value into the current height.
 @export_range(0.0, 5.0, 0.01) var lower_rail_height: float: set = set_lower_rail_height, get = get_lower_rail_height
 ## Rail style only. Enables generated post boxes along the sampled rail path.
 @export var post_enabled: bool: set = set_post_enabled, get = get_post_enabled
@@ -504,7 +504,20 @@ func get_rail_thickness() -> float:
 	return _rail_thickness
 
 func get_lower_rail_height() -> float:
-	return _get_clamped_lower_rail_height(_lower_rail_height)
+	return _lower_rail_height
+
+## Returns the thickness used for generated rails after fitting every rail
+## inside the current height.
+func get_effective_rail_thickness() -> float:
+	return min(rail_thickness, height / float(max(1, rail_count)))
+
+## Returns the lowest generated rail center after reserving enough vertical
+## space for every effective rail interval.
+func get_effective_lower_rail_height() -> float:
+	var effective_thickness := get_effective_rail_thickness()
+	var minimum := effective_thickness / 2.0
+	var maximum := max(minimum, height - effective_thickness * (float(rail_count) - 0.5))
+	return clamp(lower_rail_height, minimum, maximum)
 
 func get_post_enabled() -> bool:
 	return _post_enabled
@@ -669,19 +682,18 @@ func set_path_sample_spacing(value: float) -> void:
 
 func set_rail_count(value: int) -> void:
 	_rail_count = max(1, value)
-	_rail_thickness = _get_clamped_rail_thickness(_rail_thickness)
 	refresh_shape()
 	rail_settings_changed.emit()
 	update_gizmos()
 
 func set_rail_thickness(value: float) -> void:
-	_rail_thickness = _get_clamped_rail_thickness(value)
+	_rail_thickness = clamp(value, MIN_DIMENSION, MAX_THICKNESS)
 	refresh_shape()
 	rail_settings_changed.emit()
 	update_gizmos()
 
 func set_lower_rail_height(value: float) -> void:
-	_lower_rail_height = _get_clamped_lower_rail_height(value)
+	_lower_rail_height = clamp(value, 0.0, MAX_HEIGHT)
 	refresh_shape()
 	rail_settings_changed.emit()
 	update_gizmos()
@@ -813,11 +825,12 @@ func get_side_outer_offset(width: float) -> float:
 	return width / 2.0
 
 func get_rail_center_height(index: int) -> float:
-	var top_center := max(rail_thickness / 2.0, height - rail_thickness / 2.0)
+	var effective_thickness := get_effective_rail_thickness()
+	var top_center := height - effective_thickness / 2.0
 	if rail_count <= 1:
 		return top_center
 
-	var bottom_center := _get_clamped_lower_rail_height(lower_rail_height)
+	var bottom_center := get_effective_lower_rail_height()
 	var ratio := float(index) / float(max(1, rail_count - 1))
 	return lerp(bottom_center, top_center, ratio)
 
@@ -2148,11 +2161,8 @@ func _create_solid_wall() -> void:
 
 func _create_rails() -> void:
 	var profiles: Array = []
-	for index in range(rail_count):
-		var rail_center_height := get_rail_center_height(index)
-		var bottom := max(0.0, rail_center_height - rail_thickness / 2.0)
-		var top := min(height, rail_center_height + rail_thickness / 2.0)
-		profiles.append(_create_wall_profile(thickness, bottom, top))
+	for interval: Vector2 in _get_merged_rail_intervals():
+		profiles.append(_create_wall_profile(thickness, interval.x, interval.y))
 	_create_path_meshes("%sRails" % GENERATED_PREFIX, profiles)
 	_create_selection_proxy()
 
@@ -2390,20 +2400,23 @@ func _get_counted_post_offsets(length: float) -> PackedFloat32Array:
 		offsets.append(length * float(index) / float(denominator))
 	return offsets
 
-func _get_clamped_rail_thickness(value: float) -> float:
-	return clamp(value, MIN_DIMENSION, _get_max_rail_thickness())
+func _get_merged_rail_intervals() -> Array[Vector2]:
+	var intervals: Array[Vector2] = []
+	var effective_thickness := get_effective_rail_thickness()
+	for index in range(rail_count):
+		var center := get_rail_center_height(index)
+		var interval := Vector2(
+			max(0.0, center - effective_thickness / 2.0),
+			min(height, center + effective_thickness / 2.0)
+		)
+		if intervals.is_empty() or interval.x > intervals[intervals.size() - 1].y + 0.000001:
+			intervals.append(interval)
+			continue
 
-func _get_max_rail_thickness() -> float:
-	return min(1.0, 1.0 / float(max(1, rail_count)))
-
-func _get_clamped_lower_rail_height(value: float) -> float:
-	return clamp(value, _get_min_lower_rail_height(), _get_max_lower_rail_height())
-
-func _get_min_lower_rail_height() -> float:
-	return rail_thickness / 2.0
-
-func _get_max_lower_rail_height() -> float:
-	return max(_get_min_lower_rail_height(), height - rail_thickness / 2.0)
+		var merged := intervals[intervals.size() - 1]
+		merged.y = max(merged.y, interval.y)
+		intervals[intervals.size() - 1] = merged
+	return intervals
 
 func equals(other: Variant) -> bool:
 	return other == self

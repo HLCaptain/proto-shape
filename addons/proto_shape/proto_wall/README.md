@@ -70,8 +70,8 @@ Common properties:
 Rail-only properties:
 
 - `rail_count` - Number of horizontal rails.
-- `rail_thickness` - Vertical thickness of each rail bar.
-- `lower_rail_height` - Center height of the lowest rail when multiple rails are used. The Inspector range is stable for smooth dragging; the generated rail clamps this value to fit inside the current `height` and `rail_thickness`.
+- `rail_thickness` - Authored vertical thickness of each rail bar. If the current height and rail count cannot fit it, generated geometry uses a smaller effective thickness without overwriting the Inspector value.
+- `lower_rail_height` - Authored center height of the lowest rail when multiple rails are used. Generated geometry clamps an effective height so every rail fits without overwriting the Inspector value, making height and count changes reversible.
 - `post_enabled` - Generates posts along the path.
 - `post_placement` - Place posts by fixed spacing or by explicit count.
 - `post_spacing` - Distance between posts along the baked curve when `post_placement` is `Spacing`.
@@ -86,7 +86,7 @@ Rail-only properties:
 
 - Height handle - adjusts `height`.
 - Thickness handle - adjusts `thickness` according to the current `side` alignment.
-- Lower rail handle - adjusts `lower_rail_height` when `style` is `Rail`.
+- Lower rail handle - adjusts `lower_rail_height` when `style` is `Rail` and two or more rails are generated. The handle starts at the effective rendered height when the authored value is outside the current wall.
 - Post width handle - adjusts the along-path `post_width` when posts are enabled.
 
 Hold <kbd>Ctrl</kbd> for 1.0 unit snapping and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> for 0.1 unit fine snapping.
@@ -118,6 +118,8 @@ Capture or link these before publishing 1.2.0:
 The runtime shape script owns generated CSG nodes and remains export-safe. Editor-only gizmo code is loaded only behind `Engine.is_editor_hint()`.
 
 Generated solid walls and rail bars are closed `CSGMesh3D` sweep meshes built from sampled `Path3D` points. Rail posts are generated `CSGBox3D` nodes placed from the same sampled path cache, and their depth axis is aligned to the generated rail segment at the post offset so posts stay parallel to the rail span.
+
+Rail thickness and lower height remain authored Inspector values. Rendering derives values that fit the current height and rail count, and touching or overlapping vertical rail intervals are merged before sweeping so they do not create duplicate internal rail surfaces.
 
 `path_orientation` controls both mesh sweep sections and post transforms. `Path Perpendicular` follows each interpolation mode's sampled 3D tangent and applies interpolated `Curve3D` point tilt as explicit roll, which is useful for rails on top of `ProtoRamp` where the curve rises from `Y=0` to `Y=1`. `Fixed Up` follows the path horizontally while keeping wall height upright.
 
