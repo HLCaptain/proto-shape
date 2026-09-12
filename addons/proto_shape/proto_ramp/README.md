@@ -23,6 +23,8 @@ Open [proto_ramp_example.tscn](example/proto_ramp_example.tscn), or run this rep
 
 ProtoRamp supports custom gizmos to adjust the shape. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. Hovering an arrow highlights it, and dragging the arrow body edits the same property as the small handle icon.
 
+Width, total height, and total depth stay at least `0.001`. In `Step Dimensions` mode, the stored height and depth describe one step, so they may be smaller than `0.001` while the complete staircase remains at least `0.001`. Switching calculation mode or shape type preserves the complete shape dimensions.
+
 https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33-7b03d44f62c7
 
 #### Undo/Redo
