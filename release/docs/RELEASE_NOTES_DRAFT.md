@@ -1,74 +1,54 @@
-# Release Notes Draft
+# ProtoShape 1.2.0
 
-## Title
-
-`ProtoShape 1.2.0`
-
-## Summary
-
-ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader 3D blockout toolkit. This release adds `ProtoWall`, reworks the shared gizmo system with hoverable and directly draggable arrow bodies, and documents the provider interface for custom editor gizmos.
+ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blockout toolkit. It adds the path-driven `ProtoWall`, safer reusable gizmo contracts, reversible rail editing, and an editable Power Cell Delivery example map.
 
 ## Highlights
 
-- New `ProtoWall` shape for path-based solid walls and rails using `Path3D` and `Curve3D`.
-- Reworked `ProtoGizmo` arrow workflow with screen-space arrow hover, highlight, and direct arrow dragging.
-- Modular gizmo provider interface for custom `Node3D` tools, including provider examples and wrapper examples.
-- ProtoWall gizmos now align thickness and post-width arrows to the generated wall or rail segment across interpolation modes.
-- ProtoWall post count editing is inspector-only; the 3D viewport keeps height, thickness, lower rail height, and post width handles focused.
-- Icon assets moved into `addons/proto_shape/icons/` for shared tools and shape-local `icons/` folders for `ProtoRamp` and `ProtoWall`.
+- Added `ProtoWall` for path-based solid walls and rails using `Path3D` and `Curve3D`.
+- Added hoverable, directly draggable solid gizmo arrows with screen-space picking, snapping, cancel, and undo/redo.
+- Added Power Cell Delivery, a short playable example that combines varied ramps, walls, rails, and a power-cell delivery objective.
+- Added a native 1920x1080 Godot-rendered thumbnail of the delivered example.
 
-## Changes
+## ProtoWall
 
-### Gizmos
+- Supports solid walls, rails, posts, side alignment, collision, material assignment, path orientation, point tilt, and multiple interpolation modes.
+- Uses native `Path3D.curve_changed` lifecycle updates instead of editor polling and preserves intentionally empty or one-point curves.
+- Invalidates sampled paths when wall thickness changes, keeping edited caches equivalent to freshly configured walls.
+- Uses `Curve3D.bake_interval` in its native spacing direction for Follow Curved Path3D, within ProtoWall's supported 0.01-2.0 range.
+- Preserves authored rail thickness and lower-rail height through height/count changes, undo/redo, and save/reload.
+- Derives effective rail values that fit the current height/count and merges touching vertical intervals before generating sweep geometry.
+- Starts the lower-rail gizmo at its effective rendered height while retaining the raw authored value for cancel and undo. The handle is hidden when only one rail is generated.
 
-- Solid 3D arrows can be highlighted by cursor hover and dragged directly, without relying on Godot's native transform gizmo arrows.
-- Arrow picking uses the projected screen-space shaft and head footprint, so hover matches the visible arrow more closely.
-- Providers can expose arrow bodies with `get_arrow_drag_segments()`, `begin_arrow_drag()`, `set_arrow_drag()`, and `commit_arrow_drag()`.
-- Arrow dragging uses the same snapping, cancel, redraw, and `EditorUndoRedoManager` commit paths as point handles.
-- `ProtoGizmoWrapper` forwards optional arrow-drag callbacks from wrapped child nodes.
+## Gizmos
 
-### ProtoWall
+- Generalized `ProtoGizmo` around reusable providers and `ProtoGizmoWrapper` children.
+- Projection helpers return a nullable `Vector3`; unresolved camera-plane intersections are rejected without mutating the edited shape.
+- `begin_arrow_drag()` returns `bool` so providers can reject an invalid drag before it becomes active.
+- Updated all first-party providers and wrapper forwarding to the nullable projection and boolean begin-drag contracts.
+- `ProtoGizmoWrapper.set_handle_for_child_signal` passes `plugin` as its second argument, and `commit_handle` now includes `plugin` in the same position.
+- Generated `CSGShape3D` and `MeshInstance3D` nodes can provide click-selection geometry for their owning custom node.
 
-- Added `ProtoWall`, a `Path3D`-based wall and rail generator for level blockouts.
-- Supports solid wall and rail styles, with generated CSG geometry following editable `Curve3D` paths.
-- Useful for room and corridor walls, arena boundaries, low cover, parapets, platform lips, guardrails, fences, balcony rails, ramp-side rails, and variable-elevation rails.
-- Includes multiple interpolation modes for flat, curved, corner-rounded, filleted, Bezier, Catmull-Rom, arc-line, parallel-transport, and linear path workflows.
-- Includes example scenes for solid walls, rail use cases, mixed blockouts, and interpolation comparisons.
-- Thickness and post-width gizmos now use segment-aligned axes so the arrows stay parallel or perpendicular to the visible generated span.
-- `post_count` remains available in the inspector when post placement uses count mode, but it no longer has a dedicated 3D viewport gizmo.
+## Examples and documentation
 
-### Documentation
+- Added direct-provider, dynamic-axis, and wrapper gizmo examples.
+- Added ProtoWall scenes covering solid walls, rail layouts, mixed blockouts, elevation, and interpolation modes.
+- Added the editable Power Cell Delivery map as a hands-on addon example, not a standalone game.
+- Updated shape, gizmo, wrapper, and development documentation.
+- Moved shared icons to `addons/proto_shape/icons/` and shape icons into shape-local `icons/` folders.
 
-- Updated root README and addon README with `ProtoWall` and the reworked gizmo workflow.
-- Updated `ProtoGizmo` docs with the provider callback interface, arrow selection behavior, and examples.
-- Updated `ProtoWall` README with use cases, properties, examples, and media placeholders.
-- Updated shape-development docs with the shape-local icon convention.
+## Upgrade notes
 
-## Media Placeholders
+- ProtoShape 1.2.0 requires Godot 4.7 or later and is validated with Godot 4.7.2.
+- Custom gizmo providers must handle nullable projection results and return success from `begin_arrow_drag()`.
+- Wrapped children must use the corrected callback argument order described above.
+- No compatibility bridge is provided for pre-1.2 experimental provider or wrapper contracts.
+- Direct icon references must move from `addons/proto_shape/icon/` to the new shared or shape-local paths.
 
-Add final media links before publishing:
+## Current limitations
 
-- Overview video: `release/media/videos/proto-shape-1.2.0-overview.mp4` or hosted URL.
-- ProtoWall overview video: `release/media/videos/proto-wall-overview.mp4` or hosted URL.
-- ProtoWall overview screenshot: `release/media/screenshots/proto-wall-overview.png`.
-- ProtoWall use-case screenshot: `release/media/screenshots/proto-wall-solid-rail-use-cases.png`.
-- ProtoWall interpolation/thickness screenshot: `release/media/screenshots/proto-wall-interpolation-thickness.png`.
-- ProtoWall post-width screenshot: `release/media/screenshots/proto-wall-post-width.png`.
-- Gizmo arrow hover screenshot: `release/media/screenshots/proto-gizmo-arrow-hover.png`.
-- Arrow hover and drag GIF: `release/media/gifs/arrow-hover-and-drag.gif`.
+- Generated ProtoWall sweep meshes contain positions, normals, and indices, but no UV or tangent attributes. UV-dependent and tangent-space workflows are unsupported; solid-color and world/triplanar materials may work.
+- The standalone ProtoRamp example intentionally ships with an unbaked `NavigationMesh`; bake it in the editor to test navigation generation. This does not describe the Power Cell Delivery map.
 
-## Upgrade Notes
+## Issue
 
-- If you reference addon icons directly, update paths from `addons/proto_shape/icon/` to the new `icons/` layout.
-- `ProtoRamp` icon: `addons/proto_shape/proto_ramp/icons/proto-ramp-icon.png`.
-- `ProtoWall` icon: `addons/proto_shape/proto_wall/icons/proto-wall-icon.png`.
-- Shared addon and tool icons: `addons/proto_shape/icons/`.
-- For `ProtoWall`, edit `post_count` through the inspector instead of a 3D viewport gizmo.
-
-## Validation
-
-- [ ] `godot --headless --path . --import`
-- [ ] `godot --headless --path . --editor --quit`
-- [ ] Manual editor check: add `ProtoRamp`, hover and drag arrow bodies, test snapping, cancel, undo, and redo.
-- [ ] Manual editor check: add `ProtoWall`, test height, thickness, lower rail height, and post width handles across interpolation modes.
-- [ ] Manual editor check: save and reload the ProtoWall example scenes.
+ProtoWall implements the core request tracked in [#11](https://github.com/HLCaptain/proto-shape/issues/11).
