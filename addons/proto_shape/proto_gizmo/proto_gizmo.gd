@@ -22,10 +22,14 @@ var _fine_snapping: bool = false
 var fine_snapping: bool: set = set_fine_snapping, get = get_fine_snapping
 
 func set_snapping(snapping: bool) -> void:
+	if _snapping == snapping:
+		return
 	_snapping = snapping
 	snapping_changed.emit(snapping)
 
 func set_fine_snapping(fine_snapping: bool) -> void:
+	if _fine_snapping == fine_snapping:
+		return
 	_fine_snapping = fine_snapping
 	fine_snapping_changed.emit(fine_snapping)
 

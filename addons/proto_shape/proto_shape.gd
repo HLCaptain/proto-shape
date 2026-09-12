@@ -14,22 +14,21 @@ func _enter_tree():
 	add_custom_type("ProtoGizmoWrapper", "Node", preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd"), preload("res://addons/proto_shape/icons/proto-gizmo-wrapper-icon.png"))
 	add_node_3d_gizmo_plugin(gizmo_plugin)
 
-	var snap_to_grid_action = InputEventKey.new()
-	snap_to_grid_action.keycode = KEY_CTRL
-	var fine_snap_to_grid_action = InputEventKey.new()
-	fine_snap_to_grid_action.keycode = KEY_SHIFT
-	InputMap.add_action("snap_to_grid")
-	InputMap.add_action("fine_snap_to_grid")
-	InputMap.action_add_event("snap_to_grid", snap_to_grid_action)
-	InputMap.action_add_event("fine_snap_to_grid", fine_snap_to_grid_action)
-
 func _exit_tree():
+	_reset_snapping()
 	remove_custom_type("ProtoRamp")
 	remove_custom_type("ProtoWall")
 	remove_custom_type("ProtoGizmoWrapper")
 	remove_node_3d_gizmo_plugin(gizmo_plugin)
-	InputMap.erase_action("snap_to_grid")
-	InputMap.erase_action("fine_snap_to_grid")
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+		_reset_snapping()
+
+func _reset_snapping() -> void:
+	if is_instance_valid(gizmo_plugin):
+		gizmo_plugin.fine_snapping = false
+		gizmo_plugin.snapping = false
 
 func _handles(object: Object) -> bool:
 	if object is Node3D:
@@ -42,23 +41,11 @@ func _forward_3d_gui_input(camera: Camera3D, event: InputEvent) -> int:
 	return EditorPlugin.AFTER_GUI_INPUT_PASS
 
 func _shortcut_input(event: InputEvent) -> void:
-	if event.is_action_pressed("snap_to_grid"):
-		if event is InputEventKey:
-			if event.keycode == KEY_CTRL:
-				gizmo_plugin.snapping = true
-				if event.shift_pressed:
-					gizmo_plugin.fine_snapping = true
-				else:
-					gizmo_plugin.fine_snapping = false
-	if event.is_action_pressed("fine_snap_to_grid"):
-		if event is InputEventKey:
-			if event.keycode == KEY_SHIFT and event.ctrl_pressed:
-				gizmo_plugin.fine_snapping = true
-			else:
-				gizmo_plugin.snapping = false
-				gizmo_plugin.fine_snapping = false
-	if event.is_action_released("snap_to_grid"):
-		gizmo_plugin.snapping = false
-		gizmo_plugin.fine_snapping = false
-	if event.is_action_released("fine_snap_to_grid"):
-		gizmo_plugin.fine_snapping = false
+	if not event is InputEventKey or event.echo:
+		return
+	if event.keycode not in [KEY_CTRL, KEY_SHIFT]:
+		return
+	var ctrl: bool = event.pressed if event.keycode == KEY_CTRL else event.ctrl_pressed
+	var shift: bool = event.pressed if event.keycode == KEY_SHIFT else event.shift_pressed
+	gizmo_plugin.snapping = ctrl
+	gizmo_plugin.fine_snapping = ctrl and shift
