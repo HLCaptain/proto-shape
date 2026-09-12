@@ -44,6 +44,7 @@ func _init() -> void:
 func _run() -> void:
 	await _test_curve_lifecycle()
 	await _test_thickness_cache_invalidation()
+	await _test_thickness_drag_reference_frame()
 	await _test_bake_interval_spacing()
 	await _test_reversible_rail_values()
 	await _test_rail_save_reload()
@@ -255,6 +256,43 @@ func _test_thickness_cache_invalidation() -> void:
 
 	edited_wall.queue_free()
 	fresh_wall.queue_free()
+	await process_frame
+
+func _test_thickness_drag_reference_frame() -> void:
+	var wall: Variant = _make_corner_wall(0.05)
+	var gizmo: Variant = ProtoWallGizmos.new()
+	gizmo.attach_shape(wall)
+	var plugin := MockPlugin.new()
+	var camera := Camera3D.new()
+	root.add_child(camera)
+	var initial_handle: Vector3 = gizmo._get_thickness_handle_position()
+	var initial_axis: Vector3 = gizmo._get_thickness_drag_axis().normalized()
+	camera.global_position = Vector3(3.0, 3.0, 5.0)
+	camera.look_at(wall.global_transform * initial_handle)
+	var start_screen := camera.unproject_position(wall.global_transform * initial_handle)
+	_check(gizmo.begin_arrow_drag(plugin, 2, camera, start_screen), "Thickness drag begins on a rounded corner")
+
+	var previous_value: float = wall.thickness
+	for distance in [0.1, 0.2, 0.3]:
+		var pointer := camera.unproject_position(wall.global_transform * (initial_handle + initial_axis * distance))
+		gizmo.set_arrow_drag(plugin, 2, camera, pointer)
+		var first_value: float = wall.thickness
+		_check(first_value > previous_value, "Increasing thickness pointer motion stays monotonic")
+		gizmo.set_arrow_drag(plugin, 2, camera, pointer)
+		_check(is_equal_approx(wall.thickness, first_value), "Repeated thickness pointer is idempotent after path rebuild")
+		previous_value = first_value
+	gizmo._commit_current_edit(plugin, false)
+
+	var next_handle: Vector3 = gizmo._get_thickness_handle_position()
+	var next_axis: Vector3 = gizmo._get_thickness_drag_axis()
+	_check(not next_handle.is_equal_approx(initial_handle), "Completed thickness drag updates the next projection frame")
+	camera.look_at(wall.global_transform * next_handle)
+	_check(gizmo.begin_arrow_drag(plugin, 2, camera, camera.unproject_position(wall.global_transform * next_handle)), "Next thickness drag uses regenerated geometry")
+	_check(gizmo.drag_thickness_handle_position.is_equal_approx(next_handle) and gizmo.drag_thickness_axis.is_equal_approx(next_axis), "Projection frame is recaptured between drags")
+	gizmo._commit_current_edit(plugin, true)
+
+	camera.queue_free()
+	wall.queue_free()
 	await process_frame
 
 func _test_bake_interval_spacing() -> void:

@@ -16,6 +16,9 @@ var drag_start_value: Variant = 0.0
 var end_value: Variant = 0.0
 var drag_start_pointer_value: Variant = 0.0
 var drag_changed := false
+var drag_thickness_axis := Vector3.ZERO
+var drag_thickness_handle_position := Vector3.ZERO
+var drag_thickness_path_point := Vector3.ZERO
 
 func attach_shape(node: ProtoWall) -> void:
 	shape = node
@@ -87,6 +90,10 @@ func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector
 
 func _begin_drag(handle_id: int, pointer_value: Variant) -> void:
 	editing_handle = handle_id
+	if handle_id == HANDLE_THICKNESS:
+		drag_thickness_axis = _get_thickness_side_axis()
+		drag_thickness_handle_position = _get_thickness_handle_position()
+		drag_thickness_path_point = shape.get_path_point(_get_handle_path_offset())
 	start_value = _get_handle_value(handle_id)
 	drag_start_value = _get_rendered_handle_value(handle_id)
 	drag_start_pointer_value = pointer_value
@@ -271,12 +278,15 @@ func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -
 			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_height_handle_position(), axis, shape)
 			return (offset - _get_center_position()).dot(axis) if offset is Vector3 else null
 		HANDLE_THICKNESS:
-			var side_axis := _get_thickness_side_axis()
-			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_thickness_handle_position(), side_axis, shape)
+			var frozen_frame := editing_handle == HANDLE_THICKNESS
+			var side_axis := drag_thickness_axis if frozen_frame else _get_thickness_side_axis()
+			var handle_position := drag_thickness_handle_position if frozen_frame else _get_thickness_handle_position()
+			var path_point := drag_thickness_path_point if frozen_frame else shape.get_path_point(_get_handle_path_offset())
+			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, handle_position, side_axis, shape)
 			if not (offset is Vector3):
 				return null
 			var projected_offset: Vector3 = offset
-			var side_distance := (projected_offset - shape.get_path_point(_get_handle_path_offset())).dot(side_axis)
+			var side_distance := (projected_offset - path_point).dot(side_axis)
 			match shape.side:
 				ProtoWall.WallSide.LEFT:
 					return -side_distance
