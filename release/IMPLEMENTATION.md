@@ -24,7 +24,7 @@ validation environment: Godot 4.7.2.
 
 - [x] 0. Record baseline and preserve existing changes.
 - [x] 1. Commit existing fill correction with both-handle regression checks.
-- [ ] 2. Commit existing ramp example migration and stable UIDs.
+- [x] 2. Commit existing ramp example migration and stable UIDs.
 - [ ] 3. Isolate editor snapping from host InputMap.
 - [ ] 4. Release ramp provider references and use current callback plugin.
 - [ ] 5. Use small per-gizmo handle IDs.
@@ -66,3 +66,5 @@ lands. An unchecked manual or external gate is not a passing result.
 
 - Step 1: `godot --headless --path . --script tests/test_proto_ramp_gizmos.gd`
   passed with `PASS: ramp fill gizmos`; both fill handles, limits, and cancel.
+- Step 2: migrated main scene ran 300 fixed frames without script errors;
+  deleted legacy scene/script paths have no remaining resource references.

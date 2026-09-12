@@ -15,6 +15,10 @@ https://github.com/HLCaptain/proto-shape/assets/22623259/bccfb0e7-6799-4a94-82c4
 
 Since `1.1.4`, ProtoRamp node is now independent from `CSGShape3D` base class for correct shape generation.
 
+### Run the example
+
+Open [proto_ramp_example.tscn](example/proto_ramp_example.tscn), or run this repository directly. Move with <kbd>WASD</kbd> or the arrow keys, jump with <kbd>Space</kbd>, look around with the mouse, and press <kbd>Esc</kbd> to release the cursor. Click to capture it again.
+
 ### Use Gizmos
 
 ProtoRamp supports custom gizmos to adjust the shape. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. Hovering an arrow highlights it, and dragging the arrow body edits the same property as the small handle icon.

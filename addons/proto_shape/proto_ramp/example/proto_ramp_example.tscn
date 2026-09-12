@@ -1,8 +1,6 @@
-[gd_scene load_steps=11 format=3 uid="uid://kh6kodj0l0ld"]
+[gd_scene format=3 uid="uid://kh6kodj0l0ld"]
 
-[ext_resource type="Script" uid="uid://dbi1dsujlxbfx" path="res://addons/proto_shape/scenes/CharacterBody3D.gd" id="1_4rry8"]
-[ext_resource type="Script" uid="uid://7a8og04b8bqs" path="res://addons/proto_shape/scenes/Camera3D.gd" id="2_5cyg4"]
-[ext_resource type="Script" uid="uid://wr0twoe15d87" path="res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd" id="4_3jo5l"]
+[ext_resource type="Script" uid="uid://dbi1dsujlxbfx" path="res://addons/proto_shape/proto_ramp/example/proto_ramp_example_character.gd" id="1_4rry8"]
 [ext_resource type="Script" uid="uid://briioihkxilxm" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="4_durks"]
 
 [sub_resource type="NavigationMesh" id="NavigationMesh_s4hfa"]
@@ -32,92 +30,96 @@ sdfgi_use_occlusion = true
 radius = 0.25
 height = 1.0
 
-[node name="prototype_scene" type="Node3D"]
+[node name="ProtoRampExample" type="Node3D" unique_id=1751160283]
 
-[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="." unique_id=706207225]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.371784, 0)
 navigation_mesh = SubResource("NavigationMesh_s4hfa")
 
-[node name="CSGBox3D3" type="CSGBox3D" parent="NavigationRegion3D"]
+[node name="CSGBox3D3" type="CSGBox3D" parent="NavigationRegion3D" unique_id=90169463]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, 1, -2)
 use_collision = true
 size = Vector3(1, 3, 20)
 
-[node name="CSGBox3D4" type="CSGBox3D" parent="NavigationRegion3D"]
+[node name="CSGBox3D4" type="CSGBox3D" parent="NavigationRegion3D" unique_id=245666908]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5, 1, -7)
+use_collision = true
 size = Vector3(1, 3, 10)
 
-[node name="CSGBox3D2" type="CSGBox3D" parent="NavigationRegion3D"]
+[node name="CSGBox3D2" type="CSGBox3D" parent="NavigationRegion3D" unique_id=1927434473]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -7)
 use_collision = true
 size = Vector3(10, 1, 10)
 
-[node name="CSGBox3D5" type="CSGBox3D" parent="NavigationRegion3D"]
+[node name="CSGBox3D5" type="CSGBox3D" parent="NavigationRegion3D" unique_id=40504284]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 3)
 use_collision = true
 size = Vector3(10, 1, 10)
 
-[node name="CSGBox3D6" type="CSGBox3D" parent="NavigationRegion3D"]
+[node name="CSGBox3D6" type="CSGBox3D" parent="NavigationRegion3D" unique_id=1707375447]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.5, 6)
 use_collision = true
 size = Vector3(6, 2, 4)
 
-[node name="CSGBox3D" type="CSGBox3D" parent="NavigationRegion3D"]
+[node name="CSGBox3D" type="CSGBox3D" parent="NavigationRegion3D" unique_id=263000706]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, -1)
 use_collision = true
 size = Vector3(2, 1, 2)
 
-[node name="ProtoRamp" type="Node3D" parent="NavigationRegion3D"]
+[node name="ProtoRamp" type="Node3D" parent="NavigationRegion3D" unique_id=2131751754]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, -0.5, 4)
 script = ExtResource("4_durks")
 type = 0
 collisions_enabled = true
-width = 3.0
-height = 2.8264313
-depth = 3.0
+width = 3.0927763
+height = 2.266635
+depth = 3.0061662
 anchor = 7
 anchor_fixed = true
-fill = 0.1
+fill = 0.07922317505626364
 material = null
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1523460783]
 environment = SubResource("Environment_050vn")
 camera_attributes = SubResource("CameraAttributesPractical_6hoe0")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1287538909]
 transform = Transform3D(0.123586, 0.941458, -0.31366, -0.696625, 0.307415, 0.648236, 0.706711, 0.138391, 0.693836, 2.88203, 1.98864, 9.43085)
 shadow_enabled = true
 
-[node name="CharacterBody3D" type="CharacterBody3D" parent="WorldEnvironment"]
+[node name="Player" type="CharacterBody3D" parent="." unique_id=1583029912]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.5, 4)
 script = ExtResource("1_4rry8")
 
-[node name="Camera3D" type="Camera3D" parent="WorldEnvironment/CharacterBody3D" node_paths=PackedStringArray("node_to_look_at")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 2)
-script = ExtResource("2_5cyg4")
-node_to_look_at = NodePath("..")
+[node name="CameraPivot" type="Node3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.5, 0)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="WorldEnvironment/CharacterBody3D"]
+[node name="SpringArm3D" type="SpringArm3D" parent="Player/CameraPivot"]
+spring_length = 3.5
+margin = 0.1
+
+[node name="Camera3D" type="Camera3D" parent="Player/CameraPivot/SpringArm3D" unique_id=765274603]
+current = true
+fov = 70.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player" unique_id=66793040]
 shape = SubResource("CapsuleShape3D_ou067")
 
-[node name="CSGCombiner3D" type="CSGCombiner3D" parent="WorldEnvironment/CharacterBody3D"]
+[node name="Body" type="CSGCombiner3D" parent="Player" unique_id=1829681454]
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="WorldEnvironment/CharacterBody3D/CSGCombiner3D"]
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="Player/Body" unique_id=78525484]
 radius = 0.25
 height = 0.5
 sides = 64
 
-[node name="CSGSphere3D2" type="CSGSphere3D" parent="WorldEnvironment/CharacterBody3D/CSGCombiner3D"]
+[node name="CSGSphere3D2" type="CSGSphere3D" parent="Player/Body" unique_id=1965215863]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
 radius = 0.25
 radial_segments = 64
 rings = 32
 
-[node name="CSGSphere3D" type="CSGSphere3D" parent="WorldEnvironment/CharacterBody3D/CSGCombiner3D"]
+[node name="CSGSphere3D" type="CSGSphere3D" parent="Player/Body" unique_id=1737833383]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
 radius = 0.25
 radial_segments = 64
 rings = 32
-
-[node name="ProtoGizmoWrapper" type="Node" parent="."]
-script = ExtResource("4_3jo5l")

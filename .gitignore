@@ -11,7 +11,6 @@
 
 # Allow only specific scenes
 addons/proto_shape/scenes/*.tscn
-!addons/proto_shape/scenes/prototype_scene.tscn
 !addons/proto_shape/scenes/proto_ramp_logo.tscn
 
 # Godot 4+ specific ignores
