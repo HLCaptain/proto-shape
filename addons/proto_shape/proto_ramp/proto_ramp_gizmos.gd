@@ -18,9 +18,13 @@ func attach_ramp(node: ProtoRamp) -> void:
 	ramp = node
 
 func remove_ramp() -> void:
+	_clear_edit_state()
 	ramp = null
+
+func _clear_edit_state() -> void:
 	is_editing = false
 	screen_pos = Vector2.ZERO
+	debug_gizmo_handler_id = 0
 	camera_position = Vector3.ZERO
 
 # Snapping to grid
@@ -48,8 +52,8 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin) -> void:
 
 	gizmo.add_handles(handles, plugin.get_material("proto_handler", gizmo), [depth_gizmo_id, width_gizmo_id, height_gizmo_id, fill_gizmo_id1, fill_gizmo_id2])
 
-	# Adding debug lines for gizmo if we have cursor screen position set
-	if screen_pos:
+	# Adding debug lines while a handle is being edited
+	if is_editing:
 		var grid_size_modifier = 1.0
 		# Grid size is always the max of the two other dimensions
 		match debug_gizmo_handler_id:
@@ -154,6 +158,9 @@ func _set_dragged_handle_from_screen(plugin: ProtoGizmoPlugin, handle_id: int, c
 		fill_gizmo_id1, fill_gizmo_id2:
 			end_offset = clamp(end_offset, 0.0, 1.0)
 			ramp.fill = end_offset
+		_:
+			return false
+	end_offset = _get_current_handle_offset(handle_id)
 	return true
 
 func _get_screen_handle_offset(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
@@ -423,36 +430,52 @@ func is_handle_highlighted(_gizmo: EditorNode3DGizmo, _plugin: ProtoGizmoPlugin,
 	return is_editing and debug_gizmo_handler_id == handle_id
 
 func _commit_current_edit(plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool) -> void:
+	var property_name: StringName
+	var action_name: String
+	var do_value := 0.0
+	var undo_value := 0.0
+	match handle_id:
+		depth_gizmo_id:
+			property_name = &"depth"
+			action_name = "Edit ramp depth"
+			do_value = _get_ramp_depth(end_offset)
+			undo_value = _get_ramp_depth(start_offset)
+		width_gizmo_id:
+			property_name = &"width"
+			action_name = "Edit ramp width"
+			do_value = _get_ramp_width(end_offset)
+			undo_value = _get_ramp_width(start_offset)
+		height_gizmo_id:
+			property_name = &"height"
+			action_name = "Edit ramp height"
+			do_value = _get_ramp_height(end_offset)
+			undo_value = _get_ramp_height(start_offset)
+		fill_gizmo_id1, fill_gizmo_id2:
+			property_name = &"fill"
+			action_name = "Edit ramp fill"
+			do_value = end_offset
+			undo_value = start_offset
+		_:
+			_clear_edit_state()
+			if is_instance_valid(ramp):
+				ramp.update_gizmos()
+			return
+
+	_clear_edit_state()
 	if cancel:
 		_restore_handle_offset(handle_id, start_offset)
 		ramp.update_gizmos()
-		is_editing = false
+		return
+
+	if is_equal_approx(do_value, undo_value):
+		ramp.update_gizmos()
 		return
 
 	var undo_redo := plugin.undo_redo
-	match handle_id:
-		depth_gizmo_id:
-			undo_redo.create_action("Edit ramp depth", 0, ramp, true)
-			undo_redo.add_do_property(ramp, "depth", _get_ramp_depth(end_offset))
-			undo_redo.add_undo_property(ramp, "depth", _get_ramp_depth(start_offset))
-		width_gizmo_id:
-			undo_redo.create_action("Edit ramp width", 0, ramp, true)
-			undo_redo.add_do_property(ramp, "width", _get_ramp_width(end_offset))
-			undo_redo.add_undo_property(ramp, "width", _get_ramp_width(start_offset))
-		height_gizmo_id:
-			undo_redo.create_action("Edit ramp height", 0, ramp, true)
-			undo_redo.add_do_property(ramp, "height", _get_ramp_height(end_offset))
-			undo_redo.add_undo_property(ramp, "height", _get_ramp_height(start_offset))
-		fill_gizmo_id1, fill_gizmo_id2:
-			undo_redo.create_action("Edit ramp fill", 0, ramp, true)
-			undo_redo.add_do_property(ramp, "fill", end_offset)
-			undo_redo.add_undo_property(ramp, "fill", start_offset)
-		_:
-			is_editing = false
-			return
-
+	undo_redo.create_action(action_name, 0, ramp, true)
+	undo_redo.add_do_property(ramp, property_name, do_value)
+	undo_redo.add_undo_property(ramp, property_name, undo_value)
 	undo_redo.commit_action()
-	is_editing = false
 
 func commit_handle(
 	gizmo: EditorNode3DGizmo,

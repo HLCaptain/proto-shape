@@ -39,6 +39,8 @@ func _run() -> void:
 		for arrow_fraction in [0.25, 0.5, 0.75]:
 			_check_fill(plugin, gizmos, ramp, camera, fill_handle, arrow_fraction)
 	_check_valid_invalid_valid(plugin, gizmos, ramp, camera)
+	_check_noop_and_clamped_undo(plugin, gizmos, ramp, camera)
+	_check_cancel_restores_all_anchors(plugin, gizmos, ramp, camera)
 
 	ramp.gizmos = gizmos
 	_check_failed_begin_has_no_undo(plugin, gizmos, ramp, camera)
@@ -50,6 +52,7 @@ func _run() -> void:
 	plugin.shutdown()
 	_expect(is_equal_approx(ramp.fill, original_fill), "Plugin shutdown cancels the active drag")
 	_expect(plugin.drag_node == null, "Plugin shutdown clears drag ownership")
+	_expect_edit_state_cleared(gizmos, "Plugin shutdown")
 	var second = ProtoRamp.new()
 	world.add_child(second)
 	second.position = Vector3(4.0, 0.0, 0.0)
@@ -134,6 +137,96 @@ func _check_failed_begin_has_no_undo(plugin, gizmos, ramp, camera: Camera3D) -> 
 	_expect(plugin.drag_node == null and not gizmos.is_editing, "Failed begin captures no drag state")
 	plugin._commit_arrow_drag(false)
 	_expect(history.get_version() == version_before and is_equal_approx(ramp.fill, fill_before), "Failed begin creates no undo action")
+
+func _check_noop_and_clamped_undo(plugin, gizmos, ramp, camera: Camera3D) -> void:
+	ramp.anchor_fixed = true
+	ramp.anchor = ProtoRamp.Anchor.BOTTOM_CENTER
+	ramp.width = 1.0
+	var handle_id: int = gizmos.width_gizmo_id
+	var handle: Vector3 = gizmos._get_handle_positions()[handle_id]
+	camera.look_at(ramp.global_transform * handle)
+	var history_id: int = plugin.undo_redo.get_object_history_id(ramp)
+	var history: UndoRedo = plugin.undo_redo.get_history_undo_redo(history_id)
+	var version_before: int = history.get_version()
+	_expect(gizmos.begin_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * handle)), "No-op drag begins")
+	gizmos.commit_arrow_drag(plugin, handle_id, false)
+	_expect(history.get_version() == version_before, "Unchanged drag creates no undo action")
+	_expect_edit_state_cleared(gizmos, "No-op commit")
+
+	handle = gizmos._get_handle_positions()[handle_id]
+	camera.look_at(ramp.global_transform * handle)
+	_expect(gizmos.begin_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * handle)), "Clamped drag begins")
+	var opposite_target: Vector3 = handle - gizmos._get_width_drag_axis() * 2.0
+	gizmos.set_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * opposite_target))
+	_expect(is_equal_approx(ramp.width, ProtoRamp.MIN_DIMENSION), "Drag through the anchor applies the Ramp minimum")
+	_expect(is_equal_approx(gizmos.end_offset, gizmos._get_current_handle_offset(handle_id)), "Drag end stores the applied handle position")
+	var cleared_during_commit := [false]
+	var commit_listener := func(): cleared_during_commit[0] = not gizmos.is_editing
+	ramp.width_changed.connect(commit_listener)
+	gizmos.commit_arrow_drag(plugin, handle_id, false)
+	ramp.width_changed.disconnect(commit_listener)
+	_expect(history.get_version() == version_before + 1, "Changed drag creates exactly one undo action")
+	_expect(history.get_current_action_name() == "Edit ramp width", "Committed action retains its property name")
+	_expect(cleared_during_commit[0], "Editing state clears before commit reapplies the property")
+	_expect_edit_state_cleared(gizmos, "Changed commit")
+	history.undo()
+	_expect(is_equal_approx(ramp.width, 1.0), "Undo restores the original width")
+	history.redo()
+	_expect(is_equal_approx(ramp.width, ProtoRamp.MIN_DIMENSION), "Redo applies the clamped width")
+
+	version_before = history.get_version()
+	handle = gizmos._get_handle_positions()[handle_id]
+	camera.look_at(ramp.global_transform * handle)
+	_expect(gizmos.begin_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * handle)), "Already-clamped drag begins")
+	opposite_target = handle - gizmos._get_width_drag_axis() * 2.0
+	gizmos.set_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * opposite_target))
+	gizmos.commit_arrow_drag(plugin, handle_id, false)
+	_expect(history.get_version() == version_before, "Drag clamped to its existing value creates no action")
+	_expect_edit_state_cleared(gizmos, "Clamped no-op commit")
+
+	plugin.hovered_node = ramp
+	plugin.hovered_arrow_id = handle_id
+	_expect(plugin.is_arrow_handle_active(ramp, handle_id), "Cleanup does not clear a legitimate cursor hover")
+	plugin.hovered_node = null
+	plugin.hovered_arrow_id = -1
+
+func _check_cancel_restores_all_anchors(plugin, gizmos, ramp, camera: Camera3D) -> void:
+	var history_id: int = plugin.undo_redo.get_object_history_id(ramp)
+	var history: UndoRedo = plugin.undo_redo.get_history_undo_redo(history_id)
+	var version_before: int = history.get_version()
+	ramp.anchor_fixed = true
+	for handle_id in [gizmos.width_gizmo_id, gizmos.depth_gizmo_id, gizmos.height_gizmo_id]:
+		for anchor_value in range(ProtoRamp.Anchor.size()):
+			ramp.anchor = anchor_value
+			ramp.width = 3.0
+			ramp.depth = 3.0
+			ramp.height = 2.0
+			var original_value: float = _get_handle_property(ramp, gizmos, handle_id)
+			var handle: Vector3 = gizmos._get_handle_positions()[handle_id]
+			var drag_axis: Vector3 = gizmos._get_handle_drag_axis(handle_id).normalized()
+			camera.look_at(ramp.global_transform * handle)
+			_expect(gizmos.begin_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * handle)), "Cancel drag begins for handle %s anchor %s" % [handle_id, anchor_value])
+			gizmos.set_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * (handle + drag_axis * 0.25)))
+			gizmos.commit_arrow_drag(plugin, handle_id, true)
+			_expect(is_equal_approx(_get_handle_property(ramp, gizmos, handle_id), original_value), "Cancel restores handle %s at anchor %s" % [handle_id, anchor_value])
+			_expect_edit_state_cleared(gizmos, "Cancel handle %s anchor %s" % [handle_id, anchor_value])
+	_expect(history.get_version() == version_before, "Canceled anchor drags create no undo actions")
+
+func _get_handle_property(ramp, gizmos, handle_id: int) -> float:
+	match handle_id:
+		gizmos.width_gizmo_id:
+			return ramp.width
+		gizmos.depth_gizmo_id:
+			return ramp.depth
+		gizmos.height_gizmo_id:
+			return ramp.height
+	return 0.0
+
+func _expect_edit_state_cleared(gizmos, context: String) -> void:
+	_expect(not gizmos.is_editing, "%s clears editing state" % context)
+	_expect(gizmos.screen_pos == Vector2.ZERO, "%s clears screen debug state" % context)
+	_expect(gizmos.camera_position == Vector3.ZERO, "%s clears camera debug state" % context)
+	_expect(gizmos.debug_gizmo_handler_id == 0, "%s clears handle debug state" % context)
 
 func _check_orthographic_transformed(plugin, world: Node3D) -> void:
 	var parent := Node3D.new()
