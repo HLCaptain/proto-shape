@@ -134,12 +134,11 @@ func _get_property_list() -> Array[Dictionary]:
 		{"name": "material","class_name": &"BaseMaterial3D,ShaderMaterial", "type": 24, "hint": 17, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": 6 }
 		]
 
-	# Staircase exclusive properties
-	if type == Type.STAIRCASE:
-		list += [
-			{"name": "calculation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Staircase Dimensions,Step Dimensions"},
-			{"name": "steps", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,100,1,or_greater"},
-			]
+	var staircase_property_usage := PROPERTY_USAGE_DEFAULT if type == Type.STAIRCASE else PROPERTY_USAGE_STORAGE
+	list += [
+		{"name": "calculation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Staircase Dimensions,Step Dimensions", "usage": staircase_property_usage},
+		{"name": "steps", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,100,1,or_greater", "usage": staircase_property_usage},
+		]
 
 	return list
 

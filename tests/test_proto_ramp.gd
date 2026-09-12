@@ -19,6 +19,7 @@ func _run() -> void:
 	_test_anchors()
 	_test_reentry_and_duplication()
 	_test_step_dimensions_reload()
+	_test_hidden_staircase_state_reload()
 	world.queue_free()
 	await process_frame
 	quit(1 if failures else 0)
@@ -225,6 +226,54 @@ func _test_step_dimensions_reload() -> void:
 	scene_root.queue_free()
 	DirAccess.remove_absolute(path)
 
+func _test_hidden_staircase_state_reload() -> void:
+	var scene_root := Node3D.new()
+	scene_root.name = "HiddenStateRoot"
+	world.add_child(scene_root)
+	var ramp = ProtoRamp.new()
+	ramp.name = "Ramp"
+	scene_root.add_child(ramp)
+	ramp.owner = scene_root
+	ramp.type = ProtoRamp.Type.STAIRCASE
+	ramp.steps = 12
+	ramp.height = ProtoRamp.MIN_DIMENSION
+	ramp.depth = 0.002
+	ramp.calculation = ProtoRamp.Calculation.STEP_DIMENSIONS
+	ramp.anchor = ProtoRamp.Anchor.TOP_RIGHT
+	ramp.anchor_fixed = false
+	ramp.type = ProtoRamp.Type.RAMP
+	_expect(_property_has_usage(ramp, "calculation", PROPERTY_USAGE_STORAGE), "Hidden calculation must remain stored")
+	_expect(not _property_has_usage(ramp, "calculation", PROPERTY_USAGE_EDITOR), "Ramp calculation must stay hidden")
+	_expect(_property_has_usage(ramp, "steps", PROPERTY_USAGE_STORAGE), "Hidden steps must remain stored")
+	_expect(not _property_has_usage(ramp, "steps", PROPERTY_USAGE_EDITOR), "Ramp steps must stay hidden")
+
+	var expected_height: float = ramp.get_true_height()
+	var expected_depth: float = ramp.get_true_depth()
+	var path := "/tmp/proto_shape_ramp_hidden_%s.tscn" % OS.get_process_id()
+	var packed := PackedScene.new()
+	_expect(packed.pack(scene_root) == OK, "Hidden-state scene must pack")
+	_expect(ResourceSaver.save(packed, path) == OK, "Hidden-state scene must save")
+	var loaded_scene: Node = load(path).instantiate()
+	world.add_child(loaded_scene)
+	var loaded_ramp = loaded_scene.get_node("Ramp")
+	_expect(loaded_ramp.type == ProtoRamp.Type.RAMP, "Ramp type must survive reload")
+	_expect(loaded_ramp.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS, "Hidden calculation must survive reload")
+	_expect(loaded_ramp.steps == 12, "Hidden steps must survive reload")
+	_expect(loaded_ramp.anchor == ProtoRamp.Anchor.TOP_RIGHT, "Anchor must survive hidden-state reload")
+	_expect(not loaded_ramp.anchor_fixed, "Anchor-fixed state must survive hidden-state reload")
+	_expect_float(loaded_ramp.get_true_height(), expected_height, "Hidden-state reload must preserve true height")
+	_expect_float(loaded_ramp.get_true_depth(), expected_depth, "Hidden-state reload must preserve true depth")
+	loaded_ramp.type = ProtoRamp.Type.STAIRCASE
+	_expect(_property_has_usage(loaded_ramp, "calculation", PROPERTY_USAGE_EDITOR), "Staircase calculation must become visible")
+	_expect(_property_has_usage(loaded_ramp, "steps", PROPERTY_USAGE_EDITOR), "Staircase steps must become visible")
+	_expect_float(loaded_ramp.get_true_height(), expected_height, "Restored calculation must preserve true height")
+	_expect_float(loaded_ramp.get_true_depth(), expected_depth, "Restored steps must preserve true depth")
+	_expect_float(loaded_ramp.height, expected_height / 12.0, "Restored Step Dimensions must expose per-step height")
+	_expect_float(loaded_ramp.depth, expected_depth / 12.0, "Restored Step Dimensions must expose per-step depth")
+	loaded_scene.queue_free()
+	scene_root.queue_free()
+	DirAccess.remove_absolute(path)
+
 func _add_ramp():
 	var ramp = ProtoRamp.new()
 	world.add_child(ramp)
@@ -236,6 +285,13 @@ func _count_csg_polygons(node: Node) -> int:
 		if child is CSGPolygon3D:
 			count += 1
 	return count
+
+func _property_has_usage(object: Object, property_name: StringName, usage: int) -> bool:
+	for property in object.get_property_list():
+		if property["name"] == property_name:
+			if int(property["usage"]) & usage != 0:
+				return true
+	return false
 
 func _expect(condition: bool, message: String) -> void:
 	if condition:
