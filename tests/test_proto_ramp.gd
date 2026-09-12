@@ -59,14 +59,23 @@ func _test_mode_aware_bounds() -> void:
 	ramp.height = per_step_minimum / 2.0
 	ramp.depth = per_step_minimum / 2.0
 	ramp.width = ProtoRamp.MIN_DIMENSION / 2.0
-	_expect_float(ramp.height, per_step_minimum, "Step height must clamp relative to step count")
-	_expect_float(ramp.depth, per_step_minimum, "Step depth must clamp relative to step count")
+	_expect_float(ramp.height, per_step_minimum / 2.0, "Positive authored step height must remain stored")
+	_expect_float(ramp.depth, per_step_minimum / 2.0, "Positive authored step depth must remain stored")
 	_expect_float(ramp.width, ProtoRamp.MIN_DIMENSION, "Width must use the whole-shape minimum")
+	_expect_float(ramp.get_true_height(), ProtoRamp.MIN_DIMENSION, "Generated height must apply the whole-shape minimum")
+	_expect_float(ramp.get_true_depth(), ProtoRamp.MIN_DIMENSION, "Generated depth must apply the whole-shape minimum")
+	_expect_float(ramp.get_true_step_height(), per_step_minimum, "Effective steps must divide the generated height evenly")
+	_expect_float(ramp.get_true_step_depth(), per_step_minimum, "Effective steps must divide the generated depth evenly")
+	_expect("or_less" in _get_property_hint(ramp, &"height"), "Height Inspector hint must expose authored values below the effective minimum")
+	_expect("or_less" in _get_property_hint(ramp, &"depth"), "Depth Inspector hint must expose authored values below the effective minimum")
+	ramp.height = per_step_minimum
+	ramp.depth = per_step_minimum
 	ramp.steps = 4
-	_expect_float(ramp.height, ProtoRamp.MIN_DIMENSION / 4.0, "Reducing steps must retain a legal total height")
-	_expect_float(ramp.depth, ProtoRamp.MIN_DIMENSION / 4.0, "Reducing steps must retain a legal total depth")
-	_expect_float(ramp.get_true_height(), ProtoRamp.MIN_DIMENSION, "True height must remain legal")
-	_expect_float(ramp.get_true_depth(), ProtoRamp.MIN_DIMENSION, "True depth must remain legal")
+	_expect_tiny_step_state(ramp, 4, "Reduced count")
+	ramp.height = 0.0
+	ramp.depth = -1.0
+	_expect_float(ramp.height, ProtoRamp.MIN_DIMENSION / 4.0, "Zero step height must use the safe effective minimum")
+	_expect_float(ramp.depth, ProtoRamp.MIN_DIMENSION / 4.0, "Negative step depth must use the safe effective minimum")
 	ramp.queue_free()
 
 func _test_pre_tree_property_orders() -> void:
@@ -95,6 +104,14 @@ func _test_pre_tree_property_orders() -> void:
 	third.depth = 0.000125
 	third.calculation = ProtoRamp.Calculation.STEP_DIMENSIONS
 	ramps.append(third)
+
+	var fourth = ProtoRamp.new()
+	fourth.height = 0.000125
+	fourth.depth = 0.000125
+	fourth.calculation = ProtoRamp.Calculation.STEP_DIMENSIONS
+	fourth.steps = 4
+	fourth.type = ProtoRamp.Type.STAIRCASE
+	ramps.append(fourth)
 
 	for ramp in ramps:
 		world.add_child(ramp)
@@ -131,6 +148,17 @@ func _test_conversion_round_trips() -> void:
 	_expect_float(ramp.get_true_height(), expected_height, "Type round trips must not drift height")
 	_expect_float(ramp.get_true_depth(), expected_depth, "Type round trips must not drift depth")
 	ramp.queue_free()
+
+	var tiny = _add_tiny_step_ramp()
+	for index in range(100):
+		tiny.calculation = ProtoRamp.Calculation.STAIRCASE_DIMENSIONS
+		tiny.calculation = ProtoRamp.Calculation.STEP_DIMENSIONS
+	_expect_tiny_step_state(tiny, 4, "Tiny calculation round trips")
+	for index in range(100):
+		tiny.type = ProtoRamp.Type.RAMP
+		tiny.type = ProtoRamp.Type.STAIRCASE
+	_expect_tiny_step_state(tiny, 4, "Tiny type round trips")
+	tiny.queue_free()
 
 func _test_property_undo_redo() -> void:
 	var ramp = _add_ramp()
@@ -170,6 +198,38 @@ func _test_property_undo_redo() -> void:
 	undo_redo.free()
 	ramp.queue_free()
 
+	var tiny = _add_tiny_step_ramp(8)
+	var tiny_undo_redo := UndoRedo.new()
+	tiny_undo_redo.create_action("Change tiny step count")
+	tiny_undo_redo.add_do_property(tiny, "steps", 4)
+	tiny_undo_redo.add_undo_property(tiny, "steps", 8)
+	tiny_undo_redo.commit_action()
+	_expect_tiny_step_state(tiny, 4, "Tiny step-count do")
+	for index in range(100):
+		tiny_undo_redo.undo()
+		tiny_undo_redo.redo()
+	_expect_tiny_step_state(tiny, 4, "Tiny step-count undo/redo cycles")
+	tiny_undo_redo.undo()
+	_expect_tiny_step_state(tiny, 8, "Tiny step-count undo")
+	tiny_undo_redo.redo()
+	tiny_undo_redo.clear_history()
+
+	for change in [
+		[&"calculation", ProtoRamp.Calculation.STAIRCASE_DIMENSIONS, ProtoRamp.Calculation.STEP_DIMENSIONS],
+		[&"type", ProtoRamp.Type.RAMP, ProtoRamp.Type.STAIRCASE],
+	]:
+		tiny_undo_redo.create_action("Change tiny %s" % change[0])
+		tiny_undo_redo.add_do_property(tiny, change[0], change[1])
+		tiny_undo_redo.add_undo_property(tiny, change[0], change[2])
+		tiny_undo_redo.commit_action()
+		_expect_float(tiny.height, 0.0005, "Tiny %s do must retain authored whole height" % change[0])
+		_expect_float(tiny.depth, 0.0005, "Tiny %s do must retain authored whole depth" % change[0])
+		tiny_undo_redo.undo()
+		_expect_tiny_step_state(tiny, 4, "Tiny %s undo" % change[0])
+		tiny_undo_redo.clear_history()
+	tiny_undo_redo.free()
+	tiny.queue_free()
+
 func _test_anchors() -> void:
 	var ramp = _add_ramp()
 	ramp.type = ProtoRamp.Type.STAIRCASE
@@ -194,7 +254,7 @@ func _test_anchors() -> void:
 	ramp.queue_free()
 
 func _test_reentry_and_duplication() -> void:
-	var ramp = _add_ramp()
+	var ramp = _add_tiny_step_ramp()
 	world.remove_child(ramp)
 	await process_frame
 	await process_frame
@@ -204,6 +264,10 @@ func _test_reentry_and_duplication() -> void:
 	var duplicate = ramp.duplicate()
 	world.add_child(duplicate)
 	_expect(_count_csg_polygons(duplicate) == 1, "Duplicating a ramp must retain one generated polygon")
+	_expect(duplicate.height == 0.000125, "Duplicating a ramp must retain exact authored step height")
+	_expect(duplicate.depth == 0.000125, "Duplicating a ramp must retain exact authored step depth")
+	_expect_float(duplicate.get_true_height(), ProtoRamp.MIN_DIMENSION, "Duplicating a ramp must retain effective height")
+	_expect_float(duplicate.get_true_depth(), ProtoRamp.MIN_DIMENSION, "Duplicating a ramp must retain effective depth")
 	duplicate.queue_free()
 	ramp.queue_free()
 
@@ -220,6 +284,7 @@ func _test_step_dimensions_reload() -> void:
 	ramp.height = ProtoRamp.MIN_DIMENSION
 	ramp.depth = ProtoRamp.MIN_DIMENSION
 	ramp.calculation = ProtoRamp.Calculation.STEP_DIMENSIONS
+	ramp.steps = 4
 	ramp.collisions_enabled = false
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(0.2, 0.4, 0.6, 1.0)
@@ -232,13 +297,13 @@ func _test_step_dimensions_reload() -> void:
 	world.add_child(loaded_scene)
 	var loaded_ramp = loaded_scene.get_node("Ramp")
 	_expect(loaded_ramp.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS, "Calculation must survive reload")
-	_expect(loaded_ramp.steps == 8, "Steps must survive reload")
+	_expect(loaded_ramp.steps == 4, "Steps must survive reload")
 	_expect(not loaded_ramp.collisions_enabled, "Collision state must survive reload")
 	_expect(not loaded_ramp.shape_polygon.use_collision, "Generated collision state must restore")
 	_expect(loaded_ramp.material is StandardMaterial3D, "Material type must survive reload")
 	_expect((loaded_ramp.material as StandardMaterial3D).albedo_color.is_equal_approx(material.albedo_color), "Material value must survive reload")
-	_expect_float(loaded_ramp.height, 0.000125, "Small positive step height must survive reload")
-	_expect_float(loaded_ramp.depth, 0.000125, "Small positive step depth must survive reload")
+	_expect(loaded_ramp.height == 0.000125, "Small positive authored step height must survive reload exactly")
+	_expect(loaded_ramp.depth == 0.000125, "Small positive authored step depth must survive reload exactly")
 	_expect_float(loaded_ramp.get_true_height(), ProtoRamp.MIN_DIMENSION, "Reload must preserve true height")
 	_expect_float(loaded_ramp.get_true_depth(), ProtoRamp.MIN_DIMENSION, "Reload must preserve true depth")
 	loaded_scene.queue_free()
@@ -298,6 +363,15 @@ func _add_ramp():
 	world.add_child(ramp)
 	return ramp
 
+func _add_tiny_step_ramp(step_count := 4):
+	var ramp = _add_ramp()
+	ramp.type = ProtoRamp.Type.STAIRCASE
+	ramp.steps = step_count
+	ramp.calculation = ProtoRamp.Calculation.STEP_DIMENSIONS
+	ramp.height = 0.000125
+	ramp.depth = 0.000125
+	return ramp
+
 func _count_csg_polygons(node: Node) -> int:
 	var count := 0
 	for child in node.get_children():
@@ -311,6 +385,19 @@ func _property_has_usage(object: Object, property_name: StringName, usage: int) 
 			if int(property["usage"]) & usage != 0:
 				return true
 	return false
+
+func _get_property_hint(object: Object, property_name: StringName) -> String:
+	for property in object.get_property_list():
+		if property["name"] == property_name and property["hint"] == PROPERTY_HINT_RANGE:
+			return property["hint_string"]
+	return ""
+
+func _expect_tiny_step_state(ramp, expected_steps: int, context: String) -> void:
+	_expect(ramp.steps == expected_steps, "%s must preserve the requested count" % context)
+	_expect_float(ramp.height, 0.000125, "%s must preserve authored height" % context)
+	_expect_float(ramp.depth, 0.000125, "%s must preserve authored depth" % context)
+	_expect_float(ramp.get_true_height(), ProtoRamp.MIN_DIMENSION, "%s must preserve effective height" % context)
+	_expect_float(ramp.get_true_depth(), ProtoRamp.MIN_DIMENSION, "%s must preserve effective depth" % context)
 
 func _expect(condition: bool, message: String) -> void:
 	if condition:

@@ -25,7 +25,7 @@ The repository exposes these namespaced demo actions in `Project Settings` -> `I
 
 ProtoRamp supports custom gizmos to adjust the shape. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. Hovering an arrow highlights it, and dragging the arrow body edits the same property as the small handle icon.
 
-Width, total height, and total depth stay at least `0.001`. In `Step Dimensions` mode, the stored height and depth describe one step, so they may be smaller than `0.001` while the complete staircase remains at least `0.001`. Switching calculation mode or shape type preserves the complete shape dimensions.
+Width and generated total height and depth stay at least `0.001`. Height and depth remain authored Inspector values: in `Step Dimensions` mode they describe one step, and changing the step count does not overwrite them. If those authored values would make the complete shape smaller than `0.001`, generated geometry uses evenly sized effective steps without changing the Inspector values. Switching calculation mode or shape type converts the authored units while preserving their complete-shape equivalent.
 
 `Calculation` and `Steps` are hidden while the node is a ramp, but their values are retained when switching types or saving and reopening the scene.
 
