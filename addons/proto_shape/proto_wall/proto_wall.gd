@@ -236,7 +236,6 @@ var _material: Material = null
 var generated_shapes: Array[Node3D] = []
 var gizmos = null
 var is_refreshing := false
-var connected_curve: Curve3D = null
 var sampled_path_points := PackedVector3Array()
 var sampled_path_offsets := PackedFloat32Array()
 var sampled_path_tilts := PackedFloat32Array()
@@ -246,7 +245,6 @@ var sampled_path_bases: Array = []
 var sampled_path_length := 0.0
 var sampled_path_dirty := true
 var sampled_basis_dirty := true
-var tracked_curve_bake_interval := -1.0
 var deferred_gizmo_update_pending := false
 
 func _validate_property(property: Dictionary) -> void:
@@ -743,7 +741,6 @@ func refresh_shape() -> void:
 
 	is_refreshing = true
 	_ensure_default_curve()
-	_connect_curve_changed()
 	_ensure_sampled_path()
 	_ensure_sampled_bases()
 	_clear_generated_shapes()
@@ -823,15 +820,15 @@ func get_rail_center_height(index: int) -> float:
 	return lerp(bottom_center, top_center, ratio)
 
 func _enter_tree() -> void:
-	set_process(Engine.is_editor_hint())
 	_ensure_gizmos()
 	_ensure_default_curve()
+	if not curve_changed.is_connected(_on_curve_changed):
+		curve_changed.connect(_on_curve_changed)
 	refresh_shape()
-	_connect_curve_changed()
 
 func _exit_tree() -> void:
-	set_process(false)
-	_disconnect_curve_changed()
+	if curve_changed.is_connected(_on_curve_changed):
+		curve_changed.disconnect(_on_curve_changed)
 	_clear_generated_shapes()
 	if Engine.is_editor_hint() and gizmos != null:
 		gizmos.remove_shape()
@@ -856,33 +853,17 @@ func _flush_gizmo_update() -> void:
 	if is_inside_tree():
 		update_gizmos()
 
-func _process(_delta: float) -> void:
-	if _should_rebuild_for_curve_bake_interval_change():
-		_mark_sampled_path_dirty()
-		refresh_shape()
-		update_gizmos()
-
 func _ensure_default_curve() -> void:
-	if curve == null:
-		curve = Curve3D.new()
-		_mark_sampled_path_dirty()
-	if curve.get_point_count() < 2:
-		curve.clear_points()
-		curve.add_point(Vector3.ZERO)
-		curve.add_point(Vector3(0, 0, 4))
-		_mark_sampled_path_dirty()
+	if curve != null:
+		return
+	curve = Curve3D.new()
+	curve.add_point(Vector3.ZERO)
+	curve.add_point(Vector3(0, 0, 4))
+	_mark_sampled_path_dirty()
 
 func _ensure_sampled_path() -> void:
-	if _should_rebuild_for_curve_bake_interval_change():
-		_mark_sampled_path_dirty()
 	if sampled_path_dirty and curve != null:
 		_rebuild_sampled_path()
-
-func _should_rebuild_for_curve_bake_interval_change() -> bool:
-	return curve != null \
-		and path_interpolation == PathInterpolation.FOLLOW_CURVED_PATH3D \
-		and follow_use_bake_interval \
-		and not is_equal_approx(tracked_curve_bake_interval, curve.bake_interval)
 
 func _ensure_sampled_bases() -> void:
 	_ensure_sampled_path()
@@ -935,12 +916,8 @@ func _rebuild_sampled_path() -> void:
 	if direction_source == DirectionSource.GENERATED_SEGMENT:
 		_rebuild_sampled_forwards_from_segments()
 	_rebuild_sample_offsets()
-	_track_curve_bake_interval()
 	sampled_path_dirty = false
 	sampled_basis_dirty = true
-
-func _track_curve_bake_interval() -> void:
-	tracked_curve_bake_interval = curve.bake_interval if curve != null else -1.0
 
 func _build_baked_sampled_path(cubic: bool) -> void:
 	if _has_vertical_spike_corner():
@@ -2146,23 +2123,6 @@ func _estimate_bezier_length(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3)
 		length += previous.distance_to(point)
 		previous = point
 	return length
-
-func _connect_curve_changed() -> void:
-	if connected_curve == curve:
-		return
-	if connected_curve != null and connected_curve.changed.is_connected(_on_curve_changed):
-		connected_curve.changed.disconnect(_on_curve_changed)
-	connected_curve = curve
-	_mark_sampled_path_dirty()
-	_track_curve_bake_interval()
-	if connected_curve != null and not connected_curve.changed.is_connected(_on_curve_changed):
-		connected_curve.changed.connect(_on_curve_changed)
-
-func _disconnect_curve_changed() -> void:
-	if connected_curve != null and connected_curve.changed.is_connected(_on_curve_changed):
-		connected_curve.changed.disconnect(_on_curve_changed)
-	connected_curve = null
-	_track_curve_bake_interval()
 
 func _on_curve_changed() -> void:
 	_mark_sampled_path_dirty()
