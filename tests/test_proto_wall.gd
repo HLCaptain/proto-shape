@@ -50,7 +50,7 @@ func _run() -> void:
 	await _test_lower_rail_gizmo()
 
 	if failures == 0:
-		print("ProtoWall tests passed")
+		print("PASS: wall state")
 	quit(failures)
 
 func _test_curve_lifecycle() -> void:
