@@ -99,15 +99,25 @@ func _on_terminal_area_body_exited(body: Node3D) -> void:
 func _update_hud() -> void:
 	var objective := "Reach the cyan overlook and retrieve the power cell."
 	var prompt := ""
+	var interact_label := ProtoExampleControls.get_action_label(ProtoExampleControls.INTERACT)
 	match delivery_state:
 		DeliveryState.AT_SOURCE:
 			if cell_nearby:
-				prompt = "E / X: Pick up power cell"
+				prompt = "%s: Pick up power cell" % interact_label
 		DeliveryState.CARRIED:
 			objective = "Return the power cell to the relay terminal."
 			if terminal_nearby:
-				prompt = "E / X: Insert power cell"
+				prompt = "%s: Insert power cell" % interact_label
 		DeliveryState.DELIVERED:
 			objective = "Relay restored!"
-			prompt = "R / Start: Play again"
-	hud_label.text = "POWER CELL RELAY\n%s\n%s\nWASD / Arrows / Stick  •  Space / A: Jump  •  R / Start: Restart" % [objective, prompt]
+			prompt = "%s: Play again" % ProtoExampleControls.get_action_label(ProtoExampleControls.RESTART)
+	var controls := "Move: WASD / Arrows / Stick  •  Jump: %s  •  Restart: %s  •  Release mouse: %s" % [
+		ProtoExampleControls.get_action_label(ProtoExampleControls.JUMP),
+		ProtoExampleControls.get_action_label(ProtoExampleControls.RESTART),
+		ProtoExampleControls.get_action_label(ProtoExampleControls.RELEASE_CURSOR),
+	]
+	var lines := PackedStringArray(["POWER CELL RELAY", objective])
+	if not prompt.is_empty():
+		lines.append(prompt)
+	lines.append(controls)
+	hud_label.text = "\n".join(lines)

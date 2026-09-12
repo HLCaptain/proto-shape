@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://addons/proto_shape/examples/power_cell_delivery/power_cell_delivery.gd" id="1_demo"]
 [ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/example/proto_ramp_example_character.gd" id="2_character"]
@@ -47,6 +47,13 @@ albedo_color = Color(0.486275, 1, 0.541176, 1)
 emission_enabled = true
 emission = Color(0.25098, 1, 0.356863, 1)
 emission_energy_multiplier = 3.0
+
+[sub_resource type="StyleBoxFlat" id="HudBackdropStyle"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.025, 0.04, 0.065, 0.82)
 
 [sub_resource type="PhysicalSkyMaterial" id="SkyMaterial"]
 turbidity = 1.6
@@ -432,22 +439,24 @@ fov = 55.0
 
 [node name="Hud" type="CanvasLayer" parent="."]
 
-[node name="Backdrop" type="ColorRect" parent="Hud"]
+[node name="Backdrop" type="PanelContainer" parent="Hud"]
+custom_minimum_size = Vector2(240, 0)
+anchor_right = 1.0
 offset_left = 20.0
 offset_top = 20.0
-offset_right = 810.0
-offset_bottom = 126.0
+offset_right = -20.0
+offset_bottom = 20.0
+grow_horizontal = 2
 mouse_filter = 2
-color = Color(0.025, 0.04, 0.065, 0.82)
+theme_override_styles/panel = SubResource("HudBackdropStyle")
 
-[node name="HudLabel" type="Label" parent="Hud"]
+[node name="HudLabel" type="Label" parent="Hud/Backdrop"]
 unique_name_in_owner = true
-offset_left = 36.0
-offset_top = 30.0
-offset_right = 800.0
-offset_bottom = 118.0
+layout_mode = 2
+custom_minimum_size = Vector2(200, 0)
 theme_override_colors/font_color = Color(0.9, 0.96, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.9)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 19
 text = "POWER CELL RELAY"
+autowrap_mode = 2

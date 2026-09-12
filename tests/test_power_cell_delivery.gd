@@ -11,6 +11,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	_seed_existing_interact_action()
+	root.size = Vector2i(480, 360)
 	var source := load(SCENE_PATH) as PackedScene
 	_expect(source != null, "Demo scene must load")
 	if source == null:
@@ -23,8 +24,14 @@ func _run() -> void:
 	_expect(is_equal_approx(InputMap.action_get_deadzone(ProtoExampleControls.INTERACT), 0.23), "Existing demo actions must not be overwritten")
 	_expect(InputMap.action_get_events(ProtoExampleControls.INTERACT).size() == 1, "Existing demo action events must be preserved")
 	_test_player_visual_matches_collider(gameplay)
+	_test_hud_layout(gameplay)
 
 	gameplay._on_pickup_area_body_entered(gameplay.player)
+	_expect(ProtoExampleControls.get_action_label(ProtoExampleControls.INTERACT) == "Q", "Remapped interaction label must use Q")
+	_expect(gameplay.hud_label.text.contains("Q: Pick up power cell"), "HUD interaction prompt must use the preserved Q binding")
+	_expect(not gameplay.hud_label.text.contains("E / X"), "HUD interaction prompt must not advertise replaced bindings")
+	await process_frame
+	_test_hud_layout(gameplay)
 	gameplay.interact()
 	await process_frame
 	_expect(gameplay.delivery_state == Demo.DeliveryState.CARRIED, "Nearby interaction must pick up the cell")
@@ -86,6 +93,21 @@ func _test_player_visual_matches_collider(gameplay: Node3D) -> void:
 		visual_bottom = minf(visual_bottom, (visual.transform * vertex).y)
 	var collider_bottom := (collision.transform * Vector3(0.0, -collision_shape.height * 0.5, 0.0)).y
 	_expect(is_equal_approx(visual_bottom, collider_bottom), "Player visual and collider feet must align")
+
+func _test_hud_layout(gameplay: Node3D) -> void:
+	var backdrop := gameplay.get_node("Hud/Backdrop") as Control
+	var label := gameplay.hud_label as Label
+	var viewport_width := gameplay.get_viewport().get_visible_rect().size.x
+	var backdrop_rect := backdrop.get_global_rect()
+	var label_rect := label.get_global_rect()
+	_expect(is_equal_approx(viewport_width, 480.0), "HUD test must use a 480-pixel-wide viewport")
+	_expect(backdrop.position.x >= 0.0 and backdrop.position.x + backdrop.size.x <= viewport_width, "HUD backdrop must fit a narrow viewport")
+	_expect(backdrop.size.x >= viewport_width * 0.75, "HUD backdrop must use the available viewport width")
+	_expect(label_rect.position.x >= backdrop_rect.position.x and label_rect.end.x <= backdrop_rect.end.x, "HUD label must stay inside its backdrop")
+	_expect(label.autowrap_mode != TextServer.AUTOWRAP_OFF, "HUD label must wrap at narrow widths")
+	_expect(label.get_combined_minimum_size().y <= label.size.y, "HUD label must reserve enough height for wrapped text")
+	_expect(label.get_visible_line_count() == label.get_line_count(), "HUD must show every wrapped text line")
+	_expect(backdrop_rect.end.y >= label_rect.end.y + 8.0, "HUD backdrop must contain wrapped text with a bottom margin")
 
 func _seed_existing_interact_action() -> void:
 	if not InputMap.has_action(ProtoExampleControls.INTERACT):
