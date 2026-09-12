@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://addons/proto_shape/examples/power_cell_delivery/power_cell_delivery.gd" id="1_demo"]
 [ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/example/proto_ramp_example_character.gd" id="2_character"]
@@ -89,10 +89,17 @@ point_count = 4
 
 [sub_resource type="Curve3D" id="Curve_curvewalk_right"]
 _data = {
-"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 2.8, 2, 1, 0, 0, 0, 0, 0, 0, 6.8, 2, -1.5, 0, 0, 0, 0, 0, 0, 6.8, 2, -8.8, 0, 0, 0, 0, 0, 0, 2.5, 2, -9.2),
-"tilts": PackedFloat32Array(0, 0, 0, 0)
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 3.35, 2, 1, 0, 0, 0, 0, 0, 0, 3.35, 2, -5.8),
+"tilts": PackedFloat32Array(0, 0)
 }
-point_count = 4
+point_count = 2
+
+[sub_resource type="Curve3D" id="Curve_overlook_landing"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 6.9, 2, -6.1, 0, 0, 0, 0, 0, 0, 6.9, 2, -9.0, 0, 0, 0, 0, 0, 0, 2.5, 2, -9.2),
+"tilts": PackedFloat32Array(0, 0, 0)
+}
+point_count = 3
 
 [sub_resource type="Curve3D" id="Curve_cell_wall"]
 _data = {
@@ -188,20 +195,20 @@ material = SubResource("Material_dark")
 
 [node name="InactiveTerminal" type="MeshInstance3D" parent="MapGeometry/RelayYard/RelayTerminal"]
 unique_name_in_owner = true
-position = Vector3(0, 1.1, -0.61)
+position = Vector3(0, 1.1, 0.61)
 mesh = SubResource("TerminalLightMesh")
 material_override = SubResource("Material_terminal_inactive")
 
 [node name="ActiveTerminal" type="MeshInstance3D" parent="MapGeometry/RelayYard/RelayTerminal"]
 unique_name_in_owner = true
 visible = false
-position = Vector3(0, 1.1, -0.62)
+position = Vector3(0, 1.1, 0.62)
 mesh = SubResource("TerminalLightMesh")
 material_override = SubResource("Material_terminal_active")
 
 [node name="TerminalSocket" type="Node3D" parent="MapGeometry/RelayYard/RelayTerminal"]
 unique_name_in_owner = true
-position = Vector3(0, 0.72, -0.72)
+position = Vector3(0, 0.72, 0.72)
 rotation = Vector3(0, 0, 1.5708)
 
 [node name="TerminalArea" type="Area3D" parent="MapGeometry/RelayYard/RelayTerminal"]
@@ -242,8 +249,8 @@ material = SubResource("Material_ramp")
 [node name="Curvewalk" type="Node3D" parent="MapGeometry"]
 
 [node name="ElevatedDeck" type="CSGBox3D" parent="MapGeometry/Curvewalk"]
-position = Vector3(0, 1.75, -4.2)
-size = Vector3(14, 0.5, 10.4)
+position = Vector3(-1.75, 1.75, -4.2)
+size = Vector3(10.5, 0.5, 10.4)
 use_collision = true
 material = SubResource("Material_ground")
 
@@ -282,6 +289,29 @@ collisions_enabled = true
 material = SubResource("Material_rail")
 
 [node name="CellOverlook" type="Node3D" parent="MapGeometry"]
+
+[node name="ReturnLanding" type="CSGBox3D" parent="MapGeometry/CellOverlook"]
+position = Vector3(5.25, 1.75, -7.5)
+size = Vector3(3.5, 0.5, 3.0)
+use_collision = true
+material = SubResource("Material_ground")
+
+[node name="LandingRail" type="Path3D" parent="MapGeometry/CellOverlook"]
+script = ExtResource("4_wall")
+curve = SubResource("Curve_overlook_landing")
+style = 1
+path_interpolation = 3
+path_orientation = 0
+height = 1.1
+thickness = 0.16
+rail_count = 2
+rail_thickness = 0.1
+lower_rail_height = 0.42
+post_enabled = true
+post_spacing = 1.4
+post_width = 0.16
+collisions_enabled = true
+material = SubResource("Material_rail")
 
 [node name="OverlookBackWall" type="Path3D" parent="MapGeometry/CellOverlook"]
 script = ExtResource("4_wall")
