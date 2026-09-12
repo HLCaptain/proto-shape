@@ -102,8 +102,9 @@ When a handle has a solid arrow guide, the provider can make the arrow itself ho
 func get_arrow_drag_segments(plugin) -> Array:
 	return _get_arrow_segments()
 
-func begin_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
-	# Store the starting property value and pointer projection for relative dragging.
+func begin_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> bool:
+	# Return true only after storing a valid pointer projection and starting the edit.
+	return true
 
 func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
 	# Use the same projection math as set_handle(), applied as a pointer delta.
@@ -119,6 +120,8 @@ Gizmo providers should:
 - Reuse the handle id as the arrow segment id when an arrow edits the same property as its point handle.
 - Use `plugin.get_handle_arrow_material(gizmo, handle_id)` for arrows that should react to highlighted/editing handle state.
 - Use dynamic handle axes when shape state changes the direction of a drag.
+- Treat a `null` projection as a no-op. Do not capture drag ownership or overwrite the last valid property value.
+- Keep raw pointer projections unclamped until after applying the relative drag delta.
 - Support normal snapping through `plugin.snapping` and fine snapping through `plugin.fine_snapping`.
 - Use `EditorUndoRedoManager` through `plugin.undo_redo` in `commit_handle()`.
 - Avoid owning shape state that must survive save/reload.

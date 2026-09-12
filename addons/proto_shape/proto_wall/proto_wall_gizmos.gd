@@ -58,22 +58,30 @@ func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D
 		return
 
 	if editing_handle == 0:
-		begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+		if not begin_arrow_drag(plugin, handle_id, camera, screen_pos):
+			return
 		drag_start_pointer_value = start_value
 	set_arrow_drag(plugin, handle_id, camera, screen_pos)
 
 func get_arrow_drag_segments(_plugin) -> Array:
 	return _get_arrow_segments()
 
-func begin_arrow_drag(_plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
-	if editing_handle == 0:
-		editing_handle = handle_id
-		start_value = _get_handle_value(handle_id)
-		drag_start_pointer_value = _get_dragged_value(handle_id, camera, screen_pos)
-		end_value = start_value
+func begin_arrow_drag(_plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> bool:
+	if editing_handle != 0:
+		return false
+	var pointer_value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
+	if pointer_value == null:
+		return false
+	editing_handle = handle_id
+	start_value = _get_handle_value(handle_id)
+	drag_start_pointer_value = pointer_value
+	end_value = start_value
+	return true
 
 func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
 	var value: Variant = _get_relative_dragged_value(handle_id, camera, screen_pos)
+	if value == null:
+		return
 	value = _apply_snapping(value, plugin)
 	_set_handle_value(handle_id, value)
 	end_value = _get_handle_value(handle_id)
@@ -228,31 +236,39 @@ func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -
 	match handle_id:
 		HANDLE_HEIGHT:
 			var axis := _get_wall_up_axis()
-			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_height_handle_position(), axis, shape)
-			return max(ProtoWall.MIN_DIMENSION, (offset - _get_center_position()).dot(axis))
+			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_height_handle_position(), axis, shape)
+			return (offset - _get_center_position()).dot(axis) if offset is Vector3 else null
 		HANDLE_THICKNESS:
 			var side_axis := _get_thickness_side_axis()
-			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_thickness_handle_position(), side_axis, shape)
-			var side_distance := (offset - shape.get_path_point(_get_handle_path_offset())).dot(side_axis)
+			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_thickness_handle_position(), side_axis, shape)
+			if not (offset is Vector3):
+				return null
+			var projected_offset: Vector3 = offset
+			var side_distance := (projected_offset - shape.get_path_point(_get_handle_path_offset())).dot(side_axis)
 			match shape.side:
 				ProtoWall.WallSide.LEFT:
-					return max(ProtoWall.MIN_DIMENSION, -side_distance)
+					return -side_distance
 				ProtoWall.WallSide.RIGHT:
-					return max(ProtoWall.MIN_DIMENSION, side_distance)
-			return max(ProtoWall.MIN_DIMENSION, abs(side_distance) * 2.0)
+					return side_distance
+			return abs(side_distance) * 2.0
 		HANDLE_LOWER_RAIL_HEIGHT:
 			var axis := _get_wall_up_axis()
-			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_lower_rail_height_handle_position(), axis, shape)
-			return max(ProtoWall.MIN_DIMENSION, (offset - _get_center_position()).dot(axis))
+			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_lower_rail_height_handle_position(), axis, shape)
+			return (offset - _get_center_position()).dot(axis) if offset is Vector3 else null
 		HANDLE_POST_WIDTH:
 			var forward := _get_post_forward_axis()
-			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_post_width_handle_position(), forward, shape)
-			var forward_distance := (offset - _get_post_center_position()).dot(forward)
-			return max(ProtoWall.MIN_DIMENSION, forward_distance * 2.0)
-	return ProtoWall.MIN_DIMENSION
+			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_post_width_handle_position(), forward, shape)
+			if not (offset is Vector3):
+				return null
+			var projected_offset: Vector3 = offset
+			var forward_distance := (projected_offset - _get_post_center_position()).dot(forward)
+			return forward_distance * 2.0
+	return null
 
 func _get_relative_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
 	var pointer_value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
+	if pointer_value == null:
+		return null
 	return max(ProtoWall.MIN_DIMENSION, float(start_value) + float(pointer_value) - float(drag_start_pointer_value))
 
 func _apply_snapping(value: float, plugin) -> float:

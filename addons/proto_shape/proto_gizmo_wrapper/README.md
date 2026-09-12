@@ -34,7 +34,7 @@ signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNo
 
 Just like in [ProtoRampGizmos](../proto_ramp/README.md#protorampgizmos), keep editor-only `gizmo` and `plugin` arguments dynamically typed. Use static typing for runtime-safe values such as `Camera3D`, `Vector2`, handles, and your generated nodes.
 
-Arrow-hover and arrow-drag callbacks need return values, so `ProtoGizmoWrapper` forwards those directly to optional child methods instead of exposing them as signals. A wrapped child can implement `get_arrow_drag_segments()`, `begin_arrow_drag()`, `set_arrow_drag()`, and `commit_arrow_drag()` to make solid arrow bodies hoverable and directly draggable.
+Arrow-hover and arrow-drag callbacks need return values, so `ProtoGizmoWrapper` forwards those directly to optional child methods instead of exposing them as signals. A wrapped child can implement `get_arrow_drag_segments()`, `begin_arrow_drag()`, `set_arrow_drag()`, and `commit_arrow_drag()` to make solid arrow bodies hoverable and directly draggable. `begin_arrow_drag()` returns `true` only after a valid initial cursor projection; `false` leaves drag ownership uncaptured.
 
 ***To see a runtime-safe wrapper example, check out [ExampleWrappedVolume](../proto_gizmo/examples/wrapper_volume/example_wrapped_volume.gd) source code.***
 
@@ -123,7 +123,7 @@ func set_handle(
     # Assign debug parameters used for drawing camera projected debug planes (optional)
     self.screen_pos = screen_pos
     self.local_gizmo_position = child.global_transform.origin
-    self.camera_position = camera.position
+    self.camera_position = camera.global_position
 
     # Match the handle_id to update the appropriate property
     match handle_id:
@@ -138,7 +138,9 @@ func set_handle(
 
             # `gizmo_utils` is a reference to the `ProtoGizmoUtils` instance used for handle offset calculations
             # `handle_offset` is the offset of the dragged handle in the 3D space on a camera projected plane
-            var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+            var handle_offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
+            if not (handle_offset is Vector3):
+                return
 
             # Update custom node properties based on offset in the proper axis
             _set_depth_handle(handle_offset.z)

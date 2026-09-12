@@ -45,22 +45,30 @@ func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D
 		return
 
 	if editing_handle == 0:
-		begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+		if not begin_arrow_drag(plugin, handle_id, camera, screen_pos):
+			return
 		drag_start_pointer_value = start_value
 	set_arrow_drag(plugin, handle_id, camera, screen_pos)
 
 func get_arrow_drag_segments(_plugin) -> Array:
 	return _get_arrow_segments()
 
-func begin_arrow_drag(_plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
-	if editing_handle == 0:
-		editing_handle = handle_id
-		start_value = _get_handle_value(handle_id)
-		drag_start_pointer_value = _get_dragged_value(handle_id, camera, screen_pos)
-		end_value = start_value
+func begin_arrow_drag(_plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> bool:
+	if editing_handle != 0:
+		return false
+	var pointer_value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
+	if pointer_value == null:
+		return false
+	editing_handle = handle_id
+	start_value = _get_handle_value(handle_id)
+	drag_start_pointer_value = pointer_value
+	end_value = start_value
+	return true
 
 func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
-	var value := _get_relative_dragged_value(handle_id, camera, screen_pos)
+	var value: Variant = _get_relative_dragged_value(handle_id, camera, screen_pos)
+	if value == null:
+		return
 	value = _apply_snapping(value, plugin)
 	_set_handle_value(handle_id, value)
 	end_value = value
@@ -148,21 +156,22 @@ func _get_arrow_visual_length() -> float:
 func is_handle_highlighted(_gizmo, _plugin, handle_id: int, _secondary: bool) -> bool:
 	return editing_handle == handle_id
 
-func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> float:
+func _get_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
 	match handle_id:
 		HANDLE_WIDTH:
-			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_width_handle_position(), Vector3.RIGHT, shape)
-			return max(0.001, offset.x * 2.0)
+			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_width_handle_position(), Vector3.RIGHT, shape)
+			return offset.x * 2.0 if offset is Vector3 else null
 		HANDLE_HEIGHT:
-			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_height_handle_position(), Vector3.UP, shape)
-			return max(0.001, offset.y)
+			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_height_handle_position(), Vector3.UP, shape)
+			return offset.y if offset is Vector3 else null
 		HANDLE_DEPTH:
-			var offset: Vector3 = gizmo_utils.get_handle_offset(camera, screen_pos, _get_depth_handle_position(), Vector3.BACK, shape)
-			return max(0.001, offset.z * 2.0)
-	return 0.001
+			var offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, _get_depth_handle_position(), Vector3.BACK, shape)
+			return offset.z * 2.0 if offset is Vector3 else null
+	return null
 
-func _get_relative_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> float:
-	return max(0.001, start_value + _get_dragged_value(handle_id, camera, screen_pos) - drag_start_pointer_value)
+func _get_relative_dragged_value(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
+	var pointer_value: Variant = _get_dragged_value(handle_id, camera, screen_pos)
+	return null if pointer_value == null else max(0.001, start_value + pointer_value - drag_start_pointer_value)
 
 func _apply_snapping(value: float, plugin) -> float:
 	if plugin.fine_snapping:

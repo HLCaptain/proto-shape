@@ -139,8 +139,7 @@ func handle_3d_gui_input(camera: Camera3D, event: InputEvent) -> bool:
 			_update_arrow_hover(camera, event.position)
 			if hovered_node == null:
 				return false
-			_begin_arrow_drag(hovered_node, hovered_arrow_id, camera, event.position)
-			return true
+			return _begin_arrow_drag(hovered_node, hovered_arrow_id, camera, event.position)
 
 	return false
 
@@ -227,11 +226,13 @@ func _get_selected_gizmo_nodes() -> Array[Node3D]:
 			nodes.push_back(node)
 	return nodes
 
-func _begin_arrow_drag(node: Node3D, arrow_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+func _begin_arrow_drag(node: Node3D, arrow_id: int, camera: Camera3D, screen_pos: Vector2) -> bool:
+	if not _call_begin_arrow_drag(node, arrow_id, camera, screen_pos):
+		return false
 	drag_node = node
 	drag_arrow_id = arrow_id
-	_call_begin_arrow_drag(node, arrow_id, camera, screen_pos)
 	_update_node_gizmos(node)
+	return true
 
 func _set_arrow_drag(camera: Camera3D, screen_pos: Vector2) -> void:
 	_call_set_arrow_drag(drag_node, drag_arrow_id, camera, screen_pos)
@@ -258,15 +259,16 @@ func _get_arrow_drag_segments(node: Node3D) -> Array:
 			return wrapper_segments
 	return []
 
-func _call_begin_arrow_drag(node: Node3D, arrow_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+func _call_begin_arrow_drag(node: Node3D, arrow_id: int, camera: Camera3D, screen_pos: Vector2) -> bool:
 	var provider = _get_gizmo_provider(node)
 	if provider != null and provider.has_method("begin_arrow_drag"):
-		provider.begin_arrow_drag(self, arrow_id, camera, screen_pos)
-		return
+		var result: Variant = provider.begin_arrow_drag(self, arrow_id, camera, screen_pos)
+		return result is bool and result
 
 	var wrapper := _get_gizmo_wrapper(node)
 	if wrapper != null:
-		wrapper.begin_arrow_drag_for_child(node, self, arrow_id, camera, screen_pos)
+		return wrapper.begin_arrow_drag_for_child(node, self, arrow_id, camera, screen_pos)
+	return false
 
 func _call_set_arrow_drag(node: Node3D, arrow_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
 	var provider = _get_gizmo_provider(node)

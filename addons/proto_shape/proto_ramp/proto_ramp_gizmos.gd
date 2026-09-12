@@ -100,27 +100,34 @@ func set_handle(
 		return
 
 	if !is_editing:
-		begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+		if not begin_arrow_drag(plugin, handle_id, camera, screen_pos):
+			return
 		drag_start_pointer_offset = start_offset
 	set_arrow_drag(plugin, handle_id, camera, screen_pos)
 
 func get_arrow_drag_segments(_gizmo_plugin: ProtoGizmoPlugin) -> Array:
 	return _get_handle_arrow_segments()
 
-func begin_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+func begin_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> bool:
+	if is_editing:
+		return false
+	var pointer_offset: Variant = _get_screen_handle_offset(handle_id, camera, screen_pos)
+	if pointer_offset == null:
+		return false
 	self.screen_pos = screen_pos
-	self.camera_position = camera.position
+	self.camera_position = camera.global_position
 	debug_gizmo_handler_id = handle_id
 	start_offset = _get_current_handle_offset(handle_id)
-	drag_start_pointer_offset = _get_screen_handle_offset(handle_id, camera, screen_pos)
+	drag_start_pointer_offset = pointer_offset
 	end_offset = start_offset
 	is_editing = true
+	return true
 
 func set_arrow_drag(plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+	if not _set_dragged_handle_from_screen(plugin, handle_id, camera, screen_pos):
+		return
 	self.screen_pos = screen_pos
-	self.camera_position = camera.position
-
-	_set_dragged_handle_from_screen(plugin, handle_id, camera, screen_pos)
+	self.camera_position = camera.global_position
 	ramp.update_gizmos()
 
 func commit_arrow_drag(plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool) -> void:
@@ -128,8 +135,10 @@ func commit_arrow_drag(plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool) -
 		return
 	_commit_current_edit(plugin, handle_id, cancel)
 
-func _set_dragged_handle_from_screen(plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
-	var pointer_offset := _get_screen_handle_offset(handle_id, camera, screen_pos)
+func _set_dragged_handle_from_screen(plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> bool:
+	var pointer_offset: Variant = _get_screen_handle_offset(handle_id, camera, screen_pos)
+	if pointer_offset == null:
+		return false
 	end_offset = start_offset + pointer_offset - drag_start_pointer_offset
 	if plugin.fine_snapping:
 		end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
@@ -145,8 +154,9 @@ func _set_dragged_handle_from_screen(plugin: ProtoGizmoPlugin, handle_id: int, c
 		fill_gizmo_id1, fill_gizmo_id2:
 			end_offset = clamp(end_offset, 0.0, 1.0)
 			ramp.fill = end_offset
+	return true
 
-func _get_screen_handle_offset(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> float:
+func _get_screen_handle_offset(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
 	match handle_id:
 		depth_gizmo_id:
 			return _get_depth_handle_offset(camera, screen_pos)
@@ -158,46 +168,56 @@ func _get_screen_handle_offset(handle_id: int, camera: Camera3D, screen_pos: Vec
 			return _get_fill_handle_offset(camera, screen_pos, Vector3(-ramp.width / 2, 0, 0))
 		fill_gizmo_id2:
 			return _get_fill_handle_offset(camera, screen_pos, Vector3(ramp.width / 2, 0, 0))
-	return start_offset
+	return null
 
 func _get_depth_handle_offset(
 	camera: Camera3D,
-	screen_pos: Vector2) -> float:
+	screen_pos: Vector2) -> Variant:
 	var local_offset_axis = Vector3(0, 0, 1)
 	var gizmo_position = Vector3(0, ramp.get_true_height() / 2, ramp.get_true_depth()) + ramp.get_anchor_offset(ramp.anchor)
-	var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	var handle_offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	if not (handle_offset is Vector3):
+		return null
 	return handle_offset.z
 
 func _get_width_handle_offset(
 	camera: Camera3D,
-	screen_pos: Vector2) -> float:
+	screen_pos: Vector2) -> Variant:
 	var local_offset_axis = Vector3(1, 0, 0)
 	var gizmo_position = Vector3(ramp.width / 2, ramp.get_true_height() / 2, ramp.get_true_depth() / 2) + ramp.get_anchor_offset(ramp.anchor)
-	var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	var handle_offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	if not (handle_offset is Vector3):
+		return null
 	return handle_offset.x
 
 func _get_height_handle_offset(
 	camera: Camera3D,
-	screen_pos: Vector2) -> float:
+	screen_pos: Vector2) -> Variant:
 	var local_offset_axis = Vector3(0, 1, 0)
 	var gizmo_position = Vector3(0, ramp.get_true_height(), ramp.get_true_depth() / 2) + ramp.get_anchor_offset(ramp.anchor)
-	var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	var handle_offset: Variant = gizmo_utils.get_handle_offset(camera, screen_pos, gizmo_position, local_offset_axis, ramp)
+	if not (handle_offset is Vector3):
+		return null
 	return handle_offset.y
 
 func _get_fill_handle_offset(
 	camera: Camera3D,
 	screen_pos: Vector2,
-	gizmo_position_offset: Vector3) -> float:
+	gizmo_position_offset: Vector3) -> Variant:
 	var fill_gizmo_axis := _get_fill_max_offset()
 	fill_gizmo_axis.z = ramp.get_true_depth() - fill_gizmo_axis.z
 	var fill_gizmo_offset := fill_gizmo_axis * (1 - ramp.fill)
 	var gizmo_position := Vector3(0, fill_gizmo_offset.y, fill_gizmo_offset.z) + ramp.get_anchor_offset(ramp.anchor) + gizmo_position_offset
 	var local_plane_normal := Vector3(1, 0, 0)
-	var handle_offset = gizmo_utils.get_handle_offset_by_plane(camera, screen_pos, gizmo_position, local_plane_normal, ramp)
+	var handle_offset: Variant = gizmo_utils.get_handle_offset_by_plane(camera, screen_pos, gizmo_position, local_plane_normal, ramp)
+	if not (handle_offset is Vector3):
+		return null
 	var gizmo_base_position := Vector3(0, 0, ramp.get_true_depth())
 	handle_offset -= gizmo_base_position
 	var gizmo_max_position := fill_gizmo_axis - gizmo_base_position
 	gizmo_max_position.x = 0
+	if gizmo_max_position.length_squared() <= 0.000001:
+		return null
 	handle_offset -= ramp.get_anchor_offset(ramp.anchor)
 	handle_offset.x = 0
 	return 1.0 - handle_offset.dot(gizmo_max_position) / gizmo_max_position.length_squared()
@@ -441,7 +461,7 @@ func commit_handle(
 	secondary: bool,
 	restore: Variant,
 	cancel: bool) -> void:
-	if gizmo.get_node_3d() != ramp:
+	if gizmo.get_node_3d() != ramp or not is_editing:
 		return
 
 	_commit_current_edit(plugin, handle_id, cancel)

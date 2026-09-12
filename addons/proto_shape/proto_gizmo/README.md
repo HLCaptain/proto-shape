@@ -25,12 +25,14 @@ Providers can also make solid arrow guides hoverable and directly draggable by i
 
 ```gdscript
 func get_arrow_drag_segments(plugin) -> Array
-func begin_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void
+func begin_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> bool
 func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void
 func commit_arrow_drag(plugin, handle_id: int, cancel: bool) -> void
 ```
 
 Use the same id for a point handle and its arrow segment when both edit the same property. `get_arrow_drag_segments()` should return local-space dictionaries in the form `{"id": handle_id, "from": from_position, "to": to_position}`.
+
+`begin_arrow_drag()` must return `true` only after its initial cursor projection succeeds and the provider has captured its starting values. Returning `false` leaves the click unclaimed and prevents a later release from creating an undo action. During a drag, ignore a `null` projection and retain the original pointer offset plus the last valid property value.
 
 Arrow selection does not use Godot's native transform gizmo arrows. `ProtoGizmo` projects each provider arrow into screen space, tests the shaft and head footprint against the cursor, highlights the closest selected arrow, and forwards drag events to the provider. This lets custom nodes expose native-feeling hover and drag behavior while keeping their own property math, snapping, and undo/redo flow.
 
@@ -75,16 +77,12 @@ Properties:
 - `local_offset_axis: Vector3` - Axis the handle can be dragged on in node's local space. Used for calculating the plane the `screen_pos` is projected on.
 - `node: Node3D` - Node the gizmo is attached to. Used to get global transform and position.
 
-Returns: `Vector3` - Offset of the dragged handle in the 3D space on a camera projected plane in global space.
+Returns: `Variant` - The projected point in the node's local space as a `Vector3`, or `null` when the transform, view angle, or ray-plane intersection is invalid.
 
-Unfortunately, to get the proper offsets, projections, offsets and drawing of the gizmos, some transitions must be made between the local and global space to get the result. The `camera.position` is in global space, so the `local_gizmo_position` and `local_offset_axis` must be transformed to global space to get the proper offset from projecting `screen_pos` onto a global space plane.
+The helper transforms local points and axes with the complete `global_transform`, intersects `Camera3D.project_ray_origin()` / `project_ray_normal()` with a global plane, and converts the result back through `affine_inverse()`. Explicit local plane normals use the inverse-transpose basis, so rotated nodes, transformed parents, non-uniform scale, perspective cameras, and orthographic cameras share the same local-space contract.
 
 #### Get camera oriented plane
 
-The global plane is created by using 3 points:
-
-- `global_gizmo_position` - The gizmo position in global space, transformed from `local_gizmo_position` with the Node3D's `global_position` and `global_transform.basis`.
-- `global_offset_axis` - The axis the handle can be dragged on in global space, transformed from `local_offset_axis` with the Node3D's `global_transform.basis`.
-- A point on the line defined by `camera.position` closest to another line defined by `global_gizmo_position` and `global_offset_axis`. The line with point `camera.position` is perpendicular to the other line and its axis is the plane's normal vector, so the plane is always oriented to the camera. The calculation is found in `ProtoGizmoUtils::get_camera_oriented_plane`.
+For a perspective camera, the camera-facing plane remains the plane through the handle axis whose normal is the handle-to-camera direction projected perpendicular to that axis. Orthographic cameras use their parallel projected ray direction. End-on axes and singular or non-finite transforms return `null` rather than jumping.
 
 The plane can be visualized by drawing a grid with `ProtoGizmoUtils::debug_draw_handle_grid`.

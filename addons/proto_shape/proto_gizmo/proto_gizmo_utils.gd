@@ -2,6 +2,9 @@ const ARROW_RADIAL_SEGMENTS := 12
 const ARROW_PICK_DISTANCE_PIXELS := 14.0
 const ARROW_PICK_EDGE_TOLERANCE_PIXELS := 1.5
 const MIN_ARROW_LENGTH := 0.001
+const MIN_TRANSFORM_DETERMINANT := 0.000000001
+const MIN_PLANE_NORMAL_LENGTH_SQUARED := 0.00000001
+const MIN_RAY_PLANE_DOT := 0.000001
 
 func add_arrow_mesh(
 	gizmo: EditorNode3DGizmo,
@@ -213,43 +216,97 @@ func _create_y_axis_transform(origin: Vector3, direction: Vector3) -> Transform3
 
 ## Calculates plane based on the gizmo's position facing the camera
 ## Returns offset based on the intersection of the ray from the camera to the cursor hitting the plane
+## Returns a local-space [Vector3], or [code]null[/code] when projection is not safe.
 func get_handle_offset(
 	camera: Camera3D,
 	screen_pos: Vector2,
 	local_gizmo_position: Vector3,
 	local_offset_axis: Vector3,
-	node: Node3D) -> Vector3:
+	node: Node3D) -> Variant:
+
+	if not _can_project(camera, node, screen_pos, local_gizmo_position, local_offset_axis):
+		return null
 
 	var transform := node.global_transform
-	var position: Vector3 = node.global_position
-	var quat: Quaternion = transform.basis.get_rotation_quaternion()
-	var quat_axis: Vector3 = quat.get_axis() if quat.get_axis().is_normalized() else Vector3.UP
-	var quat_angle: float = quat.get_angle()
-	var scale: Vector3 = transform.basis.get_scale()
-	var global_gizmo_position: Vector3 = local_gizmo_position.rotated(quat_axis, quat_angle) * scale + position
-	var global_offset_axis: Vector3 = local_offset_axis.rotated(quat_axis, quat_angle)
-	var global_plane: Plane = get_camera_oriented_plane(camera.position, global_gizmo_position, global_offset_axis)
-	var local_offset: Vector3 = (global_plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - position).rotated(quat_axis, -quat_angle) / scale
-	return local_offset
+	var global_gizmo_position := transform * local_gizmo_position
+	var global_offset_axis := transform.basis * local_offset_axis
+	if not _is_valid_direction(global_offset_axis):
+		return null
+	global_offset_axis = global_offset_axis.normalized()
 
+	var ray_origin := camera.project_ray_origin(screen_pos)
+	var ray_direction := camera.project_ray_normal(screen_pos)
+	if not ray_origin.is_finite() or not _is_valid_direction(ray_direction):
+		return null
+	ray_direction = ray_direction.normalized()
+
+	var view_direction := global_gizmo_position - ray_origin
+	if camera.projection == Camera3D.PROJECTION_ORTHOGONAL:
+		view_direction = ray_direction
+	var plane_normal := view_direction - global_offset_axis * view_direction.dot(global_offset_axis)
+	return _intersect_local(camera, node, screen_pos, global_gizmo_position, plane_normal)
+
+## Projects onto an explicit local plane, returning a local-space [Vector3] or [code]null[/code].
 func get_handle_offset_by_plane(
 	camera: Camera3D,
 	screen_pos: Vector2,
 	local_gizmo_position: Vector3,
 	plane_normal: Vector3,
-	node: Node3D) -> Vector3:
+	node: Node3D) -> Variant:
+
+	if not _can_project(camera, node, screen_pos, local_gizmo_position, plane_normal):
+		return null
 
 	var transform := node.global_transform
-	var position: Vector3 = node.global_position
-	var quat: Quaternion = transform.basis.get_rotation_quaternion()
-	var quat_axis: Vector3 = quat.get_axis() if quat.get_axis().is_normalized() else Vector3.UP
-	var quat_angle: float = quat.get_angle()
-	var scale: Vector3 = transform.basis.get_scale()
-	var global_gizmo_position: Vector3 = local_gizmo_position.rotated(quat_axis, quat_angle) * scale + position
-	var global_plane_normal: Vector3 = plane_normal.rotated(quat_axis, quat_angle)
-	var global_plane: Plane = Plane(global_plane_normal, global_gizmo_position)
-	var local_offset: Vector3 = (global_plane.intersects_ray(camera.position, camera.project_position(screen_pos, 1.0) - camera.position) - position).rotated(quat_axis, -quat_angle) / scale
-	return local_offset
+	var global_gizmo_position := transform * local_gizmo_position
+	var global_plane_normal := transform.basis.inverse().transposed() * plane_normal
+	return _intersect_local(camera, node, screen_pos, global_gizmo_position, global_plane_normal)
+
+func _can_project(camera: Camera3D, node: Node3D, screen_pos: Vector2, local_position: Vector3, local_direction: Vector3) -> bool:
+	return (
+		is_instance_valid(camera)
+		and is_instance_valid(node)
+		and screen_pos.is_finite()
+		and local_position.is_finite()
+		and _is_valid_direction(local_direction)
+		and _is_valid_transform(node.global_transform)
+	)
+
+func _is_valid_transform(transform: Transform3D) -> bool:
+	return (
+		transform.origin.is_finite()
+		and transform.basis.x.is_finite()
+		and transform.basis.y.is_finite()
+		and transform.basis.z.is_finite()
+		and abs(transform.basis.determinant()) > MIN_TRANSFORM_DETERMINANT
+	)
+
+func _is_valid_direction(direction: Vector3) -> bool:
+	return direction.is_finite() and direction.length_squared() > MIN_PLANE_NORMAL_LENGTH_SQUARED
+
+func _intersect_local(
+	camera: Camera3D,
+	node: Node3D,
+	screen_pos: Vector2,
+	global_gizmo_position: Vector3,
+	global_plane_normal: Vector3) -> Variant:
+
+	if not global_gizmo_position.is_finite() or not _is_valid_direction(global_plane_normal):
+		return null
+	var ray_origin := camera.project_ray_origin(screen_pos)
+	var ray_direction := camera.project_ray_normal(screen_pos)
+	if not ray_origin.is_finite() or not _is_valid_direction(ray_direction):
+		return null
+	ray_direction = ray_direction.normalized()
+	global_plane_normal = global_plane_normal.normalized()
+	if abs(global_plane_normal.dot(ray_direction)) <= MIN_RAY_PLANE_DOT:
+		return null
+
+	var intersection: Variant = Plane(global_plane_normal, global_gizmo_position).intersects_ray(ray_origin, ray_direction)
+	if not (intersection is Vector3) or not intersection.is_finite():
+		return null
+	var local_intersection: Vector3 = node.global_transform.affine_inverse() * intersection
+	return local_intersection if local_intersection.is_finite() else null
 
 # Adds debug lines for the plane the gizmo can move on
 # Should only be called on gizmo redraw
@@ -263,14 +320,22 @@ func debug_draw_handle_grid(
 	plugin: EditorNode3DGizmoPlugin,
 	grid_size: float = 1.0) -> void:
 
+	if not is_instance_valid(node) or not _is_valid_transform(node.global_transform):
+		return
 	var transform := node.global_transform
-	var position: Vector3 = node.global_position
-	var quat: Quaternion = transform.basis.get_rotation_quaternion()
-	var quat_axis: Vector3 = quat.get_axis() if quat.get_axis().is_normalized() else Vector3.UP
-	var quat_angle: float = quat.get_angle()
-	var scale: Vector3 = transform.basis.get_scale()
-	var local_camera_position: Vector3 = (camera_position - position).rotated(quat_axis, -quat_angle) / scale
-	var local_plane: Plane = get_camera_oriented_plane(local_camera_position, local_gizmo_position, local_offset_axis)
+	var global_gizmo_position := transform * local_gizmo_position
+	var global_axis := transform.basis * local_offset_axis
+	if not camera_position.is_finite() or not _is_valid_direction(global_axis):
+		return
+	global_axis = global_axis.normalized()
+	var global_view := global_gizmo_position - camera_position
+	var global_plane_normal := global_view - global_axis * global_view.dot(global_axis)
+	if not _is_valid_direction(global_plane_normal):
+		return
+	var local_plane_normal := transform.basis.transposed() * global_plane_normal.normalized()
+	if not _is_valid_direction(local_plane_normal):
+		return
+	var local_plane := Plane(local_plane_normal.normalized(), local_gizmo_position)
 
 	debug_draw_grid_on_plane(local_gizmo_position, local_offset_axis, gizmo, plugin, local_plane, grid_size)
 
@@ -283,12 +348,6 @@ func debug_draw_handle_grid_on_plane(
 	plugin: EditorNode3DGizmoPlugin,
 	grid_size: float = 1.0) -> void:
 
-	var transform := node.global_transform
-	var position: Vector3 = node.global_position
-	var quat: Quaternion = transform.basis.get_rotation_quaternion()
-	var quat_axis: Vector3 = quat.get_axis() if quat.get_axis().is_normalized() else Vector3.UP
-	var quat_angle: float = quat.get_angle()
-	var scale: Vector3 = transform.basis.get_scale()
 	var local_plane: Plane = Plane(plane_normal, local_gizmo_position)
 
 	debug_draw_grid_on_plane(local_gizmo_position, local_offset_axis, gizmo, plugin, local_plane, grid_size)
@@ -332,18 +391,14 @@ func get_camera_oriented_plane(
 	# gizmo_position: gizmo's current position in the world
 	# gizmo_axis: axis the gizmo is moving along
 
-	var closest_point_to_camera: Vector3 = get_closest_point_on_line(gizmo_position, gizmo_axis, camera_position)
-	var closest_point_to_camera_difference: Vector3 = closest_point_to_camera - camera_position
-	var parallel_to_gizmo_dir: Vector3 = closest_point_to_camera - gizmo_position
-	var perpendicular_to_gizmo_dir: Vector3 = parallel_to_gizmo_dir.cross(closest_point_to_camera_difference).normalized()
-
-	# Transform 3 points to global space
-	var x: Vector3 = gizmo_position
-	var y: Vector3 = gizmo_position + gizmo_axis
-	var z: Vector3 = gizmo_position + perpendicular_to_gizmo_dir
-	var plane := Plane(x, y, z)
-
-	return plane
+	if not camera_position.is_finite() or not gizmo_position.is_finite() or not _is_valid_direction(gizmo_axis):
+		return Plane()
+	var axis := gizmo_axis.normalized()
+	var view_direction := gizmo_position - camera_position
+	var plane_normal := view_direction - axis * view_direction.dot(axis)
+	if not _is_valid_direction(plane_normal):
+		return Plane()
+	return Plane(plane_normal.normalized(), gizmo_position)
 
 ## [param point_in_line] is a point on the line
 ## [param line_dir] is the direction of the line
@@ -352,6 +407,8 @@ func get_closest_point_on_line(
 	point_on_line: Vector3,
 	line_dir: Vector3,
 	point: Vector3) -> Vector3:
+	if not _is_valid_direction(line_dir):
+		return point_on_line
 	var A := point_on_line
 	var B := point_on_line + line_dir  # This can be any other point in the direction of the line
 	var AP := point - A

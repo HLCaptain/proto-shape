@@ -55,10 +55,12 @@ func begin_arrow_drag_for_child(
 	plugin,
 	handle_id: int,
 	camera: Camera3D,
-	screen_pos: Vector2) -> void:
+	screen_pos: Vector2) -> bool:
 
 	if child != null and child.has_method("begin_arrow_drag"):
-		child.begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+		var result: Variant = child.begin_arrow_drag(plugin, handle_id, camera, screen_pos)
+		return result is bool and result
+	return false
 
 func set_arrow_drag_for_child(
 	child,
