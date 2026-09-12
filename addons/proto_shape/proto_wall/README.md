@@ -67,6 +67,8 @@ Common properties:
 - `collisions_enabled` - Enables collision on generated CSG parts.
 - `material` - Material applied to generated wall, rail, and post parts.
 
+Generated wall/rail sweep meshes have positions and normals but no UV or tangent attributes. Use solid-color or world/triplanar materials for blockouts; UV-dependent textures and tangent-space normal maps need a later mesh-authoring step.
+
 Rail-only properties:
 
 - `rail_count` - Number of horizontal rails.

@@ -16,10 +16,13 @@ The returned provider must implement these editor-only methods:
 ```gdscript
 func redraw_gizmos(gizmo, plugin) -> void
 func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2) -> void
-func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool) -> void
 ```
 
-`commit_handle` is optional for draw-only gizmos, but editable handles should implement it and use `EditorUndoRedoManager` through the `plugin.undo_redo` reference.
+Draw-only providers may leave `set_handle` empty. Editable handles must also implement the optional commit callback and use `EditorUndoRedoManager` through `plugin.undo_redo`:
+
+```gdscript
+func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool) -> void
+```
 
 Providers can also make solid arrow guides hoverable and directly draggable by implementing these optional methods. `ProtoGizmo` handles `EditorPlugin._forward_3d_gui_input()`, picks the closest selected arrow in screen space, and forwards drag updates to the provider:
 
@@ -30,7 +33,7 @@ func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector
 func commit_arrow_drag(plugin, handle_id: int, cancel: bool) -> void
 ```
 
-Use the same id for a point handle and its arrow segment when both edit the same property. `get_arrow_drag_segments()` should return local-space dictionaries in the form `{"id": handle_id, "from": from_position, "to": to_position}`.
+Use small, stable integer IDs unique within each node's gizmo. Use the same ID for a point handle and its arrow segment when both edit the same property. `get_arrow_drag_segments()` should return local-space dictionaries in the form `{"id": handle_id, "from": from_position, "to": to_position}`.
 
 `begin_arrow_drag()` must return `true` only after its initial cursor projection succeeds and the provider has captured its starting values. Returning `false` leaves the click unclaimed and prevents a later release from creating an undo action. During a drag, ignore a `null` projection and retain the original pointer offset plus the last valid property value.
 
@@ -57,17 +60,17 @@ See [examples](examples/README.md) for provider-based custom shapes, dynamic han
 
 ## Default materials
 
-- `proto_handler` - Same as internal "handlers" material for gizmo handles, but blue instead of redish color.
+- `proto_handler` - Same as internal "handles" material for gizmo handles, but blue instead of reddish.
 - `selected` - Material for selected nodes (bluish transparent color).
 - `main` - Base reddish color material for solid arrows, general guides, and debugging use. It is also used for drawing camera-projected debug planes.
 
 ## ProtoGizmoUtils
 
-ProtoGizmoUtils are advanced 3D math utilities used for calculating handle offsets and projecting planes for gizmos based on the camera position and screen coordinates. The projected plane, the user can drag the handles on can be drawn via `ProtoGizmoUtils::debug_draw_handle_grid` on gizmo *redraw*.
+ProtoGizmoUtils projects pointer positions onto local handle axes or planes. During gizmo redraw, `ProtoGizmoUtils.debug_draw_handle_grid` can display the drag plane.
 
 ### Calculate handle offset in 3D space
 
-`ProtoGizmoUtils::get_handle_offset` calculates the offset of the dragged handle in the 3D space on a camera projected plane.
+`ProtoGizmoUtils.get_handle_offset` calculates a handle position on a camera-oriented plane.
 
 Properties:
 
@@ -85,4 +88,4 @@ The helper transforms local points and axes with the complete `global_transform`
 
 For a perspective camera, the camera-facing plane remains the plane through the handle axis whose normal is the handle-to-camera direction projected perpendicular to that axis. Orthographic cameras use their parallel projected ray direction. End-on axes and singular or non-finite transforms return `null` rather than jumping.
 
-The plane can be visualized by drawing a grid with `ProtoGizmoUtils::debug_draw_handle_grid`.
+The plane can be visualized by drawing a grid with `ProtoGizmoUtils.debug_draw_handle_grid`.
