@@ -10,7 +10,7 @@ const ExampleWrappedVolume = preload("res://addons/proto_shape/proto_gizmo/examp
 var failures := 0
 
 func _ready() -> void:
-	if "--proto-shape-tests" in OS.get_cmdline_user_args():
+	if "--proto-shape-tests" in OS.get_cmdline_user_args() and scene_file_path in OS.get_cmdline_args():
 		_run.call_deferred()
 
 func _run() -> void:

@@ -7,7 +7,7 @@ var failures := 0
 var gizmo_utils := ProtoGizmoUtils.new()
 
 func _ready() -> void:
-	if "--proto-shape-tests" in OS.get_cmdline_user_args():
+	if "--proto-shape-tests" in OS.get_cmdline_user_args() and scene_file_path in OS.get_cmdline_args():
 		_run.call_deferred()
 
 func _run() -> void:

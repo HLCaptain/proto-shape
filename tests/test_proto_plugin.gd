@@ -6,7 +6,7 @@ const ProtoShape = preload("res://addons/proto_shape/proto_shape.gd")
 var failures := 0
 
 func _ready() -> void:
-	if "--proto-shape-tests" in OS.get_cmdline_user_args():
+	if "--proto-shape-tests" in OS.get_cmdline_user_args() and scene_file_path in OS.get_cmdline_args():
 		_run.call_deferred()
 
 func _run() -> void:
@@ -44,6 +44,17 @@ func _run() -> void:
 	plugin._reset_snapping()
 	_expect(not plugin.gizmo_plugin.snapping, "Exit reset clears snapping")
 	plugin.free()
+	var originally_enabled := EditorInterface.is_plugin_enabled("proto_shape")
+	EditorInterface.set_plugin_enabled("proto_shape", true)
+	for index in range(3):
+		await get_tree().process_frame
+	_expect(EditorInterface.is_plugin_enabled("proto_shape"), "Installed plugin enables through EditorInterface")
+	EditorInterface.set_plugin_enabled("proto_shape", false)
+	for index in range(3):
+		await get_tree().process_frame
+	_expect(not EditorInterface.is_plugin_enabled("proto_shape"), "Installed plugin disables through EditorInterface")
+	if originally_enabled:
+		EditorInterface.set_plugin_enabled("proto_shape", true)
 	_expect(InputMap.action_get_events(&"snap_to_grid") == original, "Host snapping action events are untouched")
 	_expect(is_equal_approx(InputMap.action_get_deadzone(&"snap_to_grid"), 0.7), "Host action deadzone is untouched")
 	_expect(InputMap.has_action(&"fine_snap_to_grid"), "Host fine-snapping action survives")

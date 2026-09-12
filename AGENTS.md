@@ -26,6 +26,6 @@ The addon lives under `addons/proto_shape/`. Keep plugin resources, preloads, ic
 
 ## Verification
 
-If the `godot` command is available, run relevant focused scripts under `tests/`, plus CLI checks such as `godot --headless --path . --import`, `godot --headless --path . --editor --quit`, and script-specific parse/smoke checks when practical.
+Run `bash tests/run.sh` with Godot 4.7.2 to validate an isolated copy of the project. Runtime tests use SceneTree scripts; editor tests use ordinary `@tool` scenes with `-- --proto-shape-tests`. Require completion markers and clean error output as well as successful exit status. For individual checks, use a fresh import and bounded `--editor --quit-after 120` startup rather than treating an immediate editor exit as sufficient verification.
 
 For code changes, validate in the Godot editor when possible: enable the `ProtoShape` plugin, add affected nodes from the Add Child Node menu, check for script errors, drag gizmo handles, test grid snapping and undo/redo, save/reload affected scenes, and confirm exported/runtime scenes do not depend on editor-only classes. If manual editor regression checks are necessary but cannot be run, clearly tell the user what still needs manual validation.
