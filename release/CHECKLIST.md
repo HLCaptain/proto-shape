@@ -59,7 +59,8 @@
 
 ## External ownership gates
 
-- [ ] Push the reviewed feature branch and create one draft PR. Hand the final commit and release notes to the user; merging, tag creation/push, and GitHub release publication remain user-owned.
+- [ ] Push the reviewed feature branch. Hand the final commit and release notes to the user; merging, tag creation/push, and GitHub release publication remain user-owned.
+- [ ] Obtain the explicit approval required by the tool's publishing gate before creating the planned draft PR.
 - [ ] After final validation, save the authorized Godot Asset Store draft metadata and upload the validated ZIP.
 - [ ] Check Store `Stable` only after all final validation passes.
 - [ ] Do not click Store `Publish` / `Submit for review`; review submission remains explicitly user-gated.

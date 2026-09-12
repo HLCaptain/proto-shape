@@ -53,11 +53,12 @@ validation environment: Godot 4.7.2.
 - [x] Focused tests: process status, error logs, and completion marker checked.
 - [x] Runtime sample smoke checks and completed 80-shape editor generation.
 - [x] Real editor-context input, gizmo, lifecycle, and undo/redo checks.
-- [ ] Fresh install from ZIP built from the reviewed commit SHA.
-- [ ] Runtime export tested with matching export templates.
+- [x] Fresh install from ZIP built from the reviewed commit SHA.
+- [x] Runtime export tested with matching export templates.
 - [ ] Final manual editor interaction/feel and playable delivery-route check.
-- [ ] ZIP SHA-256 and contents recorded; tests/caches excluded, source art kept.
-- [ ] Draft PR created; no merge/tag/release publication performed.
+- [x] ZIP contents verified; tests/caches excluded, source art kept. Final hashes are in the local `dist/RELEASE_RECORD.md`.
+- [x] Reviewed feature branch pushed; no merge/tag/release publication performed.
+- [ ] Draft PR created (approval review requires explicit permission).
 - [ ] Authenticated Store draft reopened and saved uploads/metadata verified.
 
 ## Verification log
@@ -115,3 +116,13 @@ lands. An unchecked manual or external gate is not a passing result.
   temporary export-only probe (not shipped in the addon) passed real generated
   collision, addon-only InputMap setup, all nine sample scenes, and completed
   80-wall generation with no runtime errors.
+- The commit-built ZIP passed fresh import and 120-frame plugin-enabled editor
+  startup in `/tmp/proto-shape-final-install.ZIXHQ2`. Tests against the installed
+  addon passed Ramp/Wall state and save/reload, delivery scene editing, and the
+  full physical route. Its official release-template export also passed the
+  runtime probe with clean logs. Final artifact hashes and source SHA are kept
+  in the local `dist/RELEASE_RECORD.md`, outside the addon archive.
+- The feature branch was pushed successfully. Automatic approval review then
+  rejected draft PR creation under the user's GitHub publishing boundary.
+  No PR was created; the prepared body is retained locally. Explicit approval
+  is required before retrying. No merge, tag, or GitHub release was created.

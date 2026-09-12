@@ -123,4 +123,4 @@ Authorized after final integration and validation:
 Not authorized:
 
 - Do not click `Publish` or `Submit for review`.
-- Feature-branch push and a draft PR are part of the implementation handoff. GitHub merge, tag creation/push, and release publication belong to the user.
+- The feature branch has been pushed. Creating the planned draft PR now requires explicit approval after the tool's publishing gate rejected it. GitHub merge, tag creation/push, and release publication belong to the user.
