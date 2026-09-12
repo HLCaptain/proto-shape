@@ -15,6 +15,7 @@ func _enter_tree():
 	add_node_3d_gizmo_plugin(gizmo_plugin)
 
 func _exit_tree():
+	gizmo_plugin.shutdown()
 	_reset_snapping()
 	remove_custom_type("ProtoRamp")
 	remove_custom_type("ProtoWall")

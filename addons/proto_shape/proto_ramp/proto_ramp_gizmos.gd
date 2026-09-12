@@ -12,71 +12,28 @@ const MAX_ARROW_VISUAL_LENGTH := 0.75
 var gizmo_utils := ProtoGizmoUtils.new()
 var ramp: ProtoRamp = null
 
-var undo_redo: EditorUndoRedoManager
 var is_editing := false
 
 func attach_ramp(node: ProtoRamp) -> void:
 	ramp = node
 
 func remove_ramp() -> void:
-	# Disconnecting any leftover connections
-	if plugin != null:
-		if current_fine_snap_callable != null:
-			if plugin.fine_snapping_changed.is_connected(current_fine_snap_callable):
-				plugin.fine_snapping_changed.disconnect(current_fine_snap_callable)
-		if current_snap_callable != null:
-			if plugin.snapping_changed.is_connected(current_snap_callable):
-				plugin.snapping_changed.disconnect(current_snap_callable)
-		plugin = null
 	ramp = null
+	is_editing = false
+	screen_pos = Vector2.ZERO
+	camera_position = Vector3.ZERO
 
 # Snapping to grid
-var snapping_enabled: bool = false
 var snap_unit: float = 1.0
-var fine_snapping_enabled: bool = false
 var fine_snap_unit: float = 0.1
 
-# Captured arguments required for signal connections
-#  ramp: ProtoRamp - on closing a scene, the ramp is freed, so we need to check for null
-#    Unfortunately, disconnecting does not work (bug?), the lambda is still called afterwards
-#  plugin: ProtoGizmoPlugin - captured plugin argument will not be null (even after setting the field to null in remove_ramp)
-func node_snap_listener(ramp: ProtoRamp, gizmo_plugin: ProtoGizmoPlugin) -> Callable:
-	return func (enabled: bool) -> void:
-		snapping_enabled = enabled
-		if ramp != null:
-			ramp.update_gizmos()
-		else:
-			gizmo_plugin.snapping_changed.disconnect(current_snap_callable)
-
-func node_fine_snap_listener(ramp: ProtoRamp, gizmo_plugin: ProtoGizmoPlugin) -> Callable:
-	return func (enabled: bool) -> void:
-		fine_snapping_enabled = enabled
-		if ramp != null:
-			ramp.update_gizmos()
-		else:
-			gizmo_plugin.fine_snapping_changed.disconnect(current_fine_snap_callable)
-
-var current_snap_callable: Callable
-
-var current_fine_snap_callable: Callable
-
-var plugin: ProtoGizmoPlugin
-
-func init_gizmo(gizmo_plugin: ProtoGizmoPlugin) -> void:
+func init_gizmo(_gizmo_plugin: ProtoGizmoPlugin) -> void:
 	# Generate a "random" id for each gizmo
 	width_gizmo_id = Time.get_ticks_usec()
 	depth_gizmo_id = width_gizmo_id + 1
 	height_gizmo_id = width_gizmo_id + 2
 	fill_gizmo_id1 = width_gizmo_id + 3
 	fill_gizmo_id2 = width_gizmo_id + 4
-	undo_redo = gizmo_plugin.undo_redo
-	plugin = gizmo_plugin
-	current_snap_callable = node_snap_listener(ramp, gizmo_plugin)
-	current_fine_snap_callable = node_fine_snap_listener(ramp, gizmo_plugin)
-	gizmo_plugin.fine_snapping_changed.connect(current_fine_snap_callable)
-	gizmo_plugin.snapping_changed.connect(current_snap_callable)
-	snapping_enabled = gizmo_plugin.snapping
-	fine_snapping_enabled = gizmo_plugin.fine_snapping
 
 # Debug purposes
 var screen_pos: Vector2
@@ -172,53 +129,34 @@ func begin_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3
 	end_offset = start_offset
 	is_editing = true
 
-func set_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+func set_arrow_drag(plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
 	self.screen_pos = screen_pos
 	self.camera_position = camera.position
 
-	_set_dragged_handle_from_screen(handle_id, camera, screen_pos)
+	_set_dragged_handle_from_screen(plugin, handle_id, camera, screen_pos)
 	ramp.update_gizmos()
 
-func commit_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool) -> void:
+func commit_arrow_drag(plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool) -> void:
 	if not is_editing:
 		return
-	_commit_current_edit(handle_id, cancel)
+	_commit_current_edit(plugin, handle_id, cancel)
 
-func _set_dragged_handle_from_screen(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
+func _set_dragged_handle_from_screen(plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
 	var pointer_offset := _get_screen_handle_offset(handle_id, camera, screen_pos)
 	end_offset = start_offset + pointer_offset - drag_start_pointer_offset
+	if plugin.fine_snapping:
+		end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+	elif plugin.snapping:
+		end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
 	match handle_id:
 		depth_gizmo_id:
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.depth = _get_ramp_depth(end_offset)
 		width_gizmo_id:
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.width = _get_ramp_width(end_offset)
 		height_gizmo_id:
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.height = _get_ramp_height(end_offset)
-		fill_gizmo_id1:
+		fill_gizmo_id1, fill_gizmo_id2:
 			end_offset = clamp(end_offset, 0.0, 1.0)
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
-			ramp.fill = end_offset
-		fill_gizmo_id2:
-			end_offset = clamp(end_offset, 0.0, 1.0)
-			if snapping_enabled and not fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
-			elif fine_snapping_enabled:
-				end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
 			ramp.fill = end_offset
 
 func _get_screen_handle_offset(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> float:
@@ -477,13 +415,14 @@ func _restore_handle_offset(handle_id: int, restore_offset: float) -> void:
 func is_handle_highlighted(_gizmo: EditorNode3DGizmo, _plugin: ProtoGizmoPlugin, handle_id: int, _secondary: bool) -> bool:
 	return is_editing and debug_gizmo_handler_id == handle_id
 
-func _commit_current_edit(handle_id: int, cancel: bool) -> void:
+func _commit_current_edit(plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool) -> void:
 	if cancel:
 		_restore_handle_offset(handle_id, start_offset)
 		ramp.update_gizmos()
 		is_editing = false
 		return
 
+	var undo_redo := plugin.undo_redo
 	match handle_id:
 		depth_gizmo_id:
 			undo_redo.create_action("Edit ramp depth", 0, ramp, true)
@@ -510,7 +449,7 @@ func _commit_current_edit(handle_id: int, cancel: bool) -> void:
 
 func commit_handle(
 	gizmo: EditorNode3DGizmo,
-	_plugin: ProtoGizmoPlugin,
+	plugin: ProtoGizmoPlugin,
 	handle_id: int,
 	secondary: bool,
 	restore: Variant,
@@ -518,4 +457,4 @@ func commit_handle(
 	if gizmo.get_node_3d() != ramp:
 		return
 
-	_commit_current_edit(handle_id, cancel)
+	_commit_current_edit(plugin, handle_id, cancel)

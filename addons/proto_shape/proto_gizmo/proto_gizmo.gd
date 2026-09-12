@@ -26,12 +26,29 @@ func set_snapping(snapping: bool) -> void:
 		return
 	_snapping = snapping
 	snapping_changed.emit(snapping)
+	_redraw_selected_nodes()
 
 func set_fine_snapping(fine_snapping: bool) -> void:
 	if _fine_snapping == fine_snapping:
 		return
 	_fine_snapping = fine_snapping
 	fine_snapping_changed.emit(fine_snapping)
+	_redraw_selected_nodes()
+
+func _redraw_selected_nodes() -> void:
+	for node in _get_selected_gizmo_nodes():
+		node.update_gizmos()
+
+func shutdown() -> void:
+	if is_instance_valid(drag_node):
+		_commit_arrow_drag(true)
+	drag_node = null
+	drag_arrow_id = -1
+	var previous_hover := hovered_node
+	hovered_node = null
+	hovered_arrow_id = -1
+	if is_instance_valid(previous_hover):
+		previous_hover.update_gizmos()
 
 func get_snapping() -> bool:
 	return _snapping
@@ -104,6 +121,12 @@ func _commit_handle(
 		return
 
 func handle_3d_gui_input(camera: Camera3D, event: InputEvent) -> bool:
+	if not is_instance_valid(drag_node):
+		drag_node = null
+		drag_arrow_id = -1
+	if not is_instance_valid(hovered_node):
+		hovered_node = null
+		hovered_arrow_id = -1
 	if drag_node != null:
 		return _handle_active_arrow_drag(camera, event)
 
@@ -308,7 +331,7 @@ func should_draw_mesh_guides(gizmo: EditorNode3DGizmo) -> bool:
 	return selection.get_selected_nodes().has(node)
 
 func _get_gizmo_provider(node: Node3D) -> Variant:
-	if node == null or not node.has_method("get_proto_gizmo_provider"):
+	if not is_instance_valid(node) or not node.has_method("get_proto_gizmo_provider"):
 		return null
 
 	var provider: Variant = node.get_proto_gizmo_provider()
@@ -322,7 +345,7 @@ func _is_gizmo_provider(provider: Variant) -> bool:
 	return provider.has_method("redraw_gizmos") and provider.has_method("set_handle")
 
 func _get_gizmo_wrapper(node: Node3D) -> ProtoGizmoWrapper:
-	if node == null:
+	if not is_instance_valid(node):
 		return null
 	if node.get_parent() is ProtoGizmoWrapper:
 		return node.get_parent()

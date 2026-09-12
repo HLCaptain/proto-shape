@@ -26,7 +26,7 @@ validation environment: Godot 4.7.2.
 - [x] 1. Commit existing fill correction with both-handle regression checks.
 - [x] 2. Commit existing ramp example migration and stable UIDs.
 - [x] 3. Isolate editor snapping from host InputMap.
-- [ ] 4. Release ramp provider references and use current callback plugin.
+- [x] 4. Release ramp provider references and use current callback plugin.
 - [ ] 5. Use small per-gizmo handle IDs.
 - [ ] 6. Exact transforms, nullable projection, accepted/rejected drag begin.
 - [ ] 7. Native ProtoWall curve lifecycle and non-destructive short paths.
@@ -71,3 +71,5 @@ lands. An unchecked manual or external gate is not a passing result.
 - Step 3: real editor scene test passed (`tests/test_proto_plugin.tscn` with
   `--editor --quit-after 240 -- --proto-shape-tests`). Custom `--editor --script`
   SceneTree execution was replaced because it bypassed normal editor cleanup.
+- Step 4: ramp editor tests passed with repeated provider removal returning
+  plugin references to baseline; fill/cancel and active-drag shutdown checked.
