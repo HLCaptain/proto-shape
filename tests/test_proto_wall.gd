@@ -9,6 +9,7 @@ func _init() -> void:
 
 func _run() -> void:
 	await _test_curve_lifecycle()
+	await _test_thickness_cache_invalidation()
 
 	if failures == 0:
 		print("ProtoWall tests passed")
@@ -46,6 +47,42 @@ func _test_curve_lifecycle() -> void:
 
 	wall.queue_free()
 	await process_frame
+
+func _test_thickness_cache_invalidation() -> void:
+	var edited_wall: Variant = _make_corner_wall(0.05)
+	edited_wall.thickness = 0.8
+	var edited_points: PackedVector3Array = edited_wall.sampled_path_points.duplicate()
+
+	var fresh_wall: Variant = _make_corner_wall(0.8)
+	_check(_points_equal(edited_points, fresh_wall.sampled_path_points), "Changing thickness rebuilds the same sampled path as a fresh wall")
+
+	edited_wall.queue_free()
+	fresh_wall.queue_free()
+	await process_frame
+
+func _make_corner_wall(wall_thickness: float) -> Variant:
+	var curve := Curve3D.new()
+	curve.add_point(Vector3.ZERO)
+	curve.add_point(Vector3(0.0, 0.0, 1.0))
+	curve.add_point(Vector3(1.0, 0.0, 1.0))
+
+	var wall := ProtoWall.new()
+	wall.curve = curve
+	wall.path_interpolation = ProtoWall.PathInterpolation.CORNER_ROUNDED
+	wall.corner_rounding = 0.5
+	wall.path_sample_spacing = 0.1
+	wall.sample_simplify_angle = 0.0
+	wall.thickness = wall_thickness
+	root.add_child(wall)
+	return wall
+
+func _points_equal(left: PackedVector3Array, right: PackedVector3Array) -> bool:
+	if left.size() != right.size():
+		return false
+	for index in range(left.size()):
+		if not left[index].is_equal_approx(right[index]):
+			return false
+	return true
 
 func _check(condition: bool, message: String) -> void:
 	if condition:

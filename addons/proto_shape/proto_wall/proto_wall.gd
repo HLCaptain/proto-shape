@@ -544,6 +544,7 @@ func set_height(value: float) -> void:
 
 func set_thickness(value: float) -> void:
 	_thickness = clamp(value, MIN_DIMENSION, MAX_THICKNESS)
+	_mark_sampled_path_dirty()
 	refresh_shape()
 	thickness_changed.emit()
 	update_gizmos()
