@@ -22,6 +22,7 @@ func _run() -> void:
 	await process_frame
 	_expect(is_equal_approx(InputMap.action_get_deadzone(ProtoExampleControls.INTERACT), 0.23), "Existing demo actions must not be overwritten")
 	_expect(InputMap.action_get_events(ProtoExampleControls.INTERACT).size() == 1, "Existing demo action events must be preserved")
+	_test_player_visual_matches_collider(gameplay)
 
 	gameplay._on_pickup_area_body_entered(gameplay.player)
 	gameplay.interact()
@@ -67,6 +68,24 @@ func _run() -> void:
 	if failures == 0:
 		print("PASS: delivery state and editing")
 	quit(1 if failures else 0)
+
+func _test_player_visual_matches_collider(gameplay: Node3D) -> void:
+	var visual := gameplay.get_node("Player/Body") as MeshInstance3D
+	var collision := gameplay.get_node("Player/CollisionShape3D") as CollisionShape3D
+	var visual_shape := visual.mesh as CapsuleMesh
+	var collision_shape := collision.shape as CapsuleShape3D
+	_expect(visual_shape != null, "Player visual must use a CapsuleMesh")
+	_expect(collision_shape != null, "Player collision must use a CapsuleShape3D")
+	if visual_shape == null or collision_shape == null:
+		return
+	_expect(is_equal_approx(visual_shape.radius, collision_shape.radius), "Player visual radius must match its collider")
+	_expect(is_equal_approx(visual_shape.height, collision_shape.height), "Player visual height must match its collider")
+	var vertices: PackedVector3Array = visual_shape.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var visual_bottom := INF
+	for vertex: Vector3 in vertices:
+		visual_bottom = minf(visual_bottom, (visual.transform * vertex).y)
+	var collider_bottom := (collision.transform * Vector3(0.0, -collision_shape.height * 0.5, 0.0)).y
+	_expect(is_equal_approx(visual_bottom, collider_bottom), "Player visual and collider feet must align")
 
 func _seed_existing_interact_action() -> void:
 	if not InputMap.has_action(ProtoExampleControls.INTERACT):

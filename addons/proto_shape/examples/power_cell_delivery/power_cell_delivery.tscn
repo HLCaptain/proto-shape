@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3]
+[gd_scene load_steps=29 format=3]
 
 [ext_resource type="Script" path="res://addons/proto_shape/examples/power_cell_delivery/power_cell_delivery.gd" id="1_demo"]
 [ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/example/proto_ramp_example_character.gd" id="2_character"]
@@ -125,6 +125,13 @@ point_count = 2
 [sub_resource type="CapsuleShape3D" id="PlayerShape"]
 radius = 0.25
 height = 1.0
+
+[sub_resource type="CapsuleMesh" id="PlayerMesh"]
+material = SubResource("Material_wall")
+radius = 0.25
+height = 1.0
+radial_segments = 24
+rings = 12
 
 [sub_resource type="CylinderMesh" id="CellMesh"]
 material = SubResource("Material_cell")
@@ -410,20 +417,8 @@ fov = 70.0
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
 shape = SubResource("PlayerShape")
 
-[node name="Body" type="CSGCombiner3D" parent="Player"]
-
-[node name="Torso" type="CSGCylinder3D" parent="Player/Body"]
-radius = 0.25
-height = 0.5
-sides = 24
-material = SubResource("Material_wall")
-
-[node name="Head" type="CSGSphere3D" parent="Player/Body"]
-position = Vector3(0, 0.28, 0)
-radius = 0.24
-radial_segments = 24
-rings = 12
-material = SubResource("Material_wall")
+[node name="Body" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("PlayerMesh")
 
 [node name="CarrySocket" type="Node3D" parent="Player"]
 unique_name_in_owner = true
