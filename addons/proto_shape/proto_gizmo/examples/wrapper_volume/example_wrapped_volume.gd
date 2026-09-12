@@ -87,6 +87,7 @@ func _enter_tree() -> void:
 			parent.commit_handle.connect(commit_handle)
 
 func _exit_tree() -> void:
+	editing_handle = 0
 	if Engine.is_editor_hint() and get_parent() is ProtoGizmoWrapper:
 		var parent: ProtoGizmoWrapper = get_parent()
 		if parent.redraw_gizmos_for_child_signal.is_connected(redraw_gizmos):
@@ -150,7 +151,7 @@ func set_arrow_drag(plugin, handle_id: int, camera: Camera3D, screen_pos: Vector
 		return
 	value = _apply_snapping(value, plugin)
 	_set_handle_value(handle_id, value)
-	end_value = value
+	end_value = _get_handle_value(handle_id)
 	update_gizmos()
 
 func commit_arrow_drag(plugin, _handle_id: int, cancel: bool) -> void:
@@ -165,19 +166,22 @@ func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Vari
 	_commit_current_edit(plugin, cancel)
 
 func _commit_current_edit(plugin, cancel: bool) -> void:
+	var handle_id := editing_handle
+	editing_handle = 0
 	if cancel:
-		_set_handle_value(editing_handle, start_value)
+		_set_handle_value(handle_id, start_value)
 		update_gizmos()
-		editing_handle = 0
+		return
+	if is_equal_approx(end_value, start_value):
+		update_gizmos()
 		return
 
-	var property_name := _get_property_name(editing_handle)
+	var property_name := _get_property_name(handle_id)
 	var undo_redo = plugin.undo_redo
 	undo_redo.create_action("Edit wrapped volume %s" % property_name, 0, self, true)
 	undo_redo.add_do_property(self, property_name, end_value)
 	undo_redo.add_undo_property(self, property_name, start_value)
 	undo_redo.commit_action()
-	editing_handle = 0
 
 func _get_handle_position(handle_id: int) -> Vector3:
 	match handle_id:
