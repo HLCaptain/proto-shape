@@ -25,12 +25,15 @@
 - [ ] Verify `follow_use_bake_interval` follows native spacing direction within ProtoWall's 0.01-2.0 bounds.
 - [ ] Verify authored rail thickness and lower height survive shrink/grow, undo/redo, and save/reload.
 - [ ] Verify high rail counts and tiny heights fit and merge touching vertical intervals into clean sweep profiles.
+- [ ] Verify tiny Ramp step values survive count/mode/type changes, cancel, undo/redo, duplication, and save/reload while generated dimensions remain valid.
 - [ ] Verify invalid gizmo projections do not mutate shapes and all first-party providers use the nullable projection and boolean begin-drag contracts.
 
 ## Manual editor validation
 
 - [ ] Enable ProtoShape and add `ProtoRamp` and `ProtoWall` from Add Child Node.
 - [ ] Test every visible handle, arrow hover/drag, snapping, cancel, undo, and redo.
+- [ ] Check all Ramp anchors and perspective/orthographic views under rotated and non-uniformly scaled parents; normal drag direction and sensitivity must still feel familiar.
+- [ ] Confirm no first-click jumps, stationary-pointer drift, stale geometry, duplicated generated nodes, flicker, or sticky drag grids after commit/cancel. Repeat an edit after switching selected shapes.
 - [ ] Confirm the lower-rail handle is hidden for one rail and starts at the effective rendered height for multiple rails.
 - [ ] Test ProtoWall interpolation, orientation, posts, material, collision, and curve save/reload behavior.
 - [ ] Run Power Cell Delivery from spawn through pickup and terminal delivery without jumping.

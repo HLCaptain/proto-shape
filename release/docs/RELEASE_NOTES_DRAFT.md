@@ -35,6 +35,7 @@ ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blo
 
 - Validates dimensions and step count without inflating small per-step values during scene loading.
 - Preserves the total silhouette through repeated calculation/type conversions, without accumulated epsilon drift.
+- Retains authored tiny step dimensions when changing step count; generated dimensions apply the minimum without making undo destructive.
 - Stores hidden staircase calculation and step-count settings while displaying a ramp.
 - Corrects both fill arrows and their relative drag projection.
 
