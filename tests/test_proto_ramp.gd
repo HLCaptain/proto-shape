@@ -17,7 +17,7 @@ func _run() -> void:
 	_test_conversion_round_trips()
 	_test_property_undo_redo()
 	_test_anchors()
-	_test_reentry_and_duplication()
+	await _test_reentry_and_duplication()
 	_test_step_dimensions_reload()
 	_test_hidden_staircase_state_reload()
 	world.queue_free()
@@ -185,11 +185,20 @@ func _test_anchors() -> void:
 		_expect_vector(ramp.get_anchor_offset(anchor_value), offset_before, "Mode conversion must preserve anchor %s" % anchor_value)
 	_expect_float(ramp.get_true_height(), 3.0, "Anchor checks must preserve height")
 	_expect_float(ramp.get_true_depth(), 4.0, "Anchor checks must preserve depth")
+	ramp.anchor = ProtoRamp.Anchor.BOTTOM_CENTER
+	ramp.anchor_fixed = false
+	var expected_shape_transform: Transform3D = ramp.shape_polygon.global_transform
+	for anchor_value in range(ProtoRamp.Anchor.size()):
+		ramp.anchor = anchor_value
+		_expect_transform(ramp.shape_polygon.global_transform, expected_shape_transform, "Unfixed anchor %s must preserve world geometry" % anchor_value)
 	ramp.queue_free()
 
 func _test_reentry_and_duplication() -> void:
 	var ramp = _add_ramp()
 	world.remove_child(ramp)
+	await process_frame
+	await process_frame
+	_expect(ramp.shape_polygon == null, "Queued generated polygon must clear before delayed re-entry")
 	world.add_child(ramp)
 	_expect(_count_csg_polygons(ramp) == 1, "Re-entering the tree must create one generated polygon")
 	var duplicate = ramp.duplicate()
@@ -211,6 +220,10 @@ func _test_step_dimensions_reload() -> void:
 	ramp.height = ProtoRamp.MIN_DIMENSION
 	ramp.depth = ProtoRamp.MIN_DIMENSION
 	ramp.calculation = ProtoRamp.Calculation.STEP_DIMENSIONS
+	ramp.collisions_enabled = false
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.2, 0.4, 0.6, 1.0)
+	ramp.material = material
 	var path := "/tmp/proto_shape_ramp_%s.tscn" % OS.get_process_id()
 	var packed := PackedScene.new()
 	_expect(packed.pack(scene_root) == OK, "Step-dimension scene must pack")
@@ -220,6 +233,10 @@ func _test_step_dimensions_reload() -> void:
 	var loaded_ramp = loaded_scene.get_node("Ramp")
 	_expect(loaded_ramp.calculation == ProtoRamp.Calculation.STEP_DIMENSIONS, "Calculation must survive reload")
 	_expect(loaded_ramp.steps == 8, "Steps must survive reload")
+	_expect(not loaded_ramp.collisions_enabled, "Collision state must survive reload")
+	_expect(not loaded_ramp.shape_polygon.use_collision, "Generated collision state must restore")
+	_expect(loaded_ramp.material is StandardMaterial3D, "Material type must survive reload")
+	_expect((loaded_ramp.material as StandardMaterial3D).albedo_color.is_equal_approx(material.albedo_color), "Material value must survive reload")
 	_expect_float(loaded_ramp.height, 0.000125, "Small positive step height must survive reload")
 	_expect_float(loaded_ramp.depth, 0.000125, "Small positive step depth must survive reload")
 	_expect_float(loaded_ramp.get_true_height(), ProtoRamp.MIN_DIMENSION, "Reload must preserve true height")
@@ -305,4 +322,7 @@ func _expect_float(actual: float, expected: float, message: String) -> void:
 	_expect(is_equal_approx(actual, expected), "%s: expected %s, got %s" % [message, expected, actual])
 
 func _expect_vector(actual: Vector3, expected: Vector3, message: String) -> void:
+	_expect(actual.is_equal_approx(expected), "%s: expected %s, got %s" % [message, expected, actual])
+
+func _expect_transform(actual: Transform3D, expected: Transform3D, message: String) -> void:
 	_expect(actual.is_equal_approx(expected), "%s: expected %s, got %s" % [message, expected, actual])
