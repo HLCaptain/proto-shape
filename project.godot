@@ -19,10 +19,6 @@ run/main_scene="res://addons/proto_shape/proto_ramp/example/proto_ramp_example.t
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://addons/proto_shape/icons/proto-shape-icon.png"
 
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/proto_shape/plugin.cfg")
-
 [input]
 
 ui_left={

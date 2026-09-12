@@ -12,7 +12,7 @@ ProtoShape 1.2.0 targets Godot 4.7.
 
 Install plugin from the AssetLib inside Godot or download the latest release from the [releases page](https://github.com/HLCaptain/proto-shape/releases/latest).
 
-Enable the plugin inside Godot. `Project` -> `Project Settings` -> `Plugins` -> Enable `ProtoShape`.
+Open the project once and wait for Godot's initial asset import to finish. Then enable the plugin from `Project` -> `Project Settings` -> `Plugins` -> `ProtoShape`.
 
 ## Usage
 
