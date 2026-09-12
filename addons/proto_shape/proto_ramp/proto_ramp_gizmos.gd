@@ -89,6 +89,8 @@ func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin) -> void:
 
 var start_offset := 0.0
 var end_offset := 0.0
+var start_value := 0.0
+var end_value := 0.0
 var drag_start_pointer_offset := 0.0
 
 func set_handle(
@@ -122,8 +124,10 @@ func begin_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3
 	self.camera_position = camera.global_position
 	debug_gizmo_handler_id = handle_id
 	start_offset = _get_current_handle_offset(handle_id)
+	start_value = _get_handle_value(handle_id)
 	drag_start_pointer_offset = pointer_offset
 	end_offset = start_offset
+	end_value = start_value
 	is_editing = true
 	return true
 
@@ -144,10 +148,17 @@ func _set_dragged_handle_from_screen(plugin: ProtoGizmoPlugin, handle_id: int, c
 	if pointer_offset == null:
 		return false
 	end_offset = start_offset + pointer_offset - drag_start_pointer_offset
-	if plugin.fine_snapping:
-		end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
-	elif plugin.snapping:
-		end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
+	if not is_equal_approx(end_offset, start_offset):
+		if plugin.fine_snapping:
+			end_offset = gizmo_utils.snap_to_grid(end_offset, fine_snap_unit)
+		elif plugin.snapping:
+			end_offset = gizmo_utils.snap_to_grid(end_offset, snap_unit)
+	if is_equal_approx(end_offset, start_offset):
+		if end_value != start_value:
+			_set_handle_value(handle_id, start_value)
+		end_offset = start_offset
+		end_value = start_value
+		return true
 	match handle_id:
 		depth_gizmo_id:
 			ramp.depth = _get_ramp_depth(end_offset)
@@ -160,7 +171,12 @@ func _set_dragged_handle_from_screen(plugin: ProtoGizmoPlugin, handle_id: int, c
 			ramp.fill = end_offset
 		_:
 			return false
+	end_value = _get_handle_value(handle_id)
 	end_offset = _get_current_handle_offset(handle_id)
+	if is_equal_approx(end_offset, start_offset):
+		_set_handle_value(handle_id, start_value)
+		end_offset = start_offset
+		end_value = start_value
 	return true
 
 func _get_screen_handle_offset(handle_id: int, camera: Camera3D, screen_pos: Vector2) -> Variant:
@@ -415,16 +431,28 @@ func _get_current_handle_offset(handle_id: int) -> float:
 			return ramp.fill
 	return 0.0
 
-func _restore_handle_offset(handle_id: int, restore_offset: float) -> void:
+func _get_handle_value(handle_id: int) -> float:
 	match handle_id:
 		depth_gizmo_id:
-			ramp.depth = _get_ramp_depth(restore_offset)
+			return ramp.depth
 		width_gizmo_id:
-			ramp.width = _get_ramp_width(restore_offset)
+			return ramp.width
 		height_gizmo_id:
-			ramp.height = _get_ramp_height(restore_offset)
+			return ramp.height
 		fill_gizmo_id1, fill_gizmo_id2:
-			ramp.fill = restore_offset
+			return ramp.fill
+	return 0.0
+
+func _set_handle_value(handle_id: int, value: float) -> void:
+	match handle_id:
+		depth_gizmo_id:
+			ramp.depth = value
+		width_gizmo_id:
+			ramp.width = value
+		height_gizmo_id:
+			ramp.height = value
+		fill_gizmo_id1, fill_gizmo_id2:
+			ramp.fill = value
 
 func is_handle_highlighted(_gizmo: EditorNode3DGizmo, _plugin: ProtoGizmoPlugin, handle_id: int, _secondary: bool) -> bool:
 	return is_editing and debug_gizmo_handler_id == handle_id
@@ -432,29 +460,19 @@ func is_handle_highlighted(_gizmo: EditorNode3DGizmo, _plugin: ProtoGizmoPlugin,
 func _commit_current_edit(plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool) -> void:
 	var property_name: StringName
 	var action_name: String
-	var do_value := 0.0
-	var undo_value := 0.0
 	match handle_id:
 		depth_gizmo_id:
 			property_name = &"depth"
 			action_name = "Edit ramp depth"
-			do_value = _get_ramp_depth(end_offset)
-			undo_value = _get_ramp_depth(start_offset)
 		width_gizmo_id:
 			property_name = &"width"
 			action_name = "Edit ramp width"
-			do_value = _get_ramp_width(end_offset)
-			undo_value = _get_ramp_width(start_offset)
 		height_gizmo_id:
 			property_name = &"height"
 			action_name = "Edit ramp height"
-			do_value = _get_ramp_height(end_offset)
-			undo_value = _get_ramp_height(start_offset)
 		fill_gizmo_id1, fill_gizmo_id2:
 			property_name = &"fill"
 			action_name = "Edit ramp fill"
-			do_value = end_offset
-			undo_value = start_offset
 		_:
 			_clear_edit_state()
 			if is_instance_valid(ramp):
@@ -463,18 +481,23 @@ func _commit_current_edit(plugin: ProtoGizmoPlugin, handle_id: int, cancel: bool
 
 	_clear_edit_state()
 	if cancel:
-		_restore_handle_offset(handle_id, start_offset)
+		_set_handle_value(handle_id, start_value)
 		ramp.update_gizmos()
 		return
 
-	if is_equal_approx(do_value, undo_value):
+	if is_equal_approx(end_offset, start_offset):
+		if _get_handle_value(handle_id) != start_value:
+			_set_handle_value(handle_id, start_value)
+		ramp.update_gizmos()
+		return
+	if end_value == start_value:
 		ramp.update_gizmos()
 		return
 
 	var undo_redo := plugin.undo_redo
 	undo_redo.create_action(action_name, 0, ramp, true)
-	undo_redo.add_do_property(ramp, property_name, do_value)
-	undo_redo.add_undo_property(ramp, property_name, undo_value)
+	undo_redo.add_do_property(ramp, property_name, end_value)
+	undo_redo.add_undo_property(ramp, property_name, start_value)
 	undo_redo.commit_action()
 
 func commit_handle(

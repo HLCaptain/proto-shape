@@ -41,6 +41,7 @@ func _run() -> void:
 	_check_valid_invalid_valid(plugin, gizmos, ramp, camera)
 	_check_noop_and_clamped_undo(plugin, gizmos, ramp, camera)
 	_check_cancel_restores_all_anchors(plugin, gizmos, ramp, camera)
+	_check_authored_effective_undo(plugin, gizmos, ramp, camera)
 
 	ramp.gizmos = gizmos
 	_check_failed_begin_has_no_undo(plugin, gizmos, ramp, camera)
@@ -211,6 +212,67 @@ func _check_cancel_restores_all_anchors(plugin, gizmos, ramp, camera: Camera3D) 
 			_expect(is_equal_approx(_get_handle_property(ramp, gizmos, handle_id), original_value), "Cancel restores handle %s at anchor %s" % [handle_id, anchor_value])
 			_expect_edit_state_cleared(gizmos, "Cancel handle %s anchor %s" % [handle_id, anchor_value])
 	_expect(history.get_version() == version_before, "Canceled anchor drags create no undo actions")
+
+func _check_authored_effective_undo(plugin, gizmos, ramp, camera: Camera3D) -> void:
+	var history_id: int = plugin.undo_redo.get_object_history_id(ramp)
+	var history: UndoRedo = plugin.undo_redo.get_history_undo_redo(history_id)
+	var authored_value := 0.000125
+	ramp.type = ProtoRamp.Type.STAIRCASE
+	ramp.steps = 4
+	ramp.calculation = ProtoRamp.Calculation.STEP_DIMENSIONS
+	plugin.snapping = true
+	plugin.fine_snapping = true
+	for handle_and_anchor in [
+		[gizmos.height_gizmo_id, ProtoRamp.Anchor.TOP_RIGHT],
+		[gizmos.depth_gizmo_id, ProtoRamp.Anchor.BASE_LEFT],
+	]:
+		var handle_id: int = handle_and_anchor[0]
+		ramp.anchor = handle_and_anchor[1]
+		ramp.height = authored_value
+		ramp.depth = authored_value
+		var handle: Vector3 = gizmos._get_handle_positions()[handle_id]
+		var drag_axis: Vector3 = gizmos._get_handle_drag_axis(handle_id).normalized()
+		camera.look_at(ramp.global_transform * handle)
+		var start_screen := camera.unproject_position(ramp.global_transform * handle)
+		var version_before: int = history.get_version()
+
+		_expect(gizmos.begin_arrow_drag(plugin, handle_id, camera, start_screen), "Tiny snapped no-op drag begins")
+		gizmos.set_arrow_drag(plugin, handle_id, camera, start_screen)
+		gizmos.commit_arrow_drag(plugin, handle_id, false)
+		_expect(_get_handle_property(ramp, gizmos, handle_id) == authored_value, "Tiny snapped no-op preserves authored value")
+		_expect(history.get_version() == version_before, "Tiny snapped no-op creates no action")
+
+		_expect(gizmos.begin_arrow_drag(plugin, handle_id, camera, start_screen), "Tiny return drag begins")
+		gizmos.set_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * (handle + drag_axis * 0.25)))
+		gizmos.set_arrow_drag(plugin, handle_id, camera, start_screen)
+		gizmos.commit_arrow_drag(plugin, handle_id, false)
+		_expect(_get_handle_property(ramp, gizmos, handle_id) == authored_value, "Returning to rendered start restores authored value")
+		_expect(history.get_version() == version_before, "Returned drag creates no action")
+
+		_expect(gizmos.begin_arrow_drag(plugin, handle_id, camera, start_screen), "Tiny cancel drag begins")
+		gizmos.set_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * (handle + drag_axis * 0.25)))
+		gizmos.commit_arrow_drag(plugin, handle_id, true)
+		_expect(_get_handle_property(ramp, gizmos, handle_id) == authored_value, "Tiny cancel restores exact authored value")
+		_expect(history.get_version() == version_before, "Tiny cancel creates no action")
+
+		_expect(gizmos.begin_arrow_drag(plugin, handle_id, camera, start_screen), "Tiny changed drag begins")
+		gizmos.set_arrow_drag(plugin, handle_id, camera, camera.unproject_position(ramp.global_transform * (handle + drag_axis * 0.25)))
+		var edited_value := _get_handle_property(ramp, gizmos, handle_id)
+		gizmos.commit_arrow_drag(plugin, handle_id, false)
+		_expect(history.get_version() == version_before + 1, "Tiny changed drag creates one action")
+		history.undo()
+		_expect(_get_handle_property(ramp, gizmos, handle_id) == authored_value, "Tiny undo restores exact authored value")
+		history.redo()
+		_expect(_get_handle_property(ramp, gizmos, handle_id) == edited_value, "Tiny redo restores exact applied value")
+	plugin.snapping = false
+	plugin.fine_snapping = false
+	ramp.calculation = ProtoRamp.Calculation.STAIRCASE_DIMENSIONS
+	ramp.type = ProtoRamp.Type.RAMP
+	ramp.anchor = ProtoRamp.Anchor.BOTTOM_CENTER
+	ramp.width = 3.0
+	ramp.height = 2.0
+	ramp.depth = 3.0
+	camera.look_at(ramp.global_transform * gizmos._get_handle_positions()[gizmos.fill_gizmo_id1])
 
 func _get_handle_property(ramp, gizmos, handle_id: int) -> float:
 	match handle_id:
