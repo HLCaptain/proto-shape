@@ -39,6 +39,8 @@ You can also undo/redo changes made with the gizmos.
 
 ProtoRamp supports navigation mesh generation. It also features a toggle to enable collisions (aqua blue if enabled).
 
+The example scene intentionally ships with an empty `NavigationMesh`, because baked data would become stale when the generated ramp changes. Open the scene and wait for the ramp's CSG geometry to finish updating, select `NavigationRegion3D`, then use **Bake NavMesh** in Godot's 3D editor. Re-bake after changing the ramp or surrounding level geometry. The playable example demonstrates collision-based movement and does not include a `NavigationAgent3D`.
+
 ![Navigation mesh on ProtoRamp](navigation_mesh_proto_ramp.png)
 
 #### ProtoRampGizmos
