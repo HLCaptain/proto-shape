@@ -45,6 +45,7 @@ ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blo
 - Added ProtoWall scenes covering solid walls, rail layouts, mixed blockouts, elevation, and interpolation modes.
 - Added the editable Power Cell Delivery map as a hands-on addon example, not a standalone game.
 - Demo controls use namespaced InputMap actions exposed in the example project's settings; installed examples register only missing defaults.
+- Cursor recapture is remappable through the same InputMap helper while retaining left-click as its default.
 - ProtoWall showcase initialization is stored, so saved property changes, additions, renames, and deletions survive reopening.
 - Updated shape, gizmo, wrapper, and development documentation.
 - Moved shared icons to `addons/proto_shape/icons/` and shape icons into shape-local `icons/` folders.

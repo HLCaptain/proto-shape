@@ -7,6 +7,12 @@ It requires successful exit status, clean error output, and a test completion
 marker. The original project's editor settings and input map are not changed.
 The temporary project and logs are retained for diagnosis.
 
+Cursor capture requires a real display. Run
+`godot --path . --script tests/test_proto_ramp_controls.gd` without `--headless`
+to check default and remapped capture behavior. The headless run explicitly
+skips only capture-state assertions; action mapping and preservation checks
+still run.
+
 Editor checks are ordinary `@tool` scenes and run only with the explicit
 `--proto-shape-tests` user argument. Opening those scenes normally does not
 start a test or close the editor. Avoid running editor objects from a custom

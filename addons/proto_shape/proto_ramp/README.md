@@ -19,7 +19,7 @@ Since `1.1.4`, ProtoRamp node is now independent from `CSGShape3D` base class fo
 
 Open [proto_ramp_example.tscn](example/proto_ramp_example.tscn) and run the current scene. Running the whole project opens the shared [Power Cell Delivery](../examples/power_cell_delivery/README.md) showcase. Move with <kbd>WASD</kbd> or the arrow keys, jump with <kbd>Space</kbd>, look around with the mouse, and press <kbd>Esc</kbd> to release the cursor. Click to capture it again.
 
-The repository exposes these namespaced demo actions in `Project Settings` -> `Input Map`. Addon-only installs create any missing actions at runtime without replacing project-specific mappings.
+The repository exposes these namespaced demo actions, including `proto_shape_demo_capture_cursor` for recapturing the mouse, in `Project Settings` -> `Input Map`. Addon-only installs create any missing actions at runtime without replacing project-specific mappings.
 
 ### Use Gizmos
 

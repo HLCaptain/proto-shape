@@ -12,6 +12,7 @@ const ACTIONS := [
 	ProtoExampleControls.INTERACT,
 	ProtoExampleControls.RESTART,
 	ProtoExampleControls.RELEASE_CURSOR,
+	ProtoExampleControls.CAPTURE_CURSOR,
 ]
 
 var failures := 0
@@ -49,6 +50,9 @@ func _test_project_actions() -> void:
 	_expect(_has_key(ProtoExampleControls.RESTART, KEY_R), "Restart must include R")
 	_expect(_has_key(ProtoExampleControls.RELEASE_CURSOR, KEY_ESCAPE), "Release cursor must include Escape")
 	_expect(_has_button(ProtoExampleControls.RELEASE_CURSOR, JOY_BUTTON_BACK), "Release cursor must include gamepad Back")
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	_expect(InputMap.action_has_event(ProtoExampleControls.CAPTURE_CURSOR, click), "Capture cursor must default to left-click")
 
 func _test_missing_only_fallback() -> void:
 	InputMap.erase_action(ProtoExampleControls.INTERACT)
@@ -57,6 +61,7 @@ func _test_missing_only_fallback() -> void:
 	custom_event.keycode = KEY_Q
 	InputMap.action_add_event(ProtoExampleControls.INTERACT, custom_event)
 	InputMap.erase_action(ProtoExampleControls.RESTART)
+	InputMap.erase_action(ProtoExampleControls.CAPTURE_CURSOR)
 
 	ProtoExampleControls.ensure_actions()
 	var custom_events := InputMap.action_get_events(ProtoExampleControls.INTERACT)
@@ -96,6 +101,33 @@ func _test_character_input_routing() -> void:
 	release_event.pressed = true
 	player._unhandled_input(release_event)
 	_expect(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "Namespaced Release Cursor must restore the cursor")
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	var can_capture_mouse := DisplayServer.get_name() != "headless"
+	_expect(click.is_action_pressed(ProtoExampleControls.CAPTURE_CURSOR), "Default left-click matches the capture action")
+	player._unhandled_input(click)
+	if can_capture_mouse:
+		_expect(Input.mouse_mode == Input.MOUSE_MODE_CAPTURED, "Missing capture action receives working left-click default")
+	player._unhandled_input(release_event)
+
+	InputMap.action_erase_events(ProtoExampleControls.CAPTURE_CURSOR)
+	InputMap.action_set_deadzone(ProtoExampleControls.CAPTURE_CURSOR, 0.73)
+	var custom_capture := InputEventKey.new()
+	custom_capture.keycode = KEY_C
+	InputMap.action_add_event(ProtoExampleControls.CAPTURE_CURSOR, custom_capture)
+	ProtoExampleControls.ensure_actions()
+	_expect(InputMap.action_get_events(ProtoExampleControls.CAPTURE_CURSOR) == [custom_capture], "Custom capture binding survives fallback setup")
+	_expect_float(InputMap.action_get_deadzone(ProtoExampleControls.CAPTURE_CURSOR), 0.73, "Custom capture deadzone survives fallback setup")
+	player._unhandled_input(click)
+	_expect(Input.mouse_mode == Input.MOUSE_MODE_VISIBLE, "Removed left-click binding must not capture the cursor")
+	custom_capture.pressed = true
+	_expect(custom_capture.is_action_pressed(ProtoExampleControls.CAPTURE_CURSOR), "Custom key matches the capture action")
+	player._unhandled_input(custom_capture)
+	if can_capture_mouse:
+		_expect(Input.mouse_mode == Input.MOUSE_MODE_CAPTURED, "Remapped capture action must capture the cursor")
+	else:
+		print("SKIP: headless display cannot capture the cursor; run this test without --headless for capture-state checks")
 	player.queue_free()
 
 func _has_key(action: StringName, key: Key, physical := false) -> bool:

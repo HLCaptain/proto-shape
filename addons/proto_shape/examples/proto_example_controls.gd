@@ -8,6 +8,7 @@ const JUMP := &"proto_shape_demo_jump"
 const INTERACT := &"proto_shape_demo_interact"
 const RESTART := &"proto_shape_demo_restart"
 const RELEASE_CURSOR := &"proto_shape_demo_release_cursor"
+const CAPTURE_CURSOR := &"proto_shape_demo_capture_cursor"
 const JOYPAD_BUTTON_LABELS := ["A", "B", "X", "Y", "Back", "Guide", "Start"]
 
 static func ensure_actions() -> void:
@@ -19,6 +20,7 @@ static func ensure_actions() -> void:
 	_ensure_action(INTERACT, [_key(KEY_E), _button(JOY_BUTTON_X)])
 	_ensure_action(RESTART, [_key(KEY_R), _button(JOY_BUTTON_START)])
 	_ensure_action(RELEASE_CURSOR, [_key(KEY_ESCAPE), _button(JOY_BUTTON_BACK)])
+	_ensure_action(CAPTURE_CURSOR, [_mouse_button(MOUSE_BUTTON_LEFT)])
 
 static func get_action_label(action: StringName) -> String:
 	var labels := PackedStringArray()
@@ -55,6 +57,11 @@ static func _key(code: int, physical := false) -> InputEventKey:
 
 static func _button(index: int) -> InputEventJoypadButton:
 	var event := InputEventJoypadButton.new()
+	event.button_index = index
+	return event
+
+static func _mouse_button(index: int) -> InputEventMouseButton:
+	var event := InputEventMouseButton.new()
 	event.button_index = index
 	return event
 

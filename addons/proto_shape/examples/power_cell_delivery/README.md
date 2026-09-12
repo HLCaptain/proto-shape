@@ -9,6 +9,7 @@ A compact playable ProtoShape showcase. Take either the broad cargo ramp or the 
 - Interact: <kbd>E</kbd> or controller X.
 - Restart or recover from a fall: <kbd>R</kbd> or controller Start.
 - Release the mouse: <kbd>Esc</kbd> or controller Back.
+- Capture the mouse again: left-click (`proto_shape_demo_capture_cursor`, remappable).
 
 ## Editing
 

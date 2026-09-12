@@ -26,7 +26,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		return
 
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+	if event.is_action_pressed(ProtoExampleControls.CAPTURE_CURSOR):
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:

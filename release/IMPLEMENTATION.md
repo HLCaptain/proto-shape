@@ -126,3 +126,9 @@ lands. An unchecked manual or external gate is not a passing result.
   rejected draft PR creation under the user's GitHub publishing boundary.
   No PR was created; the prepared body is retained locally. Explicit approval
   is required before retrying. No merge, tag, or GitHub release was created.
+- Step 14 completion audit found that mouse recapture still used a hard-coded
+  left-click. It now uses `proto_shape_demo_capture_cursor` with the same default.
+  A real-window regression passed default capture, remapping to a custom key,
+  removal of the old binding, and preservation of host events/deadzone. Headless
+  capture-state assertions are explicitly skipped; the windowed check is part
+  of the release checklist. The refreshed candidate record includes its log.

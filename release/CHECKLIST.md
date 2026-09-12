@@ -13,6 +13,7 @@
 - [ ] Run a cache-free `godot --headless --path . --import` with the plugin initially disabled.
 - [ ] Enable the plugin in the imported disposable project and run bounded `--editor --quit-after 120` startup.
 - [ ] Run `bash tests/run.sh` from the repository root.
+- [ ] Run `godot --path . --script tests/test_proto_ramp_controls.gd` with a real display to verify default and remapped cursor capture; headless mode cannot check capture state.
 - [ ] Confirm the runner copies the project to a temporary directory before executing tests.
 - [ ] Confirm runtime `SceneTree` scripts run directly and editor-only `@tool` `.tscn` tests run in editor mode with `--proto-shape-tests`.
 - [ ] Confirm every test emits a `PASS:` completion marker and failures return a non-zero exit code.
