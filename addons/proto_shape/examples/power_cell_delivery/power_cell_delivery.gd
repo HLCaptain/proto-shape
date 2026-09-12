@@ -111,12 +111,16 @@ func _update_hud() -> void:
 		DeliveryState.DELIVERED:
 			objective = "Relay restored!"
 			prompt = "%s: Play again" % ProtoExampleControls.get_action_label(ProtoExampleControls.RESTART)
-	var controls := "Move: WASD / Arrows / Stick  •  Jump: %s  •  Restart: %s  •  Release mouse: %s" % [
+	var controls := "Move: %s, %s, %s, %s  •  Jump: %s  •  Restart: %s  •  Release mouse: %s" % [
+		ProtoExampleControls.get_action_label(ProtoExampleControls.MOVE_FORWARD),
+		ProtoExampleControls.get_action_label(ProtoExampleControls.MOVE_LEFT),
+		ProtoExampleControls.get_action_label(ProtoExampleControls.MOVE_BACK),
+		ProtoExampleControls.get_action_label(ProtoExampleControls.MOVE_RIGHT),
 		ProtoExampleControls.get_action_label(ProtoExampleControls.JUMP),
 		ProtoExampleControls.get_action_label(ProtoExampleControls.RESTART),
 		ProtoExampleControls.get_action_label(ProtoExampleControls.RELEASE_CURSOR),
 	]
-	var lines := PackedStringArray(["POWER CELL RELAY", objective])
+	var lines := PackedStringArray(["PROTOSHAPE / POWER CELL DELIVERY", objective])
 	if not prompt.is_empty():
 		lines.append(prompt)
 	lines.append(controls)
