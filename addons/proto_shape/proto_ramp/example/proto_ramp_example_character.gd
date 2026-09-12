@@ -1,5 +1,6 @@
 extends CharacterBody3D
 
+const ProtoExampleControls = preload("res://addons/proto_shape/examples/proto_example_controls.gd")
 const SPEED := 5.0
 const JUMP_VELOCITY := 4.5
 const MIN_PITCH := -60.0
@@ -13,6 +14,7 @@ const MAX_PITCH := 45.0
 var gravity := float(ProjectSettings.get_setting("physics/3d/default_gravity"))
 
 func _ready() -> void:
+	ProtoExampleControls.ensure_actions()
 	camera_arm.add_excluded_object(get_rid())
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -20,7 +22,7 @@ func _exit_tree() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed(ProtoExampleControls.RELEASE_CURSOR):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		return
 
@@ -39,11 +41,16 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 
-	if Input.is_action_just_pressed("ui_accept") and is_on_floor():
+	if Input.is_action_just_pressed(ProtoExampleControls.JUMP) and is_on_floor():
 		velocity.y = JUMP_VELOCITY
 
-	var input_direction := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
-	var direction := (transform.basis * Vector3(input_direction.x, 0.0, input_direction.y)).normalized()
+	var input_direction := Input.get_vector(
+		ProtoExampleControls.MOVE_LEFT,
+		ProtoExampleControls.MOVE_RIGHT,
+		ProtoExampleControls.MOVE_FORWARD,
+		ProtoExampleControls.MOVE_BACK
+	).limit_length(1.0)
+	var direction := transform.basis * Vector3(input_direction.x, 0.0, input_direction.y)
 	velocity.x = direction.x * SPEED
 	velocity.z = direction.z * SPEED
 

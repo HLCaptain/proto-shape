@@ -19,6 +19,8 @@ Since `1.1.4`, ProtoRamp node is now independent from `CSGShape3D` base class fo
 
 Open [proto_ramp_example.tscn](example/proto_ramp_example.tscn), or run this repository directly. Move with <kbd>WASD</kbd> or the arrow keys, jump with <kbd>Space</kbd>, look around with the mouse, and press <kbd>Esc</kbd> to release the cursor. Click to capture it again.
 
+The repository exposes these namespaced demo actions in `Project Settings` -> `Input Map`. Addon-only installs create any missing actions at runtime without replacing project-specific mappings.
+
 ### Use Gizmos
 
 ProtoRamp supports custom gizmos to adjust the shape. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. Hovering an arrow highlights it, and dragging the arrow body edits the same property as the small handle icon.
