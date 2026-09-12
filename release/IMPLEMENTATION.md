@@ -27,7 +27,7 @@ validation environment: Godot 4.7.2.
 - [x] 2. Commit existing ramp example migration and stable UIDs.
 - [x] 3. Isolate editor snapping from host InputMap.
 - [x] 4. Release ramp provider references and use current callback plugin.
-- [ ] 5. Use small per-gizmo handle IDs.
+- [x] 5. Use small per-gizmo handle IDs.
 - [ ] 6. Exact transforms, nullable projection, accepted/rejected drag begin.
 - [ ] 7. Native ProtoWall curve lifecycle and non-destructive short paths.
 - [ ] 7b. Invalidate thickness-dependent sampling.
@@ -73,3 +73,5 @@ lands. An unchecked manual or external gate is not a passing result.
   SceneTree execution was replaced because it bypassed normal editor cleanup.
 - Step 4: ramp editor tests passed with repeated provider removal returning
   plugin references to baseline; fill/cancel and active-drag shutdown checked.
+- Step 5: IDs round-trip through PackedInt32Array as 1..5, and matching IDs on
+  two ramps dispatch to their owning node. Editor regression scene passes.

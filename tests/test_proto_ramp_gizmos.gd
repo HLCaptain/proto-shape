@@ -27,11 +27,7 @@ func _run() -> void:
 
 	var gizmos = ProtoRampGizmos.new()
 	gizmos.attach_ramp(ramp)
-	gizmos.width_gizmo_id = 1
-	gizmos.depth_gizmo_id = 2
-	gizmos.height_gizmo_id = 3
-	gizmos.fill_gizmo_id1 = 4
-	gizmos.fill_gizmo_id2 = 5
+	_expect(PackedInt32Array(gizmos._get_handle_ids()) == PackedInt32Array([1, 2, 3, 4, 5]), "Handle IDs remain small and stable")
 
 	var camera := Camera3D.new()
 	world.add_child(camera)
@@ -48,11 +44,20 @@ func _run() -> void:
 	plugin.shutdown()
 	_expect(is_equal_approx(ramp.fill, original_fill), "Plugin shutdown cancels the active drag")
 	_expect(plugin.drag_node == null, "Plugin shutdown clears drag ownership")
+	var second = ProtoRamp.new()
+	world.add_child(second)
+	second.position = Vector3(4.0, 0.0, 0.0)
+	second.fill = 0.5
+	var second_handle: Vector3 = second.gizmos._get_handle_positions()[second.gizmos.fill_gizmo_id1]
+	plugin._begin_arrow_drag(second, gizmos.fill_gizmo_id1, camera, camera.unproject_position(second.global_transform * second_handle))
+	plugin._set_arrow_drag(camera, camera.unproject_position(second.global_transform * (second_handle + second.gizmos._get_fill_drag_axis() * 0.05)))
+	_expect(not is_equal_approx(second.fill, 0.5) and is_equal_approx(ramp.fill, original_fill), "Matching IDs on separate ramps do not cross-dispatch")
+	plugin.shutdown()
 	gizmos.remove_ramp()
 	for index in range(3):
 		var provider := ProtoRampGizmos.new()
 		provider.attach_ramp(ramp)
-		provider.init_gizmo(plugin)
+		provider.get_arrow_drag_segments(plugin)
 		provider.remove_ramp()
 		_expect(plugin.get_reference_count() == baseline_refs, "Removed provider must not retain its plugin")
 	world.queue_free()

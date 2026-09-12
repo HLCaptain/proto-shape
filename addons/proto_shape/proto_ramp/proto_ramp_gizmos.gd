@@ -2,11 +2,11 @@
 const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
 const ProtoRamp = preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd")
 const ProtoGizmoPlugin = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo.gd")
-var width_gizmo_id: int
-var depth_gizmo_id: int
-var height_gizmo_id: int
-var fill_gizmo_id1: int
-var fill_gizmo_id2: int
+const depth_gizmo_id := 1
+const width_gizmo_id := 2
+const height_gizmo_id := 3
+const fill_gizmo_id1 := 4
+const fill_gizmo_id2 := 5
 const MIN_ARROW_VISUAL_LENGTH := 0.25
 const MAX_ARROW_VISUAL_LENGTH := 0.75
 var gizmo_utils := ProtoGizmoUtils.new()
@@ -27,14 +27,6 @@ func remove_ramp() -> void:
 var snap_unit: float = 1.0
 var fine_snap_unit: float = 0.1
 
-func init_gizmo(_gizmo_plugin: ProtoGizmoPlugin) -> void:
-	# Generate a "random" id for each gizmo
-	width_gizmo_id = Time.get_ticks_usec()
-	depth_gizmo_id = width_gizmo_id + 1
-	height_gizmo_id = width_gizmo_id + 2
-	fill_gizmo_id1 = width_gizmo_id + 3
-	fill_gizmo_id2 = width_gizmo_id + 4
-
 # Debug purposes
 var screen_pos: Vector2
 var debug_gizmo_handler_id: int
@@ -44,9 +36,6 @@ var camera_position: Vector3
 func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: ProtoGizmoPlugin) -> void:
 	if gizmo.get_node_3d() != ramp:
 		return
-
-	if width_gizmo_id == 0 or depth_gizmo_id == 0 or height_gizmo_id == 0 or fill_gizmo_id1 == 0 or fill_gizmo_id2 == 0:
-		init_gizmo(plugin)
 
 	gizmo.clear()
 	var handle_positions := _get_handle_positions()
@@ -115,9 +104,7 @@ func set_handle(
 		drag_start_pointer_offset = start_offset
 	set_arrow_drag(plugin, handle_id, camera, screen_pos)
 
-func get_arrow_drag_segments(gizmo_plugin: ProtoGizmoPlugin) -> Array:
-	if width_gizmo_id == 0 or depth_gizmo_id == 0 or height_gizmo_id == 0 or fill_gizmo_id1 == 0 or fill_gizmo_id2 == 0:
-		init_gizmo(gizmo_plugin)
+func get_arrow_drag_segments(_gizmo_plugin: ProtoGizmoPlugin) -> Array:
 	return _get_handle_arrow_segments()
 
 func begin_arrow_drag(_plugin: ProtoGizmoPlugin, handle_id: int, camera: Camera3D, screen_pos: Vector2) -> void:
