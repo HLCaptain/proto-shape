@@ -63,6 +63,7 @@ See [examples](examples/README.md) for provider-based custom shapes, dynamic han
 - `proto_handler` - Same as internal "handles" material for gizmo handles, but blue instead of reddish.
 - `selected` - Material for selected nodes (bluish transparent color).
 - `main` - Base reddish color material for solid arrows, general guides, and debugging use. It is also used for drawing camera-projected debug planes.
+- `main_highlight` - Highlighted arrow material used while hovering or dragging a handle.
 
 ## ProtoGizmoUtils
 

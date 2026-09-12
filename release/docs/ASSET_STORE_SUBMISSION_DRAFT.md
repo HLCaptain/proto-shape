@@ -118,9 +118,9 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 Authorized after final integration and validation:
 
 - Save the Store draft settings.
-- Upload the validated ZIP as version 1.2.0.
+- Upload the validated ZIP and thumbnail as version 1.2.0, then reopen the draft to verify they persisted.
 
 Not authorized:
 
 - Do not click `Publish` or `Submit for review`.
-- Do not perform GitHub merge, tag, push, or release publication; those actions belong to the user.
+- Feature-branch push and a draft PR are part of the implementation handoff. GitHub merge, tag creation/push, and release publication belong to the user.

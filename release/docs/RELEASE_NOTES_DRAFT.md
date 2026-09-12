@@ -18,6 +18,7 @@ ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blo
 - Preserves authored rail thickness and lower-rail height through height/count changes, undo/redo, and save/reload.
 - Derives effective rail values that fit the current height/count and merges touching vertical intervals before generating sweep geometry.
 - Starts the lower-rail gizmo at its effective rendered height while retaining the raw authored value for cancel and undo. The handle is hidden when only one rail is generated.
+- Keeps the thickness drag reference frame fixed during an edit, so resampling a corner cannot feed back into a stationary pointer. The next drag uses the updated frame.
 
 ## Gizmos
 
@@ -27,12 +28,23 @@ ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blo
 - Updated all first-party providers and wrapper forwarding to the nullable projection and boolean begin-drag contracts.
 - `ProtoGizmoWrapper.set_handle_for_child_signal` passes `plugin` as its second argument, and `commit_handle` now includes `plugin` in the same position.
 - Generated `CSGShape3D` and `MeshInstance3D` nodes can provide click-selection geometry for their owning custom node.
+- Editor snapping no longer registers or deletes host InputMap actions. Ramp providers release their plugin references and use stable per-node handle IDs.
+- Completed Ramp drags clear transient grids and omit unchanged undo actions.
+
+## ProtoRamp
+
+- Validates dimensions and step count without inflating small per-step values during scene loading.
+- Preserves the total silhouette through repeated calculation/type conversions, without accumulated epsilon drift.
+- Stores hidden staircase calculation and step-count settings while displaying a ramp.
+- Corrects both fill arrows and their relative drag projection.
 
 ## Examples and documentation
 
 - Added direct-provider, dynamic-axis, and wrapper gizmo examples.
 - Added ProtoWall scenes covering solid walls, rail layouts, mixed blockouts, elevation, and interpolation modes.
 - Added the editable Power Cell Delivery map as a hands-on addon example, not a standalone game.
+- Demo controls use namespaced InputMap actions exposed in the example project's settings; installed examples register only missing defaults.
+- ProtoWall showcase initialization is stored, so saved property changes, additions, renames, and deletions survive reopening.
 - Updated shape, gizmo, wrapper, and development documentation.
 - Moved shared icons to `addons/proto_shape/icons/` and shape icons into shape-local `icons/` folders.
 
@@ -41,7 +53,7 @@ ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blo
 - ProtoShape 1.2.0 requires Godot 4.7 or later and is validated with Godot 4.7.2.
 - Custom gizmo providers must handle nullable projection results and return success from `begin_arrow_drag()`.
 - Wrapped children must use the corrected callback argument order described above.
-- No compatibility bridge is provided for pre-1.2 experimental provider or wrapper contracts.
+- No compatibility bridge is provided for older wrapper callback signatures or the pre-release arrow-provider contract.
 - Direct icon references must move from `addons/proto_shape/icon/` to the new shared or shape-local paths.
 
 ## Current limitations

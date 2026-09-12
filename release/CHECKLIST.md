@@ -10,9 +10,9 @@
 ## Automated validation
 
 - [ ] Run `godot --headless --editor --path . --quit-after 240 res://tests/test_proto_ramp_gizmos.tscn -- --proto-shape-tests` and check for its PASS marker and clean error log.
-- [ ] Run `godot --headless --path . --import`.
-- [ ] Run `godot --headless --path . --editor --quit`.
-- [ ] Run `tests/run.sh` from the repository root.
+- [ ] Run a cache-free `godot --headless --path . --import` with the plugin initially disabled.
+- [ ] Enable the plugin in the imported disposable project and run bounded `--editor --quit-after 120` startup.
+- [ ] Run `bash tests/run.sh` from the repository root.
 - [ ] Confirm the runner copies the project to a temporary directory before executing tests.
 - [ ] Confirm runtime `SceneTree` scripts run directly and editor-only `@tool` `.tscn` tests run in editor mode with `--proto-shape-tests`.
 - [ ] Confirm every test emits a `PASS:` completion marker and failures return a non-zero exit code.
@@ -34,7 +34,7 @@
 - [ ] Confirm the lower-rail handle is hidden for one rail and starts at the effective rendered height for multiple rails.
 - [ ] Test ProtoWall interpolation, orientation, posts, material, collision, and curve save/reload behavior.
 - [ ] Run Power Cell Delivery from spawn through pickup and terminal delivery without jumping.
-- [ ] Confirm its InputMap helper uses only namespaced ProtoShape actions and restores any temporary actions on exit.
+- [ ] Confirm its InputMap helper registers only missing namespaced demo actions and never changes or removes host-project mappings.
 - [ ] Edit a ramp and wall in Power Cell Delivery, save/reload, and confirm authored scene changes persist.
 - [ ] Confirm the standalone ProtoRamp navigation sample intentionally remains unbaked; do not apply that note to Power Cell Delivery.
 - [ ] Confirm exported/runtime scenes do not depend on editor-only classes.
@@ -43,7 +43,7 @@
 
 - [ ] Check all internal Markdown links and `res://` paths after the demo and API commits are integrated.
 - [ ] Confirm the Power Cell Delivery thumbnail is an untouched 1920x1080 Godot render matching the delivered scene.
-- [ ] Confirm no video, GIF, placeholder, or obsolete Asset Library copy remains in release-facing documentation.
+- [ ] Confirm no unresolved media placeholders or obsolete Asset Library submission fields remain; retain the existing hosted feature videos.
 - [ ] Confirm `addons/proto_shape/LICENSE` is byte-identical to root `LICENSE`.
 
 ## Package
@@ -56,7 +56,7 @@
 
 ## External ownership gates
 
-- [ ] Hand the final commit and copy-ready `release/docs/RELEASE_NOTES_DRAFT.md` to the user; GitHub merge, tag, push, and release publication are entirely user-owned.
+- [ ] Push the reviewed feature branch and create one draft PR. Hand the final commit and release notes to the user; merging, tag creation/push, and GitHub release publication remain user-owned.
 - [ ] After final validation, save the authorized Godot Asset Store draft metadata and upload the validated ZIP.
 - [ ] Check Store `Stable` only after all final validation passes.
 - [ ] Do not click Store `Publish` / `Submit for review`; review submission remains explicitly user-gated.

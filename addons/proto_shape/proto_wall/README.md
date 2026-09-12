@@ -97,23 +97,14 @@ Hold <kbd>Ctrl</kbd> for 1.0 unit snapping and <kbd>Ctrl</kbd> + <kbd>Shift</kbd
 
 Open these scenes to test common game-development setups:
 
-- `examples/proto_wall_solid_examples.tscn` - straight walls, low cover, curved walls, and path alignment.
-- `examples/proto_wall_rail_examples.tscn` - guardrails, single rails, three-rail fences, curved rails, postless rails, and a variable-elevation rounded mountain rail.
-- `examples/proto_wall_mixed_blockout.tscn` - closed boundary walls, balcony rails, ramp rails, map perimeter fencing, and mountain road rails.
-- `examples/proto_wall_interpolation_showcase.tscn` - every interpolation mode compared against the same flat XZ and elevated curves, with both `Path Perpendicular` and `Fixed Up` orientation variants shown as solid wall and rail pairs.
+- [Solid examples](examples/proto_wall_solid_examples.tscn) - straight walls, low cover, curved walls, and path alignment.
+- [Rail examples](examples/proto_wall_rail_examples.tscn) - guardrails, single rails, three-rail fences, curved rails, postless rails, and a variable-elevation rounded mountain rail.
+- [Mixed blockout](examples/proto_wall_mixed_blockout.tscn) - closed boundary walls, balcony rails, ramp rails, map perimeter fencing, and mountain road rails.
+- [Interpolation showcase](examples/proto_wall_interpolation_showcase.tscn) - every interpolation mode compared against flat XZ and elevated curves, with both `Path Perpendicular` and `Fixed Up` orientation variants shown as solid wall and rail pairs.
 
 Each launcher generates its editable nodes once. Save the scene after generation to retain your edits; later opens do not restore renamed or deleted examples. The interpolation showcase creates 80 `ProtoWall` nodes and may take several seconds to finish in the editor.
 
-## Release Media Placeholders
-
-Capture or link these before publishing 1.2.0:
-
-- Overview video: `../../../release/media/videos/proto-wall-overview.mp4` or a hosted video link.
-- Overview screenshot: `../../../release/media/screenshots/proto-wall-overview.png`.
-- Solid and rail use-case screenshot: `../../../release/media/screenshots/proto-wall-solid-rail-use-cases.png`.
-- Interpolation/thickness screenshot: `../../../release/media/screenshots/proto-wall-interpolation-thickness.png`.
-- Post-width gizmo screenshot: `../../../release/media/screenshots/proto-wall-post-width.png`.
-- Short interaction loop: `../../../release/media/gifs/proto-wall-thickness-interpolation.gif`.
+Try [Power Cell Delivery](../examples/power_cell_delivery/README.md) to reshape walls and rails in a playable blockout.
 
 ## Implementation Notes
 
