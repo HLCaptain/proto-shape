@@ -100,7 +100,7 @@ Open these scenes to test common game-development setups:
 - `examples/proto_wall_mixed_blockout.tscn` - closed boundary walls, balcony rails, ramp rails, map perimeter fencing, and mountain road rails.
 - `examples/proto_wall_interpolation_showcase.tscn` - every interpolation mode compared against the same flat XZ and elevated curves, with both `Path Perpendicular` and `Fixed Up` orientation variants shown as solid wall and rail pairs.
 
-Each scene includes `Label3D` notes describing the setup. The example setup script generates any missing showcase nodes when the scene is opened, so the scenes stay compact while still covering many use cases.
+Each launcher generates its editable nodes once. Save the scene after generation to retain your edits; later opens do not restore renamed or deleted examples. The interpolation showcase creates 80 `ProtoWall` nodes and may take several seconds to finish in the editor.
 
 ## Release Media Placeholders
 

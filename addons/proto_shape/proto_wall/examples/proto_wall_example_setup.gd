@@ -15,19 +15,31 @@ enum ExampleType {
 }
 
 @export var example_type: ExampleType = ExampleType.SOLID_WALLS
+@export_storage var setup_completed := false
 
 var is_setting_up := false
+var setup_generation := 0
 
 func _enter_tree() -> void:
-	call_deferred("_setup_async")
+	setup_generation += 1
+	if not setup_completed:
+		call_deferred("_setup_async", setup_generation)
 
-func _setup_async() -> void:
-	if is_setting_up:
+func _exit_tree() -> void:
+	setup_generation += 1
+	is_setting_up = false
+
+func _setup_async(generation: int) -> void:
+	if setup_completed or is_setting_up or not _can_continue_setup(generation):
 		return
 	is_setting_up = true
 
 	_ensure_camera_and_light()
-	await _yield_editor_setup_frame()
+	if not await _yield_editor_setup_frame(generation):
+		_finish_setup(generation)
+		return
+
+	var completed := true
 	match example_type:
 		ExampleType.SOLID_WALLS:
 			_setup_solid_walls()
@@ -36,13 +48,28 @@ func _setup_async() -> void:
 		ExampleType.MIXED_BLOCKOUT:
 			_setup_mixed_blockout()
 		ExampleType.INTERPOLATION_SHOWCASE:
-			await _setup_interpolation_showcase()
+			completed = await _setup_interpolation_showcase(generation)
 
-	is_setting_up = false
+	if completed and _can_continue_setup(generation):
+		setup_completed = true
+	_finish_setup(generation)
 
-func _yield_editor_setup_frame() -> void:
-	if Engine.is_editor_hint() and is_inside_tree():
-		await get_tree().process_frame
+func _finish_setup(generation: int) -> void:
+	if generation == setup_generation:
+		is_setting_up = false
+
+func _can_continue_setup(generation: int) -> bool:
+	return generation == setup_generation and is_inside_tree()
+
+func _yield_editor_setup_frame(generation: int) -> bool:
+	if not _can_continue_setup(generation):
+		return false
+	if Engine.is_editor_hint():
+		var tree := get_tree()
+		if tree == null:
+			return false
+		await tree.process_frame
+	return _can_continue_setup(generation)
 
 func _setup_solid_walls() -> void:
 	_configure_wall("StraightSolidWall", Vector3(-8.0, 0.0, -2.0), _create_polyline_curve([Vector3.ZERO, Vector3(0, 0, 5)]), ProtoWall.Style.SOLID, 2.5, 0.3)
@@ -127,13 +154,14 @@ func _setup_mixed_blockout() -> void:
 	_configure_box("MountainRoadTerrainC", Vector3(8.1, 0.9, 9.9), Vector3(2.2, 0.3, 2.2))
 	_configure_label("MountainRoadRailLabel", Vector3(7.0, 2.8, 8.5), "Mountain road rail\nFollow Curved Path3D over uneven terrain")
 
-func _setup_interpolation_showcase() -> void:
+func _setup_interpolation_showcase(generation: int) -> bool:
 	_configure_label("ShowcaseTitle", Vector3(0.0, 4.0, -4.0), "ProtoWall interpolation showcase\nEach mode uses the same flat and elevated Path3D curves\nEach group: solid wall left / matching rail right")
 	var groups := _get_interpolation_showcase_groups()
 	for group_index in range(groups.size()):
 		var group: Dictionary = groups[group_index]
 		_configure_label("%sHeader" % String(group["name"]), Vector3(float(group["x"]) + 1.8, 2.8, -1.0), String(group["title"]))
-		await _yield_editor_setup_frame()
+		if not await _yield_editor_setup_frame(generation):
+			return false
 
 	var modes := _get_interpolation_showcase_modes()
 	for index in range(modes.size()):
@@ -143,7 +171,8 @@ func _setup_interpolation_showcase() -> void:
 		var title: String = info["title"]
 		var note: String = info["note"]
 		_configure_label("%sLabel" % String(info["name"]), Vector3(-31.0, 2.4, z + 1.2), "%s\n%s" % [title, note])
-		await _yield_editor_setup_frame()
+		if not await _yield_editor_setup_frame(generation):
+			return false
 		for group in groups:
 			var group_info: Dictionary = group
 			var group_name := String(group_info["name"])
@@ -162,7 +191,9 @@ func _setup_interpolation_showcase() -> void:
 				mode,
 				int(group_info["orientation"])
 			)
-			await _yield_editor_setup_frame()
+			if not await _yield_editor_setup_frame(generation):
+				return false
+	return true
 
 func _configure_showcase_pair(prefix: String, solid_position: Vector3, rail_position: Vector3, curve_resource: Curve3D, mode: int, path_orientation: int) -> void:
 	var solid_name := "%sSolid" % prefix

@@ -1,48 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://addons/proto_shape/proto_wall/examples/proto_wall_example_setup.gd" id="1"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_wall/proto_wall.gd" id="2"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_ramp/proto_ramp.gd" id="3"]
 
 [node name="ProtoWallMixedBlockout" type="Node3D"]
 script = ExtResource("1")
 example_type = 2
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-rotation = Vector3(-0.8, 0.7, 0.0)
-
-[node name="Camera3D" type="Camera3D" parent="."]
-position = Vector3(1.0, 7.0, 12.0)
-rotation = Vector3(-0.55, 0.0, 0.0)
-
-[node name="RoomBoundary" type="Path3D" parent="."]
-position = Vector3(-4.0, 0.0, 0.0)
-script = ExtResource("2")
-
-[node name="RoomBoundaryLabel" type="Label3D" parent="."]
-position = Vector3(-4.0, 2.3, 0.0)
-text = "Closed solid wall path\nFast room or arena boundary"
-
-[node name="BalconyRail" type="Path3D" parent="."]
-position = Vector3(3.0, 0.0, 0.0)
-script = ExtResource("2")
-
-[node name="BalconyRailLabel" type="Label3D" parent="."]
-position = Vector3(1.8, 1.6, 1.8)
-text = "Curved balcony rail\nPosts follow the baked curve"
-
-[node name="Ramp" type="Node3D" parent="."]
-position = Vector3(1.0, 0.0, 5.0)
-script = ExtResource("3")
-
-[node name="RampLeftRail" type="Path3D" parent="."]
-position = Vector3(1.0, 0.0, 5.0)
-script = ExtResource("2")
-
-[node name="RampRightRail" type="Path3D" parent="."]
-position = Vector3(1.0, 0.0, 5.0)
-script = ExtResource("2")
-
-[node name="RampRailsLabel" type="Label3D" parent="."]
-position = Vector3(1.0, 2.3, 7.0)
-text = "Sloped ProtoWall rails beside ProtoRamp\nPath rises from Y=0 to Y=1"

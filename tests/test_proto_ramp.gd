@@ -22,6 +22,8 @@ func _run() -> void:
 	_test_hidden_staircase_state_reload()
 	world.queue_free()
 	await process_frame
+	if failures == 0:
+		print("PASS: ramp state")
 	quit(1 if failures else 0)
 
 func _test_invalid_inputs() -> void:

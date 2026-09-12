@@ -1,55 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=2 format=3]
 
 [ext_resource type="Script" path="res://addons/proto_shape/proto_wall/examples/proto_wall_example_setup.gd" id="1"]
-[ext_resource type="Script" path="res://addons/proto_shape/proto_wall/proto_wall.gd" id="2"]
 
 [node name="ProtoWallSolidExamples" type="Node3D"]
 script = ExtResource("1")
 example_type = 0
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-rotation = Vector3(-0.8, 0.7, 0.0)
-
-[node name="Camera3D" type="Camera3D" parent="."]
-position = Vector3(1.5, 7.0, 13.0)
-rotation = Vector3(-0.55, 0.05, 0.0)
-
-[node name="StraightSolidWall" type="Path3D" parent="."]
-position = Vector3(-7.0, 0.0, -2.0)
-script = ExtResource("2")
-
-[node name="StraightSolidWallLabel" type="Label3D" parent="."]
-position = Vector3(-7.0, 2.9, 0.5)
-text = "Straight solid wall\nDrag height/thickness handles"
-
-[node name="LowCoverWall" type="Path3D" parent="."]
-position = Vector3(-2.0, 0.0, -2.0)
-script = ExtResource("2")
-
-[node name="LowCoverWallLabel" type="Label3D" parent="."]
-position = Vector3(-2.0, 1.4, 0.0)
-text = "Low cover wall\nShooter cover or platform edge"
-
-[node name="CurvedArenaWall" type="Path3D" parent="."]
-position = Vector3(3.5, 0.0, -2.0)
-script = ExtResource("2")
-
-[node name="CurvedArenaWallLabel" type="Label3D" parent="."]
-position = Vector3(2.5, 2.1, 2.0)
-text = "Curved arena wall\nPath3D curve drives the wall"
-
-[node name="CenterAlignedWall" type="Path3D" parent="."]
-position = Vector3(-5.0, 0.0, 5.0)
-script = ExtResource("2")
-
-[node name="LeftAlignedWall" type="Path3D" parent="."]
-position = Vector3(-1.0, 0.0, 5.0)
-script = ExtResource("2")
-
-[node name="RightAlignedWall" type="Path3D" parent="."]
-position = Vector3(3.0, 0.0, 5.0)
-script = ExtResource("2")
-
-[node name="AlignmentLabel" type="Label3D" parent="."]
-position = Vector3(-1.0, 2.0, 6.6)
-text = "Path alignment: Center, Left, Right\nUse side when the path is an edge instead of a centerline"
