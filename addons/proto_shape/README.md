@@ -1,4 +1,6 @@
-# ProtoShape tooling
+# ProtoShape - Ramps, Shapes and Gizmos
+
+ProtoShape provides dynamic CSG shapes and reusable editor gizmo tooling for Godot 4.7 or later.
 
 ## Shapes
 
@@ -42,3 +44,9 @@ See [Shape Development Guide](SHAPE_DEVELOPMENT.md) for the shared implementatio
 The gizmo is an `EditorNode3DGizmoPlugin` and is visible when a node with a gizmo provider or a child of `ProtoGizmoWrapper` is selected. Selection highlights the mesh with a transparent blue color and shows handles and solid arrows, which you can drag to adjust the shape.
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33-7b03d44f62c7
+
+## Playable example
+
+Open [Power Cell Delivery](examples/power_cell_delivery/power_cell_delivery.tscn) for an editable prototype map that combines varied `ProtoRamp` and `ProtoWall` configurations with a short power-cell delivery objective. It demonstrates the addon; it is not a standalone game.
+
+![Power Cell Delivery](examples/power_cell_delivery/assets/power_cell_delivery_thumbnail.png)

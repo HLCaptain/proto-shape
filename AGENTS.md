@@ -4,7 +4,7 @@ Guidance for AI agents making changes in this repository.
 
 ## Project Summary
 
-ProtoShape is a Godot 4.x editor plugin for fast 3D prototyping. It adds dynamic CSG-based shapes, currently `ProtoRamp`, and reusable editor gizmo tooling through `ProtoGizmo`, `ProtoGizmoUtils`, and `ProtoGizmoWrapper`.
+ProtoShape is a Godot 4.7 editor plugin for fast 3D prototyping. It adds the CSG-based `ProtoRamp` and path-driven `ProtoWall` shapes, reusable editor gizmo tooling through `ProtoGizmo`, `ProtoGizmoUtils`, and `ProtoGizmoWrapper`, and editable example scenes such as Power Cell Delivery.
 
 The addon lives under `addons/proto_shape/`. Keep plugin resources, preloads, icons, scenes, and `plugin.cfg` paths compatible with Godot's `res://addons/proto_shape/...` layout.
 
@@ -26,6 +26,6 @@ The addon lives under `addons/proto_shape/`. Keep plugin resources, preloads, ic
 
 ## Verification
 
-No automated test suite is documented. If the `godot` command is available, run relevant CLI checks such as `godot --headless --path . --import`, `godot --headless --path . --editor --quit`, and script-specific parse/smoke checks when practical.
+If the `godot` command is available, run relevant focused scripts under `tests/`, plus CLI checks such as `godot --headless --path . --import`, `godot --headless --path . --editor --quit`, and script-specific parse/smoke checks when practical.
 
 For code changes, validate in the Godot editor when possible: enable the `ProtoShape` plugin, add affected nodes from the Add Child Node menu, check for script errors, drag gizmo handles, test grid snapping and undo/redo, save/reload affected scenes, and confirm exported/runtime scenes do not depend on editor-only classes. If manual editor regression checks are necessary but cannot be run, clearly tell the user what still needs manual validation.
