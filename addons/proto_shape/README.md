@@ -50,3 +50,7 @@ https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33
 Open [Power Cell Delivery](examples/power_cell_delivery/power_cell_delivery.tscn) for an editable prototype map that combines varied `ProtoRamp` and `ProtoWall` configurations with a short power-cell delivery objective. It demonstrates the addon; it is not a standalone game.
 
 ![Power Cell Delivery](examples/power_cell_delivery/assets/power_cell_delivery_thumbnail.png)
+
+## License
+
+[MIT](LICENSE)
