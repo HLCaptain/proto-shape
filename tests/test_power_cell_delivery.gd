@@ -63,13 +63,16 @@ func _run() -> void:
 	_expect(reloaded.has_node("MapGeometry/UserMarker"), "User-added nodes must persist")
 	_expect(not reloaded.has_node("MapGeometry/RelayYard/TerminalGuideWall"), "User-deleted nodes must stay deleted")
 	reloaded.queue_free()
-
+	await process_frame
+	if failures == 0:
+		print("PASS: delivery state and editing")
 	quit(1 if failures else 0)
 
 func _seed_existing_interact_action() -> void:
-	if InputMap.has_action(ProtoExampleControls.INTERACT):
-		return
-	InputMap.add_action(ProtoExampleControls.INTERACT, 0.23)
+	if not InputMap.has_action(ProtoExampleControls.INTERACT):
+		InputMap.add_action(ProtoExampleControls.INTERACT)
+	InputMap.action_set_deadzone(ProtoExampleControls.INTERACT, 0.23)
+	InputMap.action_erase_events(ProtoExampleControls.INTERACT)
 	var event := InputEventKey.new()
 	event.keycode = KEY_Q
 	InputMap.action_add_event(ProtoExampleControls.INTERACT, event)
