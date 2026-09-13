@@ -79,6 +79,8 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 ## Version 1.2.0
 
 - ZIP: `proto-shape-1.2.0.zip`, built after all core and example commits are integrated
+- Archive source: `c2be7382d1d8a6a8271dc8dddaa6770bca66db03`; 4,528,298 bytes
+- ZIP SHA-256: `e44e6ea123e4248eb65b860a42f3690c9545c4d68a7c5ad4f147c34cb7428dd6`
 - Version Name: `1.2.0`
 - Stable: check only after final validation passes
 - Minimum required Godot version: `4.7`
@@ -120,7 +122,8 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 
 The user accepted the latest editor/demo changes on 2026-09-13 ("Everything is
 fine" / "Go ahead"). The latest selected thumbnail must be preserved. Final
-candidate validation and saved Store metadata/uploads are still pending.
+candidate validation has passed. Saved Store metadata/uploads are pending user
+authentication in the isolated browser; browser tooling is approved and installed.
 
 Authorized after final integration and validation:
 
@@ -130,4 +133,4 @@ Authorized after final integration and validation:
 Not authorized:
 
 - Do not click `Publish` or `Submit for review`.
-- The feature branch has been pushed. Creating the planned draft PR now requires explicit approval after the tool's publishing gate rejected it. GitHub merge, tag creation/push, and release publication belong to the user.
+- The feature branch has been pushed and [draft PR #40](https://github.com/HLCaptain/proto-shape/pull/40) was created after the user's go-ahead. GitHub merge, tag creation/push, and release publication belong to the user.

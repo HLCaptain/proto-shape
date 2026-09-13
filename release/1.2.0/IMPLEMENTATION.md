@@ -53,26 +53,68 @@ Use [the reusable release checklist](../README.md) for the workflow and
 - [x] 21. Fit posts to sloped and turning rail geometry while preserving placement settings and the post-width gizmo.
 - [x] 22. Use continuous editable Power Cell Delivery rails and preserve the user's latest thumbnail.
 
-## Final evidence required
+## Final candidate evidence
 
-Earlier candidate results remain in the log below. Revalidate the final
-candidate after integrating the latest post, demo, documentation, and thumbnail changes.
+Evidence below identifies the candidate containing the latest post, demo,
+documentation, and supplied-thumbnail changes. Earlier results are retained
+separately in the historical log.
 
 - [x] Focused tests: process status, error logs, and completion marker checked.
 - [x] Runtime sample smoke checks and completed 80-shape editor generation.
 - [x] Real editor-context input, gizmo, lifecycle, and undo/redo checks.
-- [ ] Fresh install from ZIP built from the reviewed commit SHA.
-- [ ] Runtime export tested with matching export templates.
+- [x] Fresh install from ZIP built from reviewed commit `c2be7382d1d8a6a8271dc8dddaa6770bca66db03`.
+- [x] Runtime export tested with matching official Godot 4.7.2 Linux export templates.
 - [x] User's final editor/demo sign-off received on 2026-09-13: "Everything is fine" / "Go ahead".
-- [ ] Final ZIP contents verified; tests/caches excluded, source art and the user's latest thumbnail kept. Record updated hashes in the local `dist/RELEASE_RECORD.md`.
-- [ ] Final reviewed feature commit pushed and remote SHA verified; no merge/tag/release publication performed.
-- [ ] Draft PR created (approval review requires explicit permission).
+- [x] Final ZIP contents verified; tests/caches excluded, source art and the user's latest thumbnail kept. Artifact identity is recorded below.
+- [x] Reviewed source commit pushed and remote SHA verified; no merge/tag/release publication performed.
+- [x] [PR #40](https://github.com/HLCaptain/proto-shape/pull/40) created after authorization and verified OPEN/DRAFT at the reviewed source commit.
 - [ ] Authenticated Store draft reopened and saved uploads/metadata verified.
+- [ ] Store thumbnail dimension/cropping requirements checked and Stable field saved/verified.
 
-## Verification log
+### Source and package
 
-Implementation checks and remaining operational gates are recorded here as work
-lands. An unchecked manual or external gate is not a passing result.
+- ZIP source commit: `c2be7382d1d8a6a8271dc8dddaa6770bca66db03`.
+- Addon tree: `be10005f27daab0f0412e719c98f88793b08632e`.
+- ZIP: `proto-shape-1.2.0.zip`, 4,528,298 bytes.
+- ZIP SHA-256: `e44e6ea123e4248eb65b860a42f3690c9545c4d68a7c5ad4f147c34cb7428dd6`.
+- Supplied thumbnail: 3821x1912 PNG, SHA-256 `a9c60c02f99c10823262d243c9a21421967d51c0cfe36f4d4aa013984e5c4baa`, unchanged in the package.
+
+Evidence-only commits may follow the archive source commit. They are excluded
+from the package; the addon tree and validated ZIP above remain unchanged.
+
+### Completed validation and remaining access
+
+- `bash tests/run.sh` passed all 24 stages in `/tmp/proto-shape-tests.xqPiFn`:
+  preparation, clean import, 13 regressions, and nine sample scenes. Required
+  markers, process status, and logs through shutdown were checked.
+- The exact ZIP was installed into
+  `/tmp/proto-shape-release-handoff.Srp6OM/installed_project`. Fresh import,
+  plugin-enabled `--editor --quit-after 120` startup, Ramp/Wall/posts regressions,
+  demo edit/save/reload, and the physical delivery route all passed with clean
+  output. Logs are in `/tmp/proto-shape-release-handoff.Srp6OM/logs`.
+- Its official Godot 4.7.2 Linux exported-runtime probe passed generated
+  collision, InputMap setup, all nine scenes, and the complete 80-wall showcase.
+  The probe is validation-only and is excluded from the addon ZIP.
+- Real-window default/remapped cursor-capture evidence comes from source
+  `010d80d`; controller code and bindings are unchanged in the packaged source.
+  Capture-state checks were not rerun in the current headless suite.
+- All 54 local Markdown links resolve, addon/root licenses match, archive
+  contents retain source art, and the root `project.godot` changes remain local.
+- The user accepted the latest editor/demo state on 2026-09-13. This is overall
+  manual acceptance, not a claim that every editor gesture was independently
+  observed during the automated verification.
+- PR #40 is OPEN/DRAFT; its remote head was verified as the ZIP source commit.
+  No merge, tag creation, release, main-branch change, or publication occurred.
+- Browser tooling is approved and installed (`agent-browser` 0.37.1, Chrome
+  for Testing 153.0.8010.36). The browser is at the `sso.godotengine.org` password
+  form and needs the user's sign-in. No Store writes occurred; draft metadata,
+  ZIP/thumbnail upload, cropping validation, and Stable remain pending.
+
+## Historical verification log
+
+The entries below preserve the implementation history, including superseded
+candidate archives, thumbnails, and earlier approval failures. Current status
+and artifact identity are recorded above.
 
 - Step 1: initial focused fill checks passed; the final version runs as
   `tests/test_proto_ramp_gizmos.tscn` in real editor context and prints
