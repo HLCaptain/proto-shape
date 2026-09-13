@@ -5,6 +5,9 @@ commits and existing uncommitted ramp fill/sample changes. The latter are
 preserved and committed separately before new repairs. Target: Godot 4.7;
 validation environment: Godot 4.7.2.
 
+Use [the reusable release checklist](../README.md) for the workflow and
+[the 1.2.0 checklist](CHECKLIST.md) for this candidate's remaining checks.
+
 ## Decisions
 
 - Preserve existing normal drag sensitivity, anchors, segment-aligned wall/post
@@ -13,7 +16,7 @@ validation environment: Godot 4.7.2.
   dependent-property changes. Merge touching rail profiles.
 - Use native curve lifecycle and bake spacing; leave non-null short curves alone.
 - Preserve source art and the full interpolation showcase.
-- Ship an editable Power Cell Delivery map and actual 16:9 Godot thumbnail.
+- Ship an editable Power Cell Delivery map and the publisher-approved supplied thumbnail.
 - Use namespaced InputMap actions for game/example controls without replacing
   host actions. Editor snapping does not register gameplay actions.
 - Use ordered commits in one draft PR and one final manual editor session.
@@ -41,23 +44,28 @@ validation environment: Godot 4.7.2.
 - [x] 15. Document and verify the unbaked navigation workflow.
 - [x] 16. Preserve saved Wall example edits with stored initialization state.
 - [x] 16b. Playable, editable Power Cell Delivery map.
-- [x] 16c. Actual Godot-rendered 1920 x 1080 Store thumbnail.
+- [x] 16c. Initial Godot-rendered 1920 x 1080 thumbnail prepared; superseded by the publisher-approved supplied thumbnail below.
 - [x] 17. Correct provider/wrapper documentation and material limits.
 - [x] 18. Refresh descriptions, example links, and Store installation guidance.
 - [x] 19. Include addon license, source art, and verified examples in archive rules.
 - [x] 20a. Prepare final release notes and current Store metadata fields locally.
 - [ ] 20b. Save and reopen the authenticated Asset Store asset/version draft.
+- [x] 21. Fit posts to sloped and turning rail geometry while preserving placement settings and the post-width gizmo.
+- [x] 22. Use continuous editable Power Cell Delivery rails and preserve the user's latest thumbnail.
 
 ## Final evidence required
+
+Earlier candidate results remain in the log below. Revalidate the final
+candidate after integrating the latest post, demo, documentation, and thumbnail changes.
 
 - [x] Focused tests: process status, error logs, and completion marker checked.
 - [x] Runtime sample smoke checks and completed 80-shape editor generation.
 - [x] Real editor-context input, gizmo, lifecycle, and undo/redo checks.
-- [x] Fresh install from ZIP built from the reviewed commit SHA.
-- [x] Runtime export tested with matching export templates.
-- [ ] Final manual editor interaction/feel and playable delivery-route check.
-- [x] ZIP contents verified; tests/caches excluded, source art kept. Final hashes are in the local `dist/RELEASE_RECORD.md`.
-- [x] Reviewed feature branch pushed; no merge/tag/release publication performed.
+- [ ] Fresh install from ZIP built from the reviewed commit SHA.
+- [ ] Runtime export tested with matching export templates.
+- [x] User's final editor/demo sign-off received on 2026-09-13: "Everything is fine" / "Go ahead".
+- [ ] Final ZIP contents verified; tests/caches excluded, source art and the user's latest thumbnail kept. Record updated hashes in the local `dist/RELEASE_RECORD.md`.
+- [ ] Final reviewed feature commit pushed and remote SHA verified; no merge/tag/release publication performed.
 - [ ] Draft PR created (approval review requires explicit permission).
 - [ ] Authenticated Store draft reopened and saved uploads/metadata verified.
 
@@ -132,3 +140,29 @@ lands. An unchecked manual or external gate is not a passing result.
   removal of the old binding, and preservation of host events/deadzone. Headless
   capture-state assertions are explicitly skipped; the windowed check is part
   of the release checklist. The refreshed candidate record includes its log.
+- 2026-09-13 follow-up: rail posts now use fitted sweep geometry through slopes
+  and corners, preserve full-width open ends and authored spacing/count, wrap
+  closed seams, and retain box fallback for unusable vertical footprints.
+  The post-width gizmo remains segment-aligned. Power Cell Delivery uses two
+  continuous Fixed Up rail paths with matching rail/post profiles; the inner
+  rail continues down the stairs, and the power cell is at `(-1, 3.02, -4)`.
+  Preserve the user's ramp-fill and camera edits. The publisher-approved
+  supplied thumbnail is 3821 x 1912 PNG with SHA-256
+  `a9c60c02f99c10823262d243c9a21421967d51c0cfe36f4d4aa013984e5c4baa`;
+  do not recapture or replace it. Store cropping/validation remains to be checked.
+  The user reported "Everything is fine" and authorized "Go ahead";
+  this records manual acceptance, while exact final package and external checks
+  remain separately tracked above.
+- Current candidate validation: `bash tests/run.sh` passed all 24 stages in
+  `/tmp/proto-shape-tests.xqPiFn` (preparation, clean import, 13 regressions, nine
+  sample scenes). The physical route now targets the authored cell position and
+  crosses the landing before descending. Rail checks allow the inner path to
+  extend down the stairs. The user's scene and thumbnail were not reverted.
+- The runner now disables plugins only in its disposable project via Godot's
+  native `ConfigFile`. Recovery mode alone still parsed the enabled plugin
+  before icon import in this build, so it was not retained as the solution.
+  The root `project.godot` plugin-enabled/editor serialization changes remain
+  local, outside the release commits and addon ZIP.
+- Browser tooling approval succeeded after the user's go-ahead: pinned
+  `agent-browser` 0.37.1 and Chrome for Testing 153.0.8010.36 are available.
+  Store authentication and saved draft verification are still pending.

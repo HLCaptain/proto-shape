@@ -27,7 +27,7 @@ ProtoShape is a Godot 4.7 editor addon for quickly building and reshaping 3D blo
 ## Included shapes
 
 - **ProtoRamp** creates adjustable ramps and staircases with viewport handles, grid snapping, collision support, fill controls, and a navigation-mesh workflow.
-- **ProtoWall** creates solid walls and rails along editable `Path3D` and `Curve3D` paths, including straight, curved, sloped, and variable-elevation layouts.
+- **ProtoWall** creates solid walls and rails along editable `Path3D` and `Curve3D` paths, including straight, curved, sloped, and variable-elevation layouts, with posts fitted to slopes and corners.
 
 ## Gizmo tooling
 
@@ -69,7 +69,9 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 ## Media
 
 - Thumbnail upload: `addons/proto_shape/examples/power_cell_delivery/assets/power_cell_delivery_thumbnail.png`
-- Expected file: untouched 1920x1080 PNG rendered from the delivered Godot scene
+- Expected file: publisher-approved supplied thumbnail, preserved unchanged; 3821x1912 PNG
+- SHA-256: `a9c60c02f99c10823262d243c9a21421967d51c0cfe36f4d4aa013984e5c4baa`
+- Confirm Store dimension/cropping requirements when validating the upload
 - Screenshots: none beyond the required thumbnail
 - Featured image: none
 - YouTube/video: none
@@ -91,8 +93,9 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 - Added nullable projection results and boolean begin-drag contracts so invalid projections do not mutate shapes.
 - Added thickness-aware path-cache invalidation and native Curve3D bake-interval spacing.
 - Preserved authored rail thickness and lower height while deriving fitted, merged rail geometry.
+- Fitted posts to sloped and turning rails while retaining authored placement and full-width open ends.
 - Corrected ProtoGizmoWrapper callback ordering and added provider and wrapper examples.
-- Added the editable Power Cell Delivery prototype map and its native Godot-rendered thumbnail.
+- Added the editable Power Cell Delivery prototype map and its publisher-approved supplied thumbnail.
 - Moved shared and shape-specific icons into their documented 1.2.0 paths.
 ```
 
@@ -103,7 +106,7 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 ## ZIP requirements
 
 - ZIP root: `addons/proto_shape/`, with no repository-name wrapper.
-- Include the addon `LICENSE`, README, plugin manifest, scripts, examples, 1920x1080 thumbnail, and all source art.
+- Include the addon `LICENSE`, README, plugin manifest, scripts, examples, publisher-approved supplied thumbnail, and all source art.
 - Exclude root project files, `release/`, `.git*`, `.github/`, `.godot/`, and generated `.import` files.
 - Upload only the artifact built and freshly installed after final core integration.
 
@@ -114,6 +117,10 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 - Reviews enabled/disabled: publisher choice
 
 ## Authorization boundary
+
+The user accepted the latest editor/demo changes on 2026-09-13 ("Everything is
+fine" / "Go ahead"). The latest selected thumbnail must be preserved. Final
+candidate validation and saved Store metadata/uploads are still pending.
 
 Authorized after final integration and validation:
 

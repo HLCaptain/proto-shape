@@ -1,11 +1,20 @@
 # ProtoShape 1.2.0 Release Checklist
 
+Release-specific checks supplement [the reusable release checklist](../README.md).
+See [the implementation record](IMPLEMENTATION.md), [release notes](docs/RELEASE_NOTES_DRAFT.md),
+[Store draft](docs/ASSET_STORE_SUBMISSION_DRAFT.md), and [thumbnail record](media/screenshots/README.md).
+
+User sign-off on 2026-09-13: "Everything is fine" / "Go ahead". Preserve the
+latest user-provided thumbnail and include the continuous demo rails and fitted
+posts in the final candidate. Final archive, remote PR, and Store checks below
+remain pending until verified for that candidate.
+
 ## Scope and version
 
 - [ ] Confirm the final title is `ProtoShape - Ramps, Shapes and Gizmos`.
 - [ ] Confirm `addons/proto_shape/plugin.cfg` and all release copy use version `1.2.0`.
 - [ ] Confirm minimum Godot version `4.7`, validation version `4.7.2`, and no maximum Store version.
-- [ ] Confirm the final integration commit contains only reviewed release work and the worktree is clean.
+- [ ] Confirm the final integration commit contains only reviewed release work and the addon scope is clean; preserve the intentionally local `project.godot` editor setting outside the package.
 
 ## Automated validation
 
@@ -26,11 +35,13 @@
 - [ ] Verify `follow_use_bake_interval` follows native spacing direction within ProtoWall's 0.01-2.0 bounds.
 - [ ] Verify authored rail thickness and lower height survive shrink/grow, undo/redo, and save/reload.
 - [ ] Verify high rail counts and tiny heights fit and merge touching vertical intervals into clean sweep profiles.
+- [ ] Verify fitted posts follow sloped and turning rails, retain full-width open ends, wrap closed seams, and preserve authored placement settings and the vertical-span fallback.
 - [ ] Verify tiny Ramp step values survive count/mode/type changes, cancel, undo/redo, duplication, and save/reload while generated dimensions remain valid.
 - [ ] Verify invalid gizmo projections do not mutate shapes and all first-party providers use the nullable projection and boolean begin-drag contracts.
 
 ## Manual editor validation
 
+- [x] Record the user's 2026-09-13 sign-off on the latest editor/demo changes.
 - [ ] Enable ProtoShape and add `ProtoRamp` and `ProtoWall` from Add Child Node.
 - [ ] Test every visible handle, arrow hover/drag, snapping, cancel, undo, and redo.
 - [ ] Check all Ramp anchors and perspective/orthographic views under rotated and non-uniformly scaled parents; normal drag direction and sensitivity must still feel familiar.
@@ -46,7 +57,7 @@
 ## Documentation and media
 
 - [ ] Check all internal Markdown links and `res://` paths after the demo and API commits are integrated.
-- [ ] Confirm the Power Cell Delivery thumbnail is an untouched 1920x1080 Godot render matching the delivered scene.
+- [ ] Confirm the latest user-provided Power Cell Delivery thumbnail is preserved and the packaged image matches that selected asset.
 - [ ] Confirm no unresolved media placeholders or obsolete Asset Library submission fields remain; retain the existing hosted feature videos.
 - [ ] Confirm `addons/proto_shape/LICENSE` is byte-identical to root `LICENSE`.
 

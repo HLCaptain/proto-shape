@@ -7,7 +7,7 @@ ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blo
 - Added `ProtoWall` for path-based solid walls and rails using `Path3D` and `Curve3D`.
 - Added hoverable, directly draggable solid gizmo arrows with screen-space picking, snapping, cancel, and undo/redo.
 - Added Power Cell Delivery, a short playable example that combines varied ramps, walls, rails, and a power-cell delivery objective.
-- Added a native 1920x1080 Godot-rendered thumbnail of the delivered example.
+- Added the publisher-approved supplied thumbnail of the delivered example.
 
 ## ProtoWall
 
@@ -19,6 +19,7 @@ ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blo
 - Derives effective rail values that fit the current height/count and merges touching vertical intervals before generating sweep geometry.
 - Starts the lower-rail gizmo at its effective rendered height while retaining the raw authored value for cancel and undo. The handle is hidden when only one rail is generated.
 - Keeps the thickness drag reference frame fixed during an edit, so resampling a corner cannot feed back into a stationary pointer. The next drag uses the updated frame.
+- Fits rail posts to slopes and corners using the rail's sweep geometry, with full-width open ends, closed-seam wrapping, and preserved authored placement settings. Vertical Fixed Up spans retain a box fallback.
 
 ## Gizmos
 
@@ -44,6 +45,7 @@ ProtoShape 1.2.0 expands the addon from `ProtoRamp` into a broader Godot 4.7 blo
 - Added direct-provider, dynamic-axis, and wrapper gizmo examples.
 - Added ProtoWall scenes covering solid walls, rail layouts, mixed blockouts, elevation, and interpolation modes.
 - Added the editable Power Cell Delivery map as a hands-on addon example, not a standalone game.
+- Its two continuous editable rail paths share a rail/post profile around the overlook and return route.
 - Demo controls use namespaced InputMap actions exposed in the example project's settings; installed examples register only missing defaults.
 - Cursor recapture is remappable through the same InputMap helper while retaining left-click as its default.
 - ProtoWall showcase initialization is stored, so saved property changes, additions, renames, and deletions survive reopening.
