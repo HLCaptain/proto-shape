@@ -2,6 +2,7 @@ extends SceneTree
 
 const Demo = preload("res://addons/proto_shape/examples/power_cell_delivery/power_cell_delivery.gd")
 const ProtoExampleControls = preload("res://addons/proto_shape/examples/proto_example_controls.gd")
+const ProtoWall = preload("res://addons/proto_shape/proto_wall/proto_wall.gd")
 const SCENE_PATH := "res://addons/proto_shape/examples/power_cell_delivery/power_cell_delivery.tscn"
 
 var failures := 0
@@ -25,6 +26,7 @@ func _run() -> void:
 	_expect(InputMap.action_get_events(ProtoExampleControls.INTERACT).size() == 1, "Existing demo action events must be preserved")
 	_test_player_visual_matches_collider(gameplay)
 	_test_hud_layout(gameplay)
+	_test_merged_rails(gameplay)
 
 	gameplay._on_pickup_area_body_entered(gameplay.player)
 	_expect(ProtoExampleControls.get_action_label(ProtoExampleControls.INTERACT) == "Q", "Remapped interaction label must use Q")
@@ -52,6 +54,9 @@ func _run() -> void:
 	var cargo_ramp := editable.get_node("MapGeometry/TwinRise/CargoRamp")
 	cargo_ramp.width = 4.25
 	cargo_ramp.name = "EditedCargoRamp"
+	var outer_rail := editable.get_node("MapGeometry/Curvewalk/LeftCurvewalkRail") as Path3D
+	outer_rail.curve = outer_rail.curve.duplicate()
+	outer_rail.curve.set_point_position(1, Vector3(-6.5, 2, -4))
 	editable.get_node("MapGeometry/RelayYard/TerminalGuideWall").free()
 	var marker := Node3D.new()
 	marker.name = "UserMarker"
@@ -70,11 +75,30 @@ func _run() -> void:
 	_expect(is_equal_approx(reloaded.get_node("MapGeometry/TwinRise/EditedCargoRamp").width, 4.25), "Saved ramp edits must persist")
 	_expect(reloaded.has_node("MapGeometry/UserMarker"), "User-added nodes must persist")
 	_expect(not reloaded.has_node("MapGeometry/RelayYard/TerminalGuideWall"), "User-deleted nodes must stay deleted")
+	_test_merged_rails(reloaded)
+	var restored_rail := reloaded.get_node("MapGeometry/Curvewalk/LeftCurvewalkRail") as Path3D
+	_expect(restored_rail.curve.get_point_position(1).is_equal_approx(Vector3(-6.5, 2, -4)), "Merged rail curve edits must survive save/reload")
 	reloaded.queue_free()
 	await process_frame
 	if failures == 0:
 		print("PASS: delivery state and editing")
 	quit(1 if failures else 0)
+
+func _test_merged_rails(gameplay: Node3D) -> void:
+	var rail_count := 0
+	for node in gameplay.get_node("MapGeometry").find_children("*", "Path3D", true, false):
+		if node is ProtoWall and node.style == ProtoWall.Style.RAIL:
+			rail_count += 1
+	_expect(rail_count == 2, "Demo must reuse two continuous rails instead of separate landing/return sections")
+	_expect(not gameplay.has_node("MapGeometry/CellOverlook/OverlookBackWall"), "Wall beside the power cell must remain removed")
+	for node_name in ["LeftCurvewalkRail", "RightCurvewalkRail"]:
+		var rail := gameplay.get_node("MapGeometry/Curvewalk/" + node_name) as Path3D
+		_expect(rail.curve.get_point_count() > 2, "Merged rail must retain editable intermediate points")
+		var reaches_deck := false
+		for index in range(rail.curve.get_point_count()):
+			reaches_deck = reaches_deck or is_equal_approx(rail.curve.get_point_position(index).y, 2.0)
+		_expect(reaches_deck, "Merged rail must include the elevated deck")
+		_expect(is_zero_approx(rail.curve.get_point_position(rail.curve.get_point_count() - 1).y), "Merged rail must continue to the foot of the return ramp")
 
 func _test_player_visual_matches_collider(gameplay: Node3D) -> void:
 	var visual := gameplay.get_node("Player/Body") as MeshInstance3D

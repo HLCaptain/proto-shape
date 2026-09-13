@@ -15,7 +15,8 @@ func _run() -> void:
 	current_scene = demo
 	for index in range(5):
 		await physics_frame
-	for target in [Vector2(-2.2, 6.3), Vector2(-2.2, -0.4), Vector2(-2.2, -7.4), Vector2(0.0, -7.4)]:
+	var cell_position: Vector3 = demo.power_cell.global_position
+	for target in [Vector2(-2.2, 6.3), Vector2(-2.2, -0.4), Vector2(-2.2, cell_position.z), Vector2(cell_position.x, cell_position.z)]:
 		await _walk_to(target)
 		if failed:
 			_finish()
@@ -27,7 +28,8 @@ func _run() -> void:
 	if demo.delivery_state != demo.DeliveryState.CARRIED:
 		failed = true
 		push_error("Walkable ascent must reach the real pickup trigger")
-	for target in [Vector2(5.5, -7.4), Vector2(5.5, -5.8), Vector2(5.5, 0.8), Vector2(7.4, 4.0), Vector2(7.4, 10.6), Vector2(5.4, 10.6)]:
+	var landing_z: float = demo.get_node("MapGeometry/CellOverlook/ReturnLanding").global_position.z
+	for target in [Vector2(cell_position.x, landing_z), Vector2(5.5, landing_z), Vector2(5.5, -5.8), Vector2(5.5, 0.8), Vector2(7.4, 4.0), Vector2(7.4, 10.6), Vector2(5.4, 10.6)]:
 		await _walk_to(target)
 		if failed:
 			_finish()

@@ -17,6 +17,8 @@ The map is fully authored in [power_cell_delivery.tscn](power_cell_delivery.tscn
 
 Try widening `CargoRamp`, moving the `LeftCurvewalkRail` curve points, or changing a rail's count and thickness, then play the route again. The right-hand return ramp has its own landing and an open lane beside the deck; the high end leaves a walkable underpass below it.
 
+The rail layout uses two continuous editable paths: `LeftCurvewalkRail` wraps around the outside of the overlook and down the return ramp, while `RightCurvewalkRail` follows the inside edge. Extend these curves when adjusting the route instead of adding separate rail sections. Both use the same rail/post profile, and the wall beside the power cell is intentionally omitted.
+
 Controls use named `proto_shape_demo_*` InputMap actions. Remap them in Project Settings → Input Map. When installed into another project, the shared [control helper](../proto_example_controls.gd) supplies only missing actions and preserves any mappings already defined by that project.
 
 The staircase is an optional route because the intentionally small demo character has no automatic stair-stepping. The adjacent cargo ramp is the required walkable route.
