@@ -61,7 +61,7 @@ Common properties:
 - `vertical_spike_aggressiveness` - Controls how easily `preserve_vertical_spikes` treats vertical hills/dips as protected sharp points. Lower values preserve only more extreme spikes; higher values preserve more vertical height changes. This is shown only when `preserve_vertical_spikes` is enabled.
 - `path_sample_spacing` - ProtoWall's generated path sample spacing for wall/rail sections and posts. It is hidden for `Linear`, and hidden in `Follow Curved Path3D` when `follow_use_bake_interval` is enabled.
 - `follow_use_bake_interval` - `Follow Curved Path3D` only. Uses `Curve3D.bake_interval` as the spacing between generated samples, clamped to ProtoWall's supported 0.01-2.0 range, and ignores `path_sample_spacing`.
-- `direction_source` - Chooses whether sampled orientation and gizmos follow final generated segments or the selected interpolation mode's sampled tangents. Posts always align their depth to the generated rail segment they are placed on.
+- `direction_source` - Chooses whether sampled orientation and gizmos follow final generated segments or the selected interpolation mode's sampled tangents. The post-width gizmo stays aligned to its generated rail segment; post geometry follows the full path footprint.
 - `Curve3D` point tilt - When `path_orientation` is `Path Perpendicular`, point tilt is interpolated and applied as roll around the sampled path direction.
 - `curve.closed` - Close the referenced `Path3D` curve itself to make looped walls and rails.
 - `collisions_enabled` - Enables collision on generated CSG parts.
@@ -78,7 +78,7 @@ Rail-only properties:
 - `post_placement` - Place posts by fixed spacing or by explicit count.
 - `post_spacing` - Distance between posts along the baked curve when `post_placement` is `Spacing`.
 - `post_count` - Number of posts distributed along the curve when `post_placement` is `Count`.
-- `post_width` - Post width along the wall/rail path.
+- `post_width` - Post width along the wall/rail path, measured horizontally in `Fixed Up` and spatially in `Path Perpendicular`.
 - `post_at_start` - Adds a post at the first path point.
 - `post_at_end` - Adds a post at the final path point for open paths.
 
@@ -110,7 +110,11 @@ Try [Power Cell Delivery](../examples/power_cell_delivery/README.md) to reshape 
 
 The runtime shape script owns generated CSG nodes and remains export-safe. Editor-only gizmo code is loaded only behind `Engine.is_editor_hint()`.
 
-Generated solid walls and rail bars are closed `CSGMesh3D` sweep meshes built from sampled `Path3D` points. Rail posts are generated `CSGBox3D` nodes placed from the same sampled path cache, and their depth axis is aligned to the generated rail segment at the post offset so posts stay parallel to the rail span.
+Generated solid walls, rail bars, and fitted posts are closed `CSGMesh3D` sweep meshes built from the same sampled `Path3D` geometry. Posts use short portions of that sweep: their caps follow elevation changes, and their footprint bends through corners instead of protruding through the rail. `Fixed Up` keeps the upright reference direction; `Path Perpendicular` also follows the rail's pitch and tilt. Fitting happens automatically without new Inspector settings.
+
+Authored spacing/count settings are retained, and open-end posts keep their full centered width. Closed-path footprints wrap across the seam; a width covering the whole loop generates one closed fill while preserving the authored settings. A vertical or nearly vertical `Fixed Up` span has no usable horizontal footprint, so affected posts retain the original box fallback. Changing post width does not resample the curve or alter the rail mesh.
+
+![Before and after fitting posts to sloped and turning rails](assets/post_fitting.png)
 
 Rail thickness and lower height remain authored Inspector values. Rendering derives values that fit the current height and rail count, and touching or overlapping vertical rail intervals are merged before sweeping so they do not create duplicate internal rail surfaces.
 

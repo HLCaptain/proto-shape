@@ -216,7 +216,7 @@ var _material: Material = null
 ## Rail style only. Authored center height of the lowest rail bar. Generated
 ## geometry clamps an effective value into the current height.
 @export_range(0.0, 5.0, 0.01) var lower_rail_height: float: set = set_lower_rail_height, get = get_lower_rail_height
-## Rail style only. Enables generated post boxes along the sampled rail path.
+## Rail style only. Enables posts fitted to the generated rail path.
 @export var post_enabled: bool: set = set_post_enabled, get = get_post_enabled
 @export_group("Posts")
 ## Rail posts only. Chooses fixed spacing or explicit count distribution.
@@ -227,7 +227,8 @@ var _material: Material = null
 ## Rail posts only. Number of posts when [member post_placement] is
 ## [enum PostPlacement.COUNT].
 @export_range(1, 128, 1, "or_greater") var post_count: int: set = set_post_count, get = get_post_count
-## Rail posts only. Post depth measured along the sampled path direction.
+## Rail posts only. Post depth along the path, measured horizontally in Fixed Up
+## and spatially in Path Perpendicular. Posts bend through covered corners.
 @export_range(0.001, 1.0, 0.01) var post_width: float: set = set_post_width, get = get_post_width
 ## Rail posts only. Adds a post at the start of the path when using spacing mode.
 @export var post_at_start: bool: set = set_post_at_start, get = get_post_at_start
@@ -2170,30 +2171,190 @@ func _create_rails() -> void:
 	_create_selection_proxy()
 
 func _create_posts() -> void:
-	if not post_enabled or curve == null:
+	if not post_enabled or curve == null or sampled_path_points.size() < 2:
 		return
 
+	var sections := _build_sweep_sections(_create_wall_profile(thickness, 0.0, height))
+	var distances := _get_post_path_distances()
 	for post_offset in _get_post_offsets():
-		var post := CSGBox3D.new()
+		var mesh := _create_post_mesh(post_offset, sections, distances)
+		var post: CSGPrimitive3D
+		if mesh != null:
+			var fitted := CSGMesh3D.new()
+			fitted.mesh = mesh
+			fitted.material = material
+			post = fitted
+		else:
+			# Fixed Up has no usable horizontal footprint on vertical segments.
+			# Keep the existing box behavior instead of emitting a collapsed mesh.
+			var box := CSGBox3D.new()
+			box.size = Vector3(thickness, height, post_width)
+			box.material = material
+			var basis := get_post_basis(post_offset)
+			var position := get_path_point(post_offset) + basis.x * get_side_center_offset(thickness) + basis.y * height / 2.0
+			box.transform = Transform3D(basis, position)
+			post = box
 		post.name = "%sPost" % GENERATED_PREFIX
-		post.size = Vector3(thickness, height, post_width)
 		post.use_collision = collisions_enabled
-		post.material = material
-
-		var basis := _get_post_basis(post_offset)
-		var position := get_path_point(post_offset)
-		position += basis.x * get_side_center_offset(thickness)
-		position += basis.y * height / 2.0
-		post.transform = Transform3D(basis, position)
-
 		add_child(post)
 		generated_shapes.append(post)
+		# A footprint covering a closed path fills it once, not once per post.
+		if mesh != null and is_curve_closed() and (post_width >= distances[distances.size() - 1] or is_equal_approx(post_width, distances[distances.size() - 1])):
+			break
 
-func _get_post_basis(offset: float) -> Basis:
-	_ensure_sampled_bases()
-	if sampled_path_bases.is_empty():
-		return Basis()
-	return _sample_segment_aligned_basis(_get_normalized_path_offset(offset))
+func _get_post_path_distances() -> PackedFloat32Array:
+	var distances := PackedFloat32Array([0.0])
+	var count := sampled_path_points.size()
+	var segment_count := count if is_curve_closed() else count - 1
+	for index in range(segment_count):
+		var delta := sampled_path_points[(index + 1) % count] - sampled_path_points[index]
+		var distance := delta.length()
+		if path_orientation == PathOrientation.FIXED_UP:
+			var horizontal_distance := Vector2(delta.x, delta.z).length()
+			# Fully vertical spans still need finite, increasing footprint distances.
+			if horizontal_distance > 0.000001:
+				distance = horizontal_distance
+		distances.append(distances[distances.size() - 1] + distance)
+	return distances
+
+func _is_degenerate_post_span(index: int) -> bool:
+	if path_orientation != PathOrientation.FIXED_UP:
+		return false
+	var delta := sampled_path_points[(index + 1) % sampled_path_points.size()] - sampled_path_points[index]
+	return Vector2(delta.x, delta.z).length_squared() <= MIN_DIMENSION * MIN_DIMENSION
+
+func _create_post_mesh(offset: float, sections: Array, distances: PackedFloat32Array) -> ArrayMesh:
+	var length := distances[distances.size() - 1]
+	if length <= MIN_DIMENSION:
+		return null
+	if is_curve_closed() and (post_width >= length or is_equal_approx(post_width, length)):
+		for index in range(sections.size()):
+			if _is_degenerate_post_span(index):
+				return null
+		return _create_swept_meshes([_create_wall_profile(thickness, 0.0, height)])
+
+	var path_offset := _get_normalized_path_offset(offset)
+	var index := _find_sample_segment_index(path_offset)
+	var next_path_offset := sampled_path_offsets[index + 1] if index + 1 < sampled_path_offsets.size() else sampled_path_length
+	var weight := (path_offset - sampled_path_offsets[index]) / (next_path_offset - sampled_path_offsets[index])
+	var center := lerpf(distances[index], distances[index + 1], weight)
+	var from := center - post_width / 2.0
+	var to := center + post_width / 2.0
+	if is_curve_closed():
+		from = fposmod(from, length)
+		to = from + post_width
+
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	var first_cap := PackedVector3Array()
+	var last_cap := PackedVector3Array()
+	var count := sections.size()
+	if not is_curve_closed() and from < 0.0:
+		if _is_degenerate_post_span(0):
+			return null
+		var extension := (sampled_path_points[1] - sampled_path_points[0]) * (from / distances[1])
+		var extended := _translate_sweep_section(sections[0], extension)
+		_append_post_span(vertices, normals, indices, extended, sections[0], 0.0, 1.0)
+		first_cap = _get_sweep_cut_section(extended, sections[0], 0.0)
+
+	var segment_count := count if is_curve_closed() else count - 1
+	var virtual_index: int = clampi(distances.bsearch(maxf(0.0, from), false) - 1, 0, segment_count - 1)
+	while virtual_index < segment_count * (2 if is_curve_closed() else 1):
+		index = virtual_index % segment_count
+		var lap := length if virtual_index >= segment_count else 0.0
+		var start := distances[index] + lap
+		var end := distances[index + 1] + lap
+		if start >= to:
+			break
+		var low := clampf((from - start) / (end - start), 0.0, 1.0)
+		var high := clampf((to - start) / (end - start), 0.0, 1.0)
+		if high > low:
+			if _is_degenerate_post_span(index):
+				return null
+			var next: PackedVector3Array = sections[(index + 1) % count]
+			_append_post_span(vertices, normals, indices, sections[index], next, low, high)
+			if first_cap.is_empty():
+				first_cap = _get_sweep_cut_section(sections[index], next, low)
+			last_cap = _get_sweep_cut_section(sections[index], next, high)
+		virtual_index += 1
+
+	if not is_curve_closed() and to > length:
+		if _is_degenerate_post_span(count - 2):
+			return null
+		var extension := (sampled_path_points[count - 1] - sampled_path_points[count - 2]) * ((to - length) / (length - distances[count - 2]))
+		var extended := _translate_sweep_section(sections[count - 1], extension)
+		_append_post_span(vertices, normals, indices, sections[count - 1], extended, 0.0, 1.0)
+		last_cap = _get_sweep_cut_section(sections[count - 1], extended, 1.0)
+
+	_append_post_cap(vertices, normals, indices, first_cap, true)
+	_append_post_cap(vertices, normals, indices, last_cap, false)
+	return _create_mesh_from_arrays(vertices, normals, indices)
+
+func _translate_sweep_section(section: PackedVector3Array, offset: Vector3) -> PackedVector3Array:
+	var translated := PackedVector3Array()
+	for point in section:
+		translated.append(point + offset)
+	return translated
+
+func _append_post_span(vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array, from: PackedVector3Array, to: PackedVector3Array, low: float, high: float) -> void:
+	for index in range(from.size()):
+		var next := (index + 1) % from.size()
+		var a := from[index]
+		var b := from[next]
+		var c := to[next]
+		var d := to[index]
+		# Clip the existing A-B-C / A-C-D triangles, not a newly triangulated
+		# section: on a sloped turn the original quad may not be planar.
+		var ac_low := a.lerp(c, low)
+		var ac_high := a.lerp(c, high)
+		var bc_low := b.lerp(c, low)
+		var bc_high := b.lerp(c, high)
+		var ad_low := a.lerp(d, low)
+		var ad_high := a.lerp(d, high)
+		# Exact endpoints avoid float-sized sliver faces at a shared corner.
+		if low == 0.0:
+			ac_low = a
+			bc_low = b
+			ad_low = a
+		if high == 1.0:
+			ac_high = c
+			bc_high = c
+			ad_high = d
+		_append_post_triangle(vertices, normals, indices, ac_low, bc_low, bc_high)
+		_append_post_triangle(vertices, normals, indices, ac_low, bc_high, ac_high)
+		_append_post_triangle(vertices, normals, indices, ac_low, ac_high, ad_high)
+		_append_post_triangle(vertices, normals, indices, ac_low, ad_high, ad_low)
+
+func _get_sweep_cut_section(from: PackedVector3Array, to: PackedVector3Array, weight: float) -> PackedVector3Array:
+	if weight == 0.0:
+		return from
+	if weight == 1.0:
+		return to
+	var section := PackedVector3Array()
+	for index in range(from.size()):
+		section.append(from[index].lerp(to[index], weight))
+		# Keep diagonal intersections so cap edges match the clipped faces.
+		section.append(from[index].lerp(to[(index + 1) % from.size()], weight))
+	return section
+
+func _append_post_cap(vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array, section: PackedVector3Array, reverse: bool) -> void:
+	if section.is_empty():
+		return
+	var center := Vector3.ZERO
+	for point in section:
+		center += point
+	center /= float(section.size())
+	for index in range(section.size()):
+		var next := (index + 1) % section.size()
+		if reverse:
+			_append_post_triangle(vertices, normals, indices, center, section[next], section[index])
+		else:
+			_append_post_triangle(vertices, normals, indices, center, section[index], section[next])
+
+func _append_post_triangle(vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array, a: Vector3, b: Vector3, c: Vector3) -> void:
+	if (b - a).cross(c - a).length_squared() > 1.0e-20:
+		_add_mesh_triangle(vertices, normals, indices, a, b, c)
 
 func _create_wall_profile(width: float, bottom: float, top: float) -> PackedVector2Array:
 	var min_x := -width / 2.0
@@ -2256,7 +2417,9 @@ func _create_swept_meshes(profiles: Array) -> ArrayMesh:
 	var indices := PackedInt32Array()
 	for profile: PackedVector2Array in profiles:
 		_append_swept_profile(vertices, normals, indices, profile)
+	return _create_mesh_from_arrays(vertices, normals, indices)
 
+func _create_mesh_from_arrays(vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array) -> ArrayMesh:
 	if vertices.is_empty():
 		return null
 

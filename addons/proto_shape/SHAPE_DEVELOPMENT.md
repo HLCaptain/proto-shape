@@ -183,7 +183,7 @@ Compared with a regular `CSGBox3D`, `ProtoWall` provides:
 - Click-selection through generated geometry.
 - Future wall-specific extensions such as openings, trim, fence modes, or connection helpers.
 
-The first implementation uses generated closed `CSGMesh3D` sweep meshes for solid walls and rail bars, plus generated `CSGBox3D` posts sampled along the same path cache. The selected path orientation, interpolation, corner rounding, sample simplification, and point tilt must apply to both the sweep mesh and generated post basis so irregular 3D rails do not mix different pitch, roll, or offset calculations. Door/window openings, trims, and extra fence styles can follow after the path workflow is proven.
+The implementation uses closed `CSGMesh3D` sweep meshes for solid walls, rail bars, and fitted posts. Posts clip the existing sweep triangles across their footprint, including corners, rather than approximating the rail with one box or retriangulating a nonplanar surface differently. Degenerate horizontal spans in `Fixed Up` retain a box fallback. The selected orientation, interpolation, corner rounding, simplification, and tilt must apply consistently to rails and posts; post edits must not alter the authored curve or rail mesh. Door/window openings, trims, and extra fence styles can follow after the path workflow is proven.
 
 ## Verification Checklist
 

@@ -37,6 +37,8 @@ https://github.com/user-attachments/assets/abb87cb9-2757-455d-8a05-6a6886eaed40
 
 Path-based solid walls and rails for fast level blockouts. Use it for straight or curved walls, low cover, guardrails, fences, balcony rails, ramp-side rails, and variable-elevation paths with selectable orientation and interpolation.
 
+Rail posts automatically fit slopes and bend through corners, including upright posts in Fixed Up mode.
+
 > [!TIP]
 > `ProtoWall` extends `Path3D`, so you can shape walls and rails with Godot's native curve tools and adjust wall dimensions with ProtoShape gizmos.
 
