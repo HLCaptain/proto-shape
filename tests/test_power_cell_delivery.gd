@@ -22,6 +22,7 @@ func _run() -> void:
 	var gameplay = source.instantiate()
 	root.add_child(gameplay)
 	await process_frame
+	_test_gameplay_camera(gameplay)
 	_expect(is_equal_approx(InputMap.action_get_deadzone(ProtoExampleControls.INTERACT), 0.23), "Existing demo actions must not be overwritten")
 	_expect(InputMap.action_get_events(ProtoExampleControls.INTERACT).size() == 1, "Existing demo action events must be preserved")
 	_test_player_visual_matches_collider(gameplay)
@@ -72,6 +73,7 @@ func _run() -> void:
 	var reloaded = reloaded_source.instantiate()
 	root.add_child(reloaded)
 	await process_frame
+	_test_gameplay_camera(reloaded)
 	_expect(is_equal_approx(reloaded.get_node("MapGeometry/TwinRise/EditedCargoRamp").width, 4.25), "Saved ramp edits must persist")
 	_expect(reloaded.has_node("MapGeometry/UserMarker"), "User-added nodes must persist")
 	_expect(not reloaded.has_node("MapGeometry/RelayYard/TerminalGuideWall"), "User-deleted nodes must stay deleted")
@@ -83,6 +85,12 @@ func _run() -> void:
 	if failures == 0:
 		print("PASS: delivery state and editing")
 	quit(1 if failures else 0)
+
+func _test_gameplay_camera(gameplay: Node3D) -> void:
+	var player_camera := gameplay.get_node("Player/CameraPivot/SpringArm3D/Camera3D") as Camera3D
+	var thumbnail_camera := gameplay.get_node("ThumbnailCamera") as Camera3D
+	_expect(gameplay.get_viewport().get_camera_3d() == player_camera, "Gameplay must use the following player camera")
+	_expect(not thumbnail_camera.current, "ThumbnailCamera must remain inactive during gameplay")
 
 func _test_merged_rails(gameplay: Node3D) -> void:
 	var rail_count := 0

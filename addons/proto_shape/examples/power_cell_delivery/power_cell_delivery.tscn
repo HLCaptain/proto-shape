@@ -397,7 +397,6 @@ transform = Transform3D(-3.6199901e-06, -1, 0, 1, -3.6199901e-06, 0, 0, 0, 1, 0.
 
 [node name="ThumbnailCamera" type="Camera3D" parent="." unique_id=825463284]
 transform = Transform3D(0.6712613, -0.32083055, 0.66818863, 0, 0.9014704, 0.4328407, -0.74122083, -0.29054922, 0.6051222, 11.930318, 7.6068068, 10.803005)
-current = true
 fov = 55.0
 
 [node name="Hud" type="CanvasLayer" parent="." unique_id=1967297502]
