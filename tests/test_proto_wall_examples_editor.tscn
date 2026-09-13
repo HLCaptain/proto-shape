@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/test_proto_wall_examples_editor.gd" id="1"]
+
+[node name="WallExampleEditorTests" type="Node"]
+script = ExtResource("1")

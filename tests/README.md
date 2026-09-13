@@ -1,0 +1,24 @@
+# Regression checks
+
+Run `bash tests/run.sh` with Godot 4.7.2, Bash, rsync, and ripgrep available.
+The runner copies the project into a temporary directory, imports it without
+existing caches, and runs runtime scripts and editor test scenes separately.
+A small Godot helper disables plugins only in the temporary copy before first
+import, so the original project may keep ProtoShape enabled while you work.
+It requires successful exit status, clean error output, and a test completion
+marker. The original project's editor settings and input map are not changed.
+The temporary project and logs are retained for diagnosis.
+
+Cursor capture requires a real display. Run
+`godot --path . --script tests/test_proto_ramp_controls.gd` without `--headless`
+to check default and remapped capture behavior. The headless run explicitly
+skips only capture-state assertions; action mapping and preservation checks
+still run.
+
+Editor checks are ordinary `@tool` scenes and run only with the explicit
+`--proto-shape-tests` user argument. Opening those scenes normally does not
+start a test or close the editor. Avoid running editor objects from a custom
+`--editor --script` SceneTree: that bypasses normal editor cleanup.
+
+These checks supplement the manual editing, gameplay, and exported-runtime
+checks in [the reusable release checklist](../release/README.md).

@@ -1,179 +1,53 @@
 # ProtoGizmoWrapper
 
-ProtoGizmoWrapper is a wrapper to create 3D gizmos for custom nodes in Godot. With the use of [ProtoGizmoUtils](../proto_gizmo/README.md#protogizmoutils) and only 2 method implementations, you can implement custom gizmos for your nodes.
+ProtoGizmoWrapper connects custom `Node3D` children to ProtoShape's editor gizmos through signals. For a complete, runtime-safe implementation, open [ExampleWrappedVolume](../proto_gizmo/examples/wrapper_volume/example_wrapped_volume.gd) and its [scene](../proto_gizmo/examples/wrapper_volume/example_wrapped_volume.tscn).
 
-<img src="../icon/proto-gizmo-wrapper-icon.svg" style="height: 40%; width: 40%; margin: 0 auto; display: block">
+<img src="../icons/proto-gizmo-wrapper-icon.svg" style="height: 40%; width: 40%; margin: 0 auto; display: block">
 
-## Usage
+## Setup
 
-### Create ProtoGizmoWrapper
-
-When adding a new child node, search for `ProtoGizmoWrapper` and add it to the scene.
-
-### Make your nodes compatible with gizmos
-
-ProtoGizmoWrapper exposes 2 essential methods as signals to implement gizmo functionality.
-
-To make your nodes respond to gizmo related changes, you need to subscribe to these signals.
-
-The signals have `EditorNode3DGizmo` and `EditorNode3DGizmoPlugin` typed arguments, which are only available in the editor and not in packaged games. To avoid packaging issues, `gizmo` and `plugin` arguments are dynamically typed.
-
-So basically the signals are:
+Add `ProtoGizmoWrapper` from the Add Child Node menu and place your custom shape beneath it. In the child's `_enter_tree()`, connect these signals only when `Engine.is_editor_hint()` is true. Disconnect them in `_exit_tree()`. The working example includes both lifecycle methods.
 
 ```gdscript
-# This
 signal redraw_gizmos_for_child_signal(gizmo, plugin)
-
-# Instead of this
-signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin)
+signal set_handle_for_child_signal(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2)
+signal commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool)
 ```
 
-Just like in [ProtoRampGizmos](../proto_ramp/README.md#protorampgizmos), you can connect methods with static typing to these signals to avoid dynamic typing and runtime errors.
+The wrapper broadcasts signals to subscribed children, so every callback must check `gizmo.get_node_3d() == self`. Keep `gizmo` and `plugin` dynamically typed in scripts that also load in exported games; editor-only classes are unavailable in export templates.
 
-***To see a fully working example, check out [ProtoRampGizmos](../proto_ramp/proto_ramp_gizmos.gd) source code.***
+## Callback skeleton
 
-#### Redraw
-
-This signal is emitted when a wrapper's child node's gizmos need to be redrawn.
-
-When a `ProtoGizmoWrapper` has multiple child nodes (each subscribed to this signal), children should check if the affected node is itself with `gizmo.get_node_3d() == self`. Else, the children not affected are also redrawn, resulting in multiple (unnecessary) gizmos being drawn.
-
-Propagating `EditorNode3DGizmoPlugin::_redraw`.
+Use small, stable handle IDs, such as `const HANDLE_WIDTH := 1`. IDs need to be unique only within this child's gizmo; they are not resource UIDs.
 
 ```gdscript
-signal redraw_gizmos_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin)
+func redraw_gizmos(gizmo, plugin) -> void:
+	if gizmo.get_node_3d() != self:
+		return
+	gizmo.clear()
+	# Draw handles with plugin.get_material("proto_handler", gizmo).
+
+func set_handle(gizmo, plugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2) -> void:
+	if gizmo.get_node_3d() != self:
+		return
+	# Project the pointer, ignore null projections, and apply the property edit.
+
+func commit_handle(gizmo, plugin, handle_id: int, secondary: bool, restore: Variant, cancel: bool) -> void:
+	if gizmo.get_node_3d() != self:
+		return
+	# Restore the original value on cancel; otherwise commit one undo action.
 ```
 
-Each child is responsible to initialize their handles (generate UID for each handle, to use them later). In case of [ProtoRamp](../proto_ramp/README.md), the handles are initialized this way:
+These are callback skeletons, not a complete editable shape. [ExampleWrappedVolume](../proto_gizmo/examples/wrapper_volume/example_wrapped_volume.gd) implements geometry, handles, drag state, snapping, and `plugin.undo_redo` together.
 
-```gdscript
-# For initializing gizmo handles
-var width_gizmo_id: int
-var depth_gizmo_id: int
-var height_gizmo_id: int
+## Arrows and coordinates
 
-# Optional variables for drawing debug grid for camera projection (assigned in `set_handle` function)
-var screen_pos: Vector2
-var local_gizmo_position: Vector3
-var local_offset_axis: Vector3
-var camera_position: Vector3
+Optional arrow methods are forwarded directly to the child because they return values. Implement `get_arrow_drag_segments()`, `begin_arrow_drag()`, `set_arrow_drag()`, and `commit_arrow_drag()` using the [generic provider contract](../proto_gizmo/README.md#generic-gizmo-providers). `begin_arrow_drag()` returns `true` only after a valid initial projection; returning `false` leaves the click unclaimed.
 
-func redraw_gizmos(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin) -> void:
+[ProtoGizmoUtils](../proto_gizmo/README.md#protogizmoutils) returns node-local `Vector3` points or `null` when projection is unsafe. Ignore invalid samples without changing the last valid property or initial pointer offset. Use the same local axis for projection and property calculation.
 
-    # Check if this is the affected node
-    if gizmo.get_node_3d() != self:
-        return
+Expose `get_proto_gizmo_selection_nodes()` on your child to make its generated `CSGShape3D` or `MeshInstance3D` geometry selectable through the owner node.
 
-    # Initializing gizmo handles
-    if width_gizmo_id == 0 or depth_gizmo_id == 0 or height_gizmo_id == 0:
-        width_gizmo_id = randi_range(0, 1_000_000)
-        depth_gizmo_id = randi_range(0, 1_000_000)
-        height_gizmo_id = randi_range(0, 1_000_000)
+## Upgrading to 1.2.0
 
-    # Clearing previous drawn gizmos
-    gizmo.clear()
-
-    var handles = PackedVector3Array()
-    # ... calculate and add gizmo handle positions to the array
-    gizmo.add_handles(handles, plugin.get_material("proto_handler", gizmo), [depth_gizmo_id, width_gizmo_id, height_gizmo_id])
-
-    # Add selection with mouse click on screen by adding the node's mesh to the gizmo
-    if get_meshes().size() > 1:
-        gizmo.add_collision_triangles(get_meshes()[1].generate_triangle_mesh())
-        gizmo.add_mesh(get_meshes()[1], plugin.get_material("selected", gizmo))
-
-    # Drawing debug grid for camera projection (optional)
-    # Adding debug lines for gizmo if we have cursor screen position set
-    if screen_pos:
-        var grid_size_modifier = 1.0
-        gizmo_utils.debug_draw_handle_grid(camera_position, screen_pos, local_gizmo_position, local_offset_axis, self, gizmo, plugin, grid_size_modifier)
-```
-
-#### Set handle
-
-This signal is emitted when a handle is dragged by the user.
-
-With identifying the affected handle, being drawn by `handle_id` on the affected node `gizmo.get_node_3d()`, the node can update its properties accordingly with the use of [ProtoGizmoUtils](../proto_gizmo/README.md#protogizmoutils).
-
-Propagating `EditorNode3DGizmoPlugin::_set_handle`.
-
-```gdscript
-signal set_handle_for_child_signal(gizmo: EditorNode3DGizmo, plugin: EditorNode3DGizmoPlugin, handle_id: int, secondary: bool, camera: Camera3D, screen_pos: Vector2)
-```
-
-```gdscript
-func set_handle(
-    gizmo: EditorNode3DGizmo,
-    plugin: EditorNode3DGizmoPlugin,
-    handle_id: int,
-    secondary: bool,
-    camera: Camera3D,
-    screen_pos: Vector2) -> void:
-
-    # Check if this is the affected node
-    if gizmo.get_node_3d() != self:
-        return
-
-    # Assign debug parameters used for drawing camera projected debug planes (optional)
-    self.screen_pos = screen_pos
-    self.local_gizmo_position = child.global_transform.origin
-    self.camera_position = camera.position
-
-    # Match the handle_id to update the appropriate property
-    match handle_id:
-        depth_gizmo_id:
-            # Use ProtoGizmoUtils to update depth
-
-            # `local_offset_axis` is used for debugging reasons, so it is not a local variable defined with `var`
-            # `local_offset_axis` is used to define the axis the handle can be dragged on.
-            local_offset_axis = Vector3(1, 0, 0)
-            # Also used for debugging
-            local_gizmo_position = ... set gizmo position based on node properties
-
-            # `gizmo_utils` is a reference to the `ProtoGizmoUtils` instance used for handle offset calculations
-            # `handle_offset` is the offset of the dragged handle in the 3D space on a camera projected plane
-            var handle_offset = gizmo_utils.get_handle_offset(camera, screen_pos, local_gizmo_position, local_offset_axis, self)
-
-            # Update custom node properties based on offset in the proper axis
-            _set_depth_handle(handle_offset.z)
-        width_gizmo_id:
-            # ... update width
-        height_gizmo_id:
-            # ... update height
-
-    # Redraw gizmos after updating the properties
-    update_gizmos()
-```
-
-#### Initializing your nodes
-
-To use gizmos and `ProtoGizmoUtils` for getting handle offsets, you need to initialize an instance of it in your node, for example:
-
-```gdscript
-# Import ProtoGizmoWrapper and ProtoGizmoUtils
-const ProtoGizmoWrapper = preload("res://addons/proto_shape/proto_gizmo_wrapper/proto_gizmo_wrapper.gd")
-const ProtoGizmoUtils = preload("res://addons/proto_shape/proto_gizmo/proto_gizmo_utils.gd")
-var gizmo_utils := ProtoGizmoUtils.new()
-
-func _enter_tree() -> void:
-    if get_parent() is ProtoGizmoWrapper:
-        # Connect to ProtoGizmoWrapper signals
-        var parent: ProtoGizmoWrapper = get_parent()
-        parent.redraw_gizmos_for_child_signal.connect(redraw_gizmos)
-        parent.set_handle_for_child_signal.connect(set_handle)
-
-func _exit_tree() -> void:
-    if get_parent() is ProtoGizmoWrapper:
-        # Disconnect from ProtoGizmoWrapper signals
-        var parent: ProtoGizmoWrapper = get_parent()
-        parent.redraw_gizmos_for_child_signal.disconnect(redraw_gizmos)
-        parent.set_handle_for_child_signal.disconnect(set_handle)
-```
-
-### Setup node hierarchy
-
-Add your custom nodes under the `ProtoGizmoWrapper` node, for the `ProtoGizmo` *EditorNode3DGizmoPlugin* to pick it up as a node with gizmos enabled.
-
-When your node connects to the `ProtoGizmoWrapper` signals, it will start responding to gizmo related changes, called by `ProtoGizmo`.
-
-If you implemented your functions correctly, you should see the gizmos for your 3D nodes and be able to drag them around.
+The handle signal now consistently delivers `(gizmo, plugin, handle_id, secondary, camera, screen_pos)`, and `commit_handle` includes `plugin` as its second argument. Update handlers that compensated for the older argument order. The wrapper keeps one current contract; it does not adapt old callback signatures.

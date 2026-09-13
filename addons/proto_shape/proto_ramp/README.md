@@ -2,8 +2,8 @@
 
 ProtoRamp is a dynamic ramp/staircase shape based on Godot's Constructive Solid Geometry (CSG). It is designed to be used for prototyping levels and game mechanics.
 
-<!-- Icon (addons/proto_shape/icon/proto-ramp-icon.png) -->
-<img src="../icon/proto-ramp-icon.png" style="height: 40%; width: 40%; margin: 0 auto; display: block">
+<!-- Icon (addons/proto_shape/proto_ramp/icons/proto-ramp-icon.png) -->
+<img src="icons/proto-ramp-icon.png" style="height: 40%; width: 40%; margin: 0 auto; display: block">
 
 ## Usage
 
@@ -15,9 +15,19 @@ https://github.com/HLCaptain/proto-shape/assets/22623259/bccfb0e7-6799-4a94-82c4
 
 Since `1.1.4`, ProtoRamp node is now independent from `CSGShape3D` base class for correct shape generation.
 
+### Run the example
+
+Open [proto_ramp_example.tscn](example/proto_ramp_example.tscn) and run the current scene. Running the whole project opens the shared [Power Cell Delivery](../examples/power_cell_delivery/README.md) showcase. Move with <kbd>WASD</kbd> or the arrow keys, jump with <kbd>Space</kbd>, look around with the mouse, and press <kbd>Esc</kbd> to release the cursor. Click to capture it again.
+
+The repository exposes these namespaced demo actions, including `proto_shape_demo_capture_cursor` for recapturing the mouse, in `Project Settings` -> `Input Map`. Addon-only installs create any missing actions at runtime without replacing project-specific mappings.
+
 ### Use Gizmos
 
-ProtoRamp supports custom gizmos to adjust the shape.
+ProtoRamp supports custom gizmos to adjust the shape. Solid 3D arrows start at each handle icon and point in the direction the handle can be dragged. Hovering an arrow highlights it, and dragging the arrow body edits the same property as the small handle icon.
+
+Width and generated total height and depth stay at least `0.001`. Height and depth remain authored Inspector values: in `Step Dimensions` mode they describe one step, and changing the step count does not overwrite them. If those authored values would make the complete shape smaller than `0.001`, generated geometry uses evenly sized effective steps without changing the Inspector values. Switching calculation mode or shape type converts the authored units while preserving their complete-shape equivalent.
+
+`Calculation` and `Steps` are hidden while the node is a ramp, but their values are retained when switching types or saving and reopening the scene.
 
 https://github.com/HLCaptain/proto-shape/assets/22623259/1db3f18d-4d90-400f-9d33-7b03d44f62c7
 
@@ -29,13 +39,15 @@ You can also undo/redo changes made with the gizmos.
 
 ProtoRamp supports navigation mesh generation. It also features a toggle to enable collisions (aqua blue if enabled).
 
+The example scene intentionally ships with an empty `NavigationMesh`, because baked data would become stale when the generated ramp changes. Open the scene and wait for the ramp's CSG geometry to finish updating, select `NavigationRegion3D`, then use **Bake NavMesh** in Godot's 3D editor. Re-bake after changing the ramp or surrounding level geometry. The playable example demonstrates collision-based movement and does not include a `NavigationAgent3D`.
+
 ![Navigation mesh on ProtoRamp](navigation_mesh_proto_ramp.png)
 
 #### ProtoRampGizmos
 
-Gizmo functionality is delegated to [ProtoRampGizmos](proto_ramp_gizmos.gd). It is a helper class that provides gizmo functionality for the `ProtoRamp` node, which only gets instantiated in the editor. This way, the packaged game will not rely on any editor-plugin specific code.
+Gizmo functionality is delegated to [ProtoRampGizmos](proto_ramp_gizmos.gd). It is a provider class returned by `ProtoRamp.get_proto_gizmo_provider()` and only gets instantiated in the editor. This way, the packaged game will not rely on any editor-plugin specific code.
 
-`Engine.is_editor_hint()` is used in `ProtoRamp` itself to check if the game is running in the editor. If it is, the `ProtoRampGizmos` class is instantiated and added as a child node to the `ProtoRamp` node.
+`Engine.is_editor_hint()` is used in `ProtoRamp` itself to check if the game is running in the editor. If it is, the `ProtoRampGizmos` class is instantiated and stored as the ramp's gizmo provider.
 
 ### Adjust parameters
 

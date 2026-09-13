@@ -7,7 +7,7 @@ const ProtoRamp = preload("res://addons/proto_shape/proto_ramp/proto_ramp.gd")
 ##
 ## This node can generate ramps and staircases with a variety of parameters.
 
-## Called when the anchor is changed. Used by the `proto_gizmo.dg` script to update gizmo handler positions.
+## Called when the anchor is changed. Used by `proto_ramp_gizmos.gd` to update gizmo handle positions.
 signal anchor_changed
 
 ## Called when the width is changed.
@@ -51,7 +51,7 @@ enum Anchor {
 ## Act as a ramp without stairs or a staircase with stairs.
 enum Type {
 	RAMP,		## Simple CSGPolygon3D shape.
-	STAIRCASE,  ## Staircase with stairs combined of CSGBox3D shapes.
+	STAIRCASE,  ## Staircase generated as a single CSGPolygon3D shape.
 }
 
 ## Used to avoid setting properties traditionally on initialization to avoid bugs.
@@ -60,8 +60,7 @@ var is_entered_tree := false
 ## Storing CSG shapes for easy access without interfering with children.
 var shape_polygon: CSGPolygon3D = null
 
-## Used to avoid z-fighting and incorrect snapping between steps.
-var epsilon: float = 0.0001
+const MIN_DIMENSION := 0.001
 
 ## Default public values
 const _default_calculation := Calculation.STAIRCASE_DIMENSIONS
@@ -122,24 +121,24 @@ var anchor_fixed: bool: set = set_anchor_fixed, get = get_anchor_fixed
 var material: Variant: set = set_material, get = get_material
 
 func _get_property_list() -> Array[Dictionary]:
+	var stored_dimension_minimum := _get_stored_dimension_minimum()
 	var list: Array[Dictionary] = [
 		{"name": "type", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Ramp,Staircase"},
 		{"name": "collisions_enabled", "type": TYPE_BOOL},
 		{"name": "width", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
-		{"name": "height", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
-		{"name": "depth", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.001,100,0.01,or_greater"},
+		{"name": "height", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "%s,100,0.01,or_greater,or_less" % stored_dimension_minimum},
+		{"name": "depth", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "%s,100,0.01,or_greater,or_less" % stored_dimension_minimum},
 		{"name": "anchor", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Bottom Center,Bottom Left,Bottom Right,Top Center,Top Left,Top Right,Base Center,Base Left,Base Right"},
 		{"name": "anchor_fixed", "type": TYPE_BOOL},
 		{"name": "fill", "type": TYPE_FLOAT, "hint": PROPERTY_HINT_RANGE, "hint_string": "0.000,1.000,0.001"},
 		{"name": "material","class_name": &"BaseMaterial3D,ShaderMaterial", "type": 24, "hint": 17, "hint_string": "BaseMaterial3D,ShaderMaterial", "usage": 6 }
 		]
 
-	# Staircase exclusive properties
-	if type == Type.STAIRCASE:
-		list += [
-			{"name": "calculation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Staircase Dimensions,Step Dimensions"},
-			{"name": "steps", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,100,1,or_greater"},
-			]
+	var staircase_property_usage := PROPERTY_USAGE_DEFAULT if type == Type.STAIRCASE else PROPERTY_USAGE_STORAGE
+	list += [
+		{"name": "calculation", "type": TYPE_INT, "hint": PROPERTY_HINT_ENUM, "hint_string": "Staircase Dimensions,Step Dimensions", "usage": staircase_property_usage},
+		{"name": "steps", "type": TYPE_INT, "hint": PROPERTY_HINT_RANGE, "hint_string": "1,100,1,or_greater", "usage": staircase_property_usage},
+		]
 
 	return list
 
@@ -245,33 +244,56 @@ func get_anchor_fixed() -> bool:
 func get_material() -> Variant:
 	return material
 
+func _get_stored_dimension_minimum() -> float:
+	if _type == Type.STAIRCASE and _calculation == Calculation.STEP_DIMENSIONS:
+		return MIN_DIMENSION / float(max(1, _steps))
+	return MIN_DIMENSION
+
+func _get_authored_true_height() -> float:
+	if _type == Type.STAIRCASE and _calculation == Calculation.STEP_DIMENSIONS:
+		return _height * float(_steps)
+	return _height
+
+func _get_authored_true_depth() -> float:
+	if _type == Type.STAIRCASE and _calculation == Calculation.STEP_DIMENSIONS:
+		return _depth * float(_steps)
+	return _depth
+
+func _set_stored_dimensions_from_authored_size(authored_height: float, authored_depth: float) -> void:
+	var scale := float(_steps) if _type == Type.STAIRCASE and _calculation == Calculation.STEP_DIMENSIONS else 1.0
+	_height = authored_height / scale
+	_depth = authored_depth / scale
+
+func _validate_stored_dimension(value: float) -> float:
+	var stored_minimum := _get_stored_dimension_minimum()
+	if is_finite(value) and value > 0.0:
+		return value
+	return stored_minimum
+
+func _normalize_dimensions() -> void:
+	_width = max(_width, MIN_DIMENSION) if is_finite(_width) else MIN_DIMENSION
+	_height = _validate_stored_dimension(_height)
+	_depth = _validate_stored_dimension(_depth)
+
 ## Get the step depth of the staircase.
 func get_true_step_depth() -> float:
-	if type == Type.RAMP or calculation == Calculation.STEP_DIMENSIONS:
-		return depth
-	else:
-		return depth / steps
+	if type == Type.STAIRCASE:
+		return get_true_depth() / float(steps)
+	return get_true_depth()
 
 ## Get the whole depth of the ramp/staircase.
 func get_true_depth() -> float:
-	if type == Type.STAIRCASE:
-		return get_true_step_depth() * steps
-	else:
-		return get_true_step_depth()
+	return max(_get_authored_true_depth(), MIN_DIMENSION)
 
 ## Get the step height of the staircase.
 func get_true_step_height() -> float:
-	if type == Type.RAMP or calculation == Calculation.STEP_DIMENSIONS:
-		return height
-	else:
-		return height / steps
+	if type == Type.STAIRCASE:
+		return get_true_height() / float(steps)
+	return get_true_height()
 
 ## Get the whole height of the ramp/staircase.
 func get_true_height() -> float:
-	if type == Type.STAIRCASE:
-		return get_true_step_height() * steps
-	else:
-		return get_true_step_height()
+	return max(_get_authored_true_height(), MIN_DIMENSION)
 
 ## Get the anchor offset for a specific anchor according to the dimensions of the ramp/staircase.
 func get_anchor_offset(anchor: Anchor) -> Vector3:
@@ -300,59 +322,49 @@ func get_anchor_offset(anchor: Anchor) -> Vector3:
 	return offset
 
 func set_type(value: Type) -> void:
-	_type = value
+	var next_type: Type = clampi(value, Type.RAMP, Type.STAIRCASE)
+	var should_convert := is_entered_tree and next_type != _type
+	var authored_height := _get_authored_true_height() if should_convert else 0.0
+	var authored_depth := _get_authored_true_depth() if should_convert else 0.0
+	_type = next_type
+	if should_convert:
+		_set_stored_dimensions_from_authored_size(authored_height, authored_depth)
 	notify_property_list_changed()
-	if is_entered_tree:
-		# Staircase: dimensions are reset from forced STAIRCASE_DIMENSIONS calculation
-		# Ramp: dimensions are forced to STAIRCASE_DIMENSIONS calculation
-		if calculation == Calculation.STEP_DIMENSIONS:
-			match type:
-				Type.STAIRCASE:
-					_height /= steps
-					_depth = (_depth + epsilon) / steps
-				Type.RAMP:
-					_height *= steps
-					_depth = (_depth + epsilon) * steps
 	refresh_shape()
 	type_changed.emit()
 	update_gizmos()
 
 ## Sets the calculation method and recalculates the dimensions of the ramp/staircase.
 func set_calculation(value: Calculation) -> void:
-	_calculation = value
-	# Calculate current step or staircase dimensions
-	# Only affecting dimensions when in STAIRCASE mode
-	if is_entered_tree:
-		match calculation:
-			Calculation.STAIRCASE_DIMENSIONS:
-				if type == Type.STAIRCASE:
-					_height *= steps
-					_depth = (_depth + epsilon) * steps
-			Calculation.STEP_DIMENSIONS:
-				if type == Type.STAIRCASE:
-					_height /= steps
-					_depth = (_depth + epsilon) / steps
+	var next_calculation: Calculation = clampi(value, Calculation.STAIRCASE_DIMENSIONS, Calculation.STEP_DIMENSIONS)
+	var should_convert := is_entered_tree and type == Type.STAIRCASE and next_calculation != _calculation
+	var authored_height := _get_authored_true_height() if should_convert else 0.0
+	var authored_depth := _get_authored_true_depth() if should_convert else 0.0
+	_calculation = next_calculation
+	if should_convert:
+		_set_stored_dimensions_from_authored_size(authored_height, authored_depth)
+		notify_property_list_changed()
 
 func set_width(value: float) -> void:
-	_width = value
+	_width = max(value, MIN_DIMENSION) if is_finite(value) else MIN_DIMENSION
 	refresh_shape()
 	width_changed.emit()
 	update_gizmos()
 
 func set_height(value: float) -> void:
-	_height = value
+	_height = _validate_stored_dimension(value)
 	refresh_shape()
 	height_changed.emit()
 	update_gizmos()
 
 func set_depth(value: float) -> void:
-	_depth = value
+	_depth = _validate_stored_dimension(value)
 	refresh_shape()
 	depth_changed.emit()
 	update_gizmos()
 
 func set_fill(value: float) -> void:
-	_fill = max(0.0, min(1.0, value))
+	_fill = clamp(value, 0.0, 1.0) if is_finite(value) else _default_fill
 	refresh_shape()
 	fill_changed.emit()
 	update_gizmos()
@@ -360,9 +372,10 @@ func set_fill(value: float) -> void:
 ## Translates the ramp/staircase to a new anchor point in local space.
 ## Then recalculates the stairs/ramp with the new offset.
 func set_anchor(value: Anchor) -> void:
+	var next_anchor: Anchor = clampi(value, Anchor.BOTTOM_CENTER, Anchor.BASE_RIGHT)
 	# Transform node to new anchor
-	translate_anchor(anchor, value)
-	_anchor = value
+	translate_anchor(anchor, next_anchor)
+	_anchor = next_anchor
 	refresh_shape()
 	anchor_changed.emit()
 	update_gizmos()
@@ -385,7 +398,10 @@ func set_material(value: Variant) -> void:
 	refresh_shape()
 
 func set_steps(value: int) -> void:
-	_steps = value
+	_steps = max(1, value)
+	if is_entered_tree:
+		_normalize_dimensions()
+	notify_property_list_changed()
 	refresh_shape()
 	step_count_changed.emit()
 	update_gizmos()
@@ -399,7 +415,8 @@ func refresh_shape() -> void:
 	translate_anchor(anchor, Anchor.BOTTOM_CENTER)
 
 	if shape_polygon != null:
-		remove_child(shape_polygon)
+		if shape_polygon.get_parent() == self:
+			remove_child(shape_polygon)
 		shape_polygon.queue_free()
 		shape_polygon = null
 
@@ -454,7 +471,7 @@ func create_ramp_array() -> PackedVector2Array:
 	return array
 
 func create_staircase_array() -> PackedVector2Array:
-	# Create a staircase with CSGBox3Ds
+	# Create a staircase polygon
 	var array := PackedVector2Array()
 
 	if fill == 1:
@@ -546,7 +563,14 @@ func find_shape_polygon_and_delete_duplicates() -> void:
 ## See proto_ramp_gizmos.gd for more information.
 var gizmos = null
 
+func get_proto_gizmo_provider() -> Variant:
+	return gizmos
+
+func get_proto_gizmo_selection_nodes() -> Array:
+	return [shape_polygon]
+
 func _enter_tree() -> void:
+	_normalize_dimensions()
 	find_shape_polygon_and_delete_duplicates()
 	# is_entered_tree is used to avoid setting properties traditionally on initialization
 	refresh_shape()
@@ -561,9 +585,11 @@ func _enter_tree() -> void:
 
 func _exit_tree() -> void:
 	# Remove all children
-	remove_child(shape_polygon)
-	shape_polygon.queue_free()
-	if Engine.is_editor_hint():
+	if shape_polygon != null:
+		if shape_polygon.get_parent() == self:
+			remove_child(shape_polygon)
+		shape_polygon.queue_free()
+	if Engine.is_editor_hint() and gizmos != null:
 		gizmos.remove_ramp()
 
 func equals(other: ProtoRamp) -> bool:
