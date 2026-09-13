@@ -2,6 +2,11 @@
 
 This sheet targets the new `store.godotengine.org` platform. It does not contain legacy Asset Library icon URLs or download-commit fields.
 
+Store work was CANCELLED by the user on 2026-09-13: "Don't upload the asset
+to the store". Retain this local metadata as reference only. Authentication,
+metadata saves, ZIP/thumbnail uploads, cropping validation, and `Stable` changes
+are out of scope and are not pending release blockers.
+
 ## Initial asset page
 
 - Publisher: existing `Illyan` publisher
@@ -9,7 +14,7 @@ This sheet targets the new `store.godotengine.org` platform. It does not contain
 - Asset URL slug: `proto-shape`
 - Asset type: `Addon`
 
-The publisher selection and immutable slug must be confirmed in the user's authenticated Store session. Acceptance of Store terms is user-owned.
+The publisher selection and immutable slug were not confirmed in an authenticated Store session. Store authentication is cancelled; acceptance of Store terms remains user-owned.
 
 ## Settings
 
@@ -60,7 +65,7 @@ https://github.com/HLCaptain/proto-shape
 
 ### AI usage disclosure
 
-Set AI usage to yes and use:
+Prepared AI usage value: yes. Disclosure copy:
 
 > Generative AI tools were used to assist with code implementation, refactoring, documentation, examples, and code review for version 1.2.0.
 
@@ -68,10 +73,10 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 
 ## Media
 
-- Thumbnail upload: `addons/proto_shape/examples/power_cell_delivery/assets/power_cell_delivery_thumbnail.png`
+- Local thumbnail: `addons/proto_shape/examples/power_cell_delivery/assets/power_cell_delivery_thumbnail.png`
 - Expected file: publisher-approved supplied thumbnail, preserved unchanged; 3821x1912 PNG
 - SHA-256: `a9c60c02f99c10823262d243c9a21421967d51c0cfe36f4d4aa013984e5c4baa`
-- Confirm Store dimension/cropping requirements when validating the upload
+- Store upload and dimension/cropping validation: CANCELLED by the user on 2026-09-13
 - Screenshots: none beyond the required thumbnail
 - Featured image: none
 - YouTube/video: none
@@ -79,10 +84,10 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 ## Version 1.2.0
 
 - ZIP: `proto-shape-1.2.0.zip`, built after all core and example commits are integrated
-- Archive source: `c2be7382d1d8a6a8271dc8dddaa6770bca66db03`; 4,528,298 bytes
-- ZIP SHA-256: `e44e6ea123e4248eb65b860a42f3690c9545c4d68a7c5ad4f147c34cb7428dd6`
+- Archive source: `314e8920cead1e67f4b3957474da6304805e30bf`; 4,528,365 bytes
+- ZIP SHA-256: `48c6825d3f7e7974565932ca310e8d94a46ecc650f3344042a4f70724b92d0fc`
 - Version Name: `1.2.0`
-- Stable: check only after final validation passes
+- Stable: saving/verifying CANCELLED by the user on 2026-09-13
 - Minimum required Godot version: `4.7`
 - Maximum compatible Godot version: unset
 - Validation version: `4.7.2`
@@ -110,7 +115,7 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 - ZIP root: `addons/proto_shape/`, with no repository-name wrapper.
 - Include the addon `LICENSE`, README, plugin manifest, scripts, examples, publisher-approved supplied thumbnail, and all source art.
 - Exclude root project files, `release/`, `.git*`, `.github/`, `.godot/`, and generated `.import` files.
-- Upload only the artifact built and freshly installed after final core integration.
+- Keep the artifact built and freshly installed after final core integration locally; Store upload is CANCELLED.
 
 ## Pricing and reviews
 
@@ -121,16 +126,13 @@ Do not add a claim that the publisher personally reviewed or manually tested eve
 ## Authorization boundary
 
 The user accepted the latest editor/demo changes on 2026-09-13 ("Everything is
-fine" / "Go ahead"). The latest selected thumbnail must be preserved. Final
-candidate validation has passed. Saved Store metadata/uploads are pending user
-authentication in the isolated browser; browser tooling is approved and installed.
-
-Authorized after final integration and validation:
-
-- Save the Store draft settings.
-- Upload the validated ZIP and thumbnail as version 1.2.0, then reopen the draft to verify they persisted.
+fine" / "Go ahead") and subsequently CANCELLED Store work: "Don't upload the
+asset to the store". This supersedes the earlier authorization to save metadata
+and upload the ZIP/thumbnail. No Store metadata or uploads have been written.
+The latest selected thumbnail must be preserved locally.
 
 Not authorized:
 
+- Store authentication, metadata saves, ZIP/thumbnail uploads, cropping validation, or `Stable` changes.
 - Do not click `Publish` or `Submit for review`.
 - The feature branch has been pushed and [draft PR #40](https://github.com/HLCaptain/proto-shape/pull/40) was created after the user's go-ahead. GitHub merge, tag creation/push, and release publication belong to the user.

@@ -20,8 +20,9 @@ Use [the reusable release checklist](../README.md) for the workflow and
 - Use namespaced InputMap actions for game/example controls without replacing
   host actions. Editor snapping does not register gameplay actions.
 - Use ordered commits in one draft PR and one final manual editor session.
-- Save an Asset Store draft under Illyan / proto-shape. The user handles Store
-  review submission and GitHub merge, tagging, and release publication.
+- Store work was CANCELLED by the user on 2026-09-13: "Don't upload the asset
+  to the store". Keep the Illyan / proto-shape metadata locally as reference only.
+  The user handles Store review submission and GitHub merge, tagging, and release publication.
 
 ## Steps
 
@@ -49,7 +50,7 @@ Use [the reusable release checklist](../README.md) for the workflow and
 - [x] 18. Refresh descriptions, example links, and Store installation guidance.
 - [x] 19. Include addon license, source art, and verified examples in archive rules.
 - [x] 20a. Prepare final release notes and current Store metadata fields locally.
-- [ ] 20b. Save and reopen the authenticated Asset Store asset/version draft.
+- CANCELLED by the user on 2026-09-13: 20b. Authenticate, save, and reopen the Asset Store asset/version draft.
 - [x] 21. Fit posts to sloped and turning rail geometry while preserving placement settings and the post-width gizmo.
 - [x] 22. Use continuous editable Power Cell Delivery rails and preserve the user's latest thumbnail.
 
@@ -62,36 +63,36 @@ separately in the historical log.
 - [x] Focused tests: process status, error logs, and completion marker checked.
 - [x] Runtime sample smoke checks and completed 80-shape editor generation.
 - [x] Real editor-context input, gizmo, lifecycle, and undo/redo checks.
-- [x] Fresh install from ZIP built from reviewed commit `c2be7382d1d8a6a8271dc8dddaa6770bca66db03`.
+- [x] Fresh install from ZIP built from reviewed commit `314e8920cead1e67f4b3957474da6304805e30bf`.
 - [x] Runtime export tested with matching official Godot 4.7.2 Linux export templates.
 - [x] User's final editor/demo sign-off received on 2026-09-13: "Everything is fine" / "Go ahead".
 - [x] Final ZIP contents verified; tests/caches excluded, source art and the user's latest thumbnail kept. Artifact identity is recorded below.
 - [x] Reviewed source commit pushed and remote SHA verified; no merge/tag/release publication performed.
 - [x] [PR #40](https://github.com/HLCaptain/proto-shape/pull/40) created after authorization and verified OPEN/DRAFT at the reviewed source commit.
-- [ ] Authenticated Store draft reopened and saved uploads/metadata verified.
-- [ ] Store thumbnail dimension/cropping requirements checked and Stable field saved/verified.
+- CANCELLED by the user on 2026-09-13: Store authentication, metadata saves, ZIP/thumbnail uploads, and saved draft verification.
+- CANCELLED by the user on 2026-09-13: Store thumbnail dimension/cropping validation and saving/verifying `Stable`.
 
 ### Source and package
 
-- ZIP source commit: `c2be7382d1d8a6a8271dc8dddaa6770bca66db03`.
-- Addon tree: `be10005f27daab0f0412e719c98f88793b08632e`.
-- ZIP: `proto-shape-1.2.0.zip`, 4,528,298 bytes.
-- ZIP SHA-256: `e44e6ea123e4248eb65b860a42f3690c9545c4d68a7c5ad4f147c34cb7428dd6`.
+- ZIP source commit: `314e8920cead1e67f4b3957474da6304805e30bf`.
+- Addon tree: `c6b7130532732a8cc39441046c24e0d46ec438bd`.
+- ZIP: `proto-shape-1.2.0.zip`, 4,528,365 bytes.
+- ZIP SHA-256: `48c6825d3f7e7974565932ca310e8d94a46ecc650f3344042a4f70724b92d0fc`.
 - Supplied thumbnail: 3821x1912 PNG, SHA-256 `a9c60c02f99c10823262d243c9a21421967d51c0cfe36f4d4aa013984e5c4baa`, unchanged in the package.
 
 Evidence-only commits may follow the archive source commit. They are excluded
 from the package; the addon tree and validated ZIP above remain unchanged.
 
-### Completed validation and remaining access
+### Completed validation and Store cancellation
 
-- `bash tests/run.sh` passed all 24 stages in `/tmp/proto-shape-tests.xqPiFn`:
+- `bash tests/run.sh` passed all 24 stages in `/tmp/proto-shape-tests.neR7Wu`:
   preparation, clean import, 13 regressions, and nine sample scenes. Required
   markers, process status, and logs through shutdown were checked.
 - The exact ZIP was installed into
-  `/tmp/proto-shape-release-handoff.Srp6OM/installed_project`. Fresh import,
+  `/tmp/proto-shape-camera-release.DMjlv8/project`. Fresh import,
   plugin-enabled `--editor --quit-after 120` startup, Ramp/Wall/posts regressions,
   demo edit/save/reload, and the physical delivery route all passed with clean
-  output. Logs are in `/tmp/proto-shape-release-handoff.Srp6OM/logs`.
+  output. Logs are in `/tmp/proto-shape-camera-release.DMjlv8/logs`.
 - Its official Godot 4.7.2 Linux exported-runtime probe passed generated
   collision, InputMap setup, all nine scenes, and the complete 80-wall showcase.
   The probe is validation-only and is excluded from the addon ZIP.
@@ -105,16 +106,21 @@ from the package; the addon tree and validated ZIP above remain unchanged.
   observed during the automated verification.
 - PR #40 is OPEN/DRAFT; its remote head was verified as the ZIP source commit.
   No merge, tag creation, release, main-branch change, or publication occurred.
-- Browser tooling is approved and installed (`agent-browser` 0.37.1, Chrome
-  for Testing 153.0.8010.36). The browser is at the `sso.godotengine.org` password
-  form and needs the user's sign-in. No Store writes occurred; draft metadata,
-  ZIP/thumbnail upload, cropping validation, and Stable remain pending.
+- The user CANCELLED Store work on 2026-09-13. Authentication, metadata saves,
+  ZIP/thumbnail uploads, cropping validation, and `Stable` are out of scope,
+  with no Store writes performed. These are not pending release blockers.
+
+The user confirmed the player camera for gameplay on 2026-09-13.
+The thumbnail camera's saved active flag was removed; startup and save/reload
+camera assertions passed, while the supplied thumbnail remained unchanged.
+The isolated Store browser was closed after the user's upload cancellation.
 
 ## Historical verification log
 
 The entries below preserve the implementation history, including superseded
-candidate archives, thumbnails, and earlier approval failures. Current status
-and artifact identity are recorded above.
+candidate archives, thumbnails, and earlier approval failures. References to
+pending Store work describe earlier states superseded by the user's 2026-09-13
+cancellation. Current status and artifact identity are recorded above.
 
 - Step 1: initial focused fill checks passed; the final version runs as
   `tests/test_proto_ramp_gizmos.tscn` in real editor context and prints
