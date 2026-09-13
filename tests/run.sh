@@ -27,6 +27,7 @@ run_check() {
 	printf 'PASS: %s\n' "$name"
 }
 
+run_check prepare 'PASS:' --script res://tests/prepare_project.gd -- --isolated-test-project
 run_check import - --import
 
 while IFS= read -r script; do
